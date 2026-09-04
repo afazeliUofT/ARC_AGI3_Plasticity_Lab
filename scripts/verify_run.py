@@ -403,9 +403,7 @@ def _load_manifest(run_dir: Path) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
-def check_run_completeness(
-    artifacts_root: Path, extra_files: tuple[str, ...] = ()
-) -> CheckResult:
+def check_run_completeness(artifacts_root: Path, extra_files: tuple[str, ...] = ()) -> CheckResult:
     """Every run has every contract file and every manifest key (constitution section 11).
 
     ``extra_files`` are the gate's ``verification.additional_run_artifacts``.
@@ -466,9 +464,7 @@ def check_sha256sums(prereg: dict[str, Any], artifacts_root: Path) -> CheckResul
             else:
                 problems.append(f"{run.name}: hash mismatch for {rel}")
         if must_list_all:
-            present = {
-                str(p.relative_to(run)) for p in run.rglob("*") if p.is_file() and p != sums
-            }
+            present = {str(p.relative_to(run)) for p in run.rglob("*") if p.is_file() and p != sums}
             unlisted = sorted(present - set(listed))
             if unlisted:
                 problems.append(f"{run.name}: unlisted files {unlisted}")
@@ -476,7 +472,12 @@ def check_sha256sums(prereg: dict[str, Any], artifacts_root: Path) -> CheckResul
     return CheckResult(
         "sha256sums_verify",
         passed=bool(runs) and fraction >= frac_min and not problems,
-        observed={"listed": total, "verified": verified, "fraction": fraction, "problems": problems},
+        observed={
+            "listed": total,
+            "verified": verified,
+            "fraction": fraction,
+            "problems": problems,
+        },
         threshold={"fraction_min": frac_min, "must_list_every_file": must_list_all},
         evidence=[str(r / "SHA256SUMS") for r in runs],
     )
@@ -564,7 +565,9 @@ def check_determinism(
             "contrast_seed": contrast_seed,
             "contrast_invocations": n_contrast,
         },
-        evidence=[str(r / f) for r in fixed_runs + contrast_runs for f in ("results.json", "metrics.csv")],
+        evidence=[
+            str(r / f) for r in fixed_runs + contrast_runs for f in ("results.json", "metrics.csv")
+        ],
     )
 
 
@@ -600,7 +603,7 @@ def parse_verify_on_machine(markdown: str) -> tuple[int, int, list[str]]:
     m = re.search(r"^## 11\..*?$", markdown, re.MULTILINE)
     if not m:
         return 0, 0, ["section 11 heading not found"]
-    body = markdown[m.end():]
+    body = markdown[m.end() :]
     nxt = re.search(r"^## ", body, re.MULTILINE)
     if nxt:
         body = body[: nxt.start()]
@@ -609,7 +612,7 @@ def parse_verify_on_machine(markdown: str) -> tuple[int, int, list[str]]:
     unresolved: list[str] = []
     for i, mm in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(body)
-        item = body[mm.start():end]
+        item = body[mm.start() : end]
         total += 1
         if RESOLVED_RE.search(item):
             resolved += 1
@@ -728,8 +731,14 @@ def evaluate_g0(
             "mypy_exit_code",
         ):
             checks.append(
-                CheckResult(name, passed=False, observed=None, threshold=threshold(prereg, name),
-                            skipped=True, detail="skipped by --skip-tooling")
+                CheckResult(
+                    name,
+                    passed=False,
+                    observed=None,
+                    threshold=threshold(prereg, name),
+                    skipped=True,
+                    detail="skipped by --skip-tooling",
+                )
             )
     else:
         checks.extend(check_tooling(prereg, root))
@@ -838,7 +847,9 @@ def check_environment_cache_manifest(prereg: dict[str, Any], root: Path = ROOT) 
     manifest_rel = str(warming.get("manifest_path") or "")
     env_rel = str(section(prereg, "experiment").get("environments_dir") or "")
     if not manifest_rel or not env_rel:
-        raise PreregistrationError("cache_warming.manifest_path or experiment.environments_dir missing")
+        raise PreregistrationError(
+            "cache_warming.manifest_path or experiment.environments_dir missing"
+        )
     manifest_path = root / manifest_rel
     env_dir = root / env_rel
     expected_stems = arc_interface.public_game_stems(root)
@@ -870,7 +881,10 @@ def check_environment_cache_manifest(prereg: dict[str, Any], root: Path = ROOT) 
         )
     proc = subprocess.run(
         ["git", "ls-files", "--error-unmatch", manifest_rel],
-        cwd=root, capture_output=True, text=True, check=False,
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     observed["committed"] = proc.returncode == 0
     if proc.returncode != 0:
@@ -1207,7 +1221,9 @@ def check_replay_final_frame_identity(
                     )
                 try:
                     actions = [arc_interface.ActionRecord.from_mapping(r) for r in recs]
-                    result = arc_interface.replay_actions(env_dir, game_id, int(rec["seed"]), actions)
+                    result = arc_interface.replay_actions(
+                        env_dir, game_id, int(rec["seed"]), actions
+                    )
                 except (arc_interface.EnvironmentLoadError, arc_interface.ReplayError) as exc:
                     divergent.append(f"{run.name}/{game_id}")
                     row["divergent"].append({"game_id": game_id, "reason": str(exc)})
@@ -1282,7 +1298,12 @@ def check_throughput(prereg: dict[str, Any], artifacts_root: Path) -> CheckResul
             problems.append(f"{run.name}: aggregate steps/step_seconds invalid: {agg!r}")
             continue
         fps = steps / float(seconds)
-        per_run[run.name] = {"steps": steps, "step_seconds": seconds, "fps": fps, "stated_fps": stated}
+        per_run[run.name] = {
+            "steps": steps,
+            "step_seconds": seconds,
+            "fps": fps,
+            "stated_fps": stated,
+        }
         if not isinstance(stated, (int, float)) or abs(float(stated) - fps) > 1e-6 * max(1.0, fps):
             problems.append(f"{run.name}: stated fps {stated!r} != recomputed {fps:.3f}")
         if steps < steps_min:
@@ -1298,14 +1319,18 @@ def check_throughput(prereg: dict[str, Any], artifacts_root: Path) -> CheckResul
     )
 
 
-def _tooling_checks(
-    prereg: dict[str, Any], root: Path, skip_tooling: bool
-) -> list[CheckResult]:
+def _tooling_checks(prereg: dict[str, Any], root: Path, skip_tooling: bool) -> list[CheckResult]:
     if not skip_tooling:
         return check_tooling(prereg, root)
     return [
-        CheckResult(name, passed=False, observed=None, threshold=threshold(prereg, name),
-                    skipped=True, detail="skipped by --skip-tooling")
+        CheckResult(
+            name,
+            passed=False,
+            observed=None,
+            threshold=threshold(prereg, name),
+            skipped=True,
+            detail="skipped by --skip-tooling",
+        )
         for name in (
             "uv_sync_exit_code",
             "pytest_exit_code",
@@ -1320,7 +1345,9 @@ def evaluate_g1(
     prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT, skip_tooling: bool = False
 ) -> list[CheckResult]:
     """G1 checks in the order ``verification.checks_in_order`` lists them."""
-    extra = tuple(str(f) for f in section(prereg, "verification").get("additional_run_artifacts", []))
+    extra = tuple(
+        str(f) for f in section(prereg, "verification").get("additional_run_artifacts", [])
+    )
     checks: list[CheckResult] = []
     checks.append(check_arc_agi_version_pinned(prereg, root))
     checks.append(check_environment_cache_manifest(prereg, root))
@@ -1381,7 +1408,12 @@ def check_public_level_count(prereg: dict[str, Any], root: Path = ROOT) -> Check
     return CheckResult(
         "public_level_count",
         passed=not problems,
-        observed={"games": len(games), "levels_sum": levels_sum, "per_game": per_game, "problems": problems},
+        observed={
+            "games": len(games),
+            "levels_sum": levels_sum,
+            "per_game": per_game,
+            "problems": problems,
+        },
         threshold={
             "public_games_total": games_total,
             "public_levels_total": levels_total,
@@ -1424,16 +1456,24 @@ def check_rhae_synthetic_vectors(prereg: dict[str, Any], root: Path = ROOT) -> C
             failing += 1
             per_case.append({"id": case_id, "ok": False, "error": repr(exc)})
             continue
-        ok = len(got_envs) == len(expected_envs) and all(
-            abs(g - e) <= tol for g, e in zip(got_envs, expected_envs, strict=True)
-        ) and abs(got_total - expected_total) <= tol
+        ok = (
+            len(got_envs) == len(expected_envs)
+            and all(abs(g - e) <= tol for g, e in zip(got_envs, expected_envs, strict=True))
+            and abs(got_total - expected_total) <= tol
+        )
         per_case.append(
-            {"id": case_id, "ok": ok, "expected": [*expected_envs, expected_total],
-             "got": [*got_envs, got_total]}
+            {
+                "id": case_id,
+                "ok": ok,
+                "expected": [*expected_envs, expected_total],
+                "got": [*got_envs, got_total],
+            }
         )
         if not ok:
             failing += 1
-            problems.append(f"{case_id}: got {got_envs} total {got_total}, expected {expected_envs} total {expected_total}")
+            problems.append(
+                f"{case_id}: got {got_envs} total {got_total}, expected {expected_envs} total {expected_total}"
+            )
     if not (cases_min <= len(cases) <= cases_max):
         problems.append(f"{len(cases)} synthetic cases, required {cases_min}..{cases_max}")
     missing_tags = [t for t in required_tags if t not in tags_seen]
@@ -1452,12 +1492,18 @@ def check_rhae_synthetic_vectors(prereg: dict[str, Any], root: Path = ROOT) -> C
         "rhae_synthetic_vectors",
         passed=not problems,
         observed={
-            "cases": len(cases), "failing": failing, "tags_seen": sorted(tags_seen),
-            "delegates": delegates, "per_case": per_case, "problems": problems,
+            "cases": len(cases),
+            "failing": failing,
+            "tags_seen": sorted(tags_seen),
+            "delegates": delegates,
+            "per_case": per_case,
+            "problems": problems,
         },
         threshold={
-            "rhae_synthetic_cases_min": cases_min, "rhae_synthetic_cases_max": cases_max,
-            "rhae_synthetic_abs_tolerance": tol, "rhae_synthetic_required_tags": required_tags,
+            "rhae_synthetic_cases_min": cases_min,
+            "rhae_synthetic_cases_max": cases_max,
+            "rhae_synthetic_abs_tolerance": tol,
+            "rhae_synthetic_required_tags": required_tags,
             "rhae_synthetic_all_cases_must_pass": all_must_pass,
             "rhae_adapter_must_delegate_to_toolkit": must_delegate,
         },
@@ -1504,13 +1550,23 @@ def check_baseline_derivation_vectors(prereg: dict[str, Any]) -> CheckResult:
     return CheckResult(
         "baseline_derivation_vectors",
         passed=not problems,
-        observed={"cases": len(cases), "failing": failing, "per_case": per_case, "problems": problems},
-        threshold={"derivation_vectors_min": cases_min, "derivation_vectors_all_must_pass": all_must_pass},
+        observed={
+            "cases": len(cases),
+            "failing": failing,
+            "per_case": per_case,
+            "problems": problems,
+        },
+        threshold={
+            "derivation_vectors_min": cases_min,
+            "derivation_vectors_all_must_pass": all_must_pass,
+        },
         evidence=["src/arc_plasticity/evaluation/human_replays.py", "preregistration"],
     )
 
 
-def _dataset_manifest(prereg: dict[str, Any], root: Path) -> tuple[Path, dict[str, Any] | None, str]:
+def _dataset_manifest(
+    prereg: dict[str, Any], root: Path
+) -> tuple[Path, dict[str, Any] | None, str]:
     """The committed dataset manifest: path, parsed mapping (or None) and the load problem."""
     path = root / _g2_inputs(prereg)["dataset_manifest"]
     if not path.is_file():
@@ -1545,13 +1601,20 @@ def check_dataset_manifest(prereg: dict[str, Any], root: Path = ROOT) -> CheckRe
     _, manifest, problem = _dataset_manifest(prereg, root)
     problems: list[str] = [problem] if problem else []
     observed: dict[str, Any] = {
-        "manifest": inputs["dataset_manifest"], "raw_dir": inputs["raw_replays_dir"],
-        "committed": False, "files": 0, "drift": [], "provenance": {},
+        "manifest": inputs["dataset_manifest"],
+        "raw_dir": inputs["raw_replays_dir"],
+        "committed": False,
+        "files": 0,
+        "drift": [],
+        "provenance": {},
     }
     if manifest is not None:
         proc = subprocess.run(
             ["git", "ls-files", "--error-unmatch", inputs["dataset_manifest"]],
-            cwd=root, capture_output=True, text=True, check=False,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         observed["committed"] = proc.returncode == 0
         if proc.returncode != 0:
@@ -1560,7 +1623,8 @@ def check_dataset_manifest(prereg: dict[str, Any], root: Path = ROOT) -> CheckRe
             if manifest.get(key) in (None, "", {}, []):
                 problems.append(f"manifest lacks {key}")
         observed["provenance"] = {
-            k: manifest.get(k) for k in ("source_url", "retrieval_utc", "retrieval_method", "revision")
+            k: manifest.get(k)
+            for k in ("source_url", "retrieval_utc", "retrieval_method", "revision")
         }
         files = manifest.get("files")
         n_files = len(files) if isinstance(files, dict) else 0
@@ -1610,7 +1674,8 @@ def check_replay_ingestion(
         units = results.get("replay_units_ingested")
         failures = results.get("replay_parse_failures")
         row: dict[str, Any] = {
-            "replay_units_ingested": units, "replay_parse_failures": failures,
+            "replay_units_ingested": units,
+            "replay_parse_failures": failures,
             "participant_ids_available": results.get("participant_ids_available"),
             "session_order_source": results.get("session_order_source"),
             "dataset_manifest_sha256": results.get("dataset_manifest_sha256"),
@@ -1626,7 +1691,9 @@ def check_replay_ingestion(
         if not isinstance(row["session_order_source"], str) or not row["session_order_source"]:
             problems.append(f"{run.name}: session_order_source missing")
         if manifest_sha is not None and results.get("dataset_manifest_sha256") != manifest_sha:
-            problems.append(f"{run.name}: dataset_manifest_sha256 != committed manifest {manifest_sha}")
+            problems.append(
+                f"{run.name}: dataset_manifest_sha256 != committed manifest {manifest_sha}"
+            )
         input_path = run / "input_manifest.json"
         if not input_path.exists():
             problems.append(f"{run.name}: input_manifest.json missing")
@@ -1647,7 +1714,9 @@ def check_replay_ingestion(
         if must_equal and not equal:
             only_read = sorted(set(read) - set(manifest_digests))
             only_listed = sorted(set(manifest_digests) - set(read))
-            changed = sorted(k for k in set(read) & set(manifest_digests) if read[k] != manifest_digests[k])
+            changed = sorted(
+                k for k in set(read) & set(manifest_digests) if read[k] != manifest_digests[k]
+            )
             problems.append(
                 f"{run.name}: input manifest differs from dataset manifest "
                 f"(read-only {only_read[:5]}, listed-only {only_listed[:5]}, changed {changed[:5]})"
@@ -1701,7 +1770,9 @@ def check_human_baseline_coverage(prereg: dict[str, Any], artifacts_root: Path) 
         for r in derived_rows:
             value = r["derived_baseline_actions"]
             official = r["official_baseline_actions"]
-            if positive_ints and (isinstance(value, bool) or not isinstance(value, int) or value < 1):
+            if positive_ints and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 1
+            ):
                 problems.append(f"{run.name}: derived value {value!r} is not a positive int")
             if isinstance(official, bool) or not isinstance(official, int) or official < 1:
                 problems.append(f"{run.name}: official value {official!r} is not a positive int")
@@ -1710,12 +1781,21 @@ def check_human_baseline_coverage(prereg: dict[str, Any], artifacts_root: Path) 
         derived = len(derived_rows)
         coverage = derived / levels_total if levels_total else 0.0
         agreement = (
-            sum(1 for r in derived_rows if r["derived_baseline_actions"] == r["official_baseline_actions"]) / derived
-            if derived else None
+            sum(
+                1
+                for r in derived_rows
+                if r["derived_baseline_actions"] == r["official_baseline_actions"]
+            )
+            / derived
+            if derived
+            else None
         )
         row = {
-            "games": len(games), "levels": len(rows), "derived_levels": derived,
-            "coverage": coverage, "reported_coverage": results.get("human_baseline_level_coverage"),
+            "games": len(games),
+            "levels": len(rows),
+            "derived_levels": derived,
+            "coverage": coverage,
+            "reported_coverage": results.get("human_baseline_level_coverage"),
             "reported_derived_levels": results.get("derived_levels"),
             "exact_agreement_fraction": agreement,
             "reported_exact_agreement_fraction": results.get("exact_agreement_fraction"),
@@ -1727,7 +1807,9 @@ def check_human_baseline_coverage(prereg: dict[str, Any], artifacts_root: Path) 
         if len(rows) != levels_total:
             problems.append(f"{run.name}: table has {len(rows)} levels, required {levels_total}")
         if results.get("derived_levels") != derived:
-            problems.append(f"{run.name}: results derived_levels {results.get('derived_levels')!r} != table {derived}")
+            problems.append(
+                f"{run.name}: results derived_levels {results.get('derived_levels')!r} != table {derived}"
+            )
         reported = results.get("human_baseline_level_coverage")
         if not isinstance(reported, (int, float)) or abs(float(reported) - coverage) > 1e-12:
             problems.append(f"{run.name}: reported coverage {reported!r} != recomputed {coverage}")
@@ -1736,9 +1818,16 @@ def check_human_baseline_coverage(prereg: dict[str, Any], artifacts_root: Path) 
         reported_agree = results.get("exact_agreement_fraction")
         if agreement is None:
             if reported_agree is not None:
-                problems.append(f"{run.name}: exact_agreement_fraction {reported_agree!r} with no derived level")
-        elif not isinstance(reported_agree, (int, float)) or abs(float(reported_agree) - agreement) > 1e-12:
-            problems.append(f"{run.name}: reported exact_agreement_fraction {reported_agree!r} != {agreement}")
+                problems.append(
+                    f"{run.name}: exact_agreement_fraction {reported_agree!r} with no derived level"
+                )
+        elif (
+            not isinstance(reported_agree, (int, float))
+            or abs(float(reported_agree) - agreement) > 1e-12
+        ):
+            problems.append(
+                f"{run.name}: reported exact_agreement_fraction {reported_agree!r} != {agreement}"
+            )
         if "median_abs_relative_difference" not in results:
             problems.append(f"{run.name}: median_abs_relative_difference not recorded")
     return CheckResult(
@@ -1768,8 +1857,13 @@ def check_determinism_fixed_seed(
     proto = section(prereg, "determinism_protocol")
     identity_min = float(threshold(prereg, "determinism_identity_min"))
     contrast_required = int(threshold(prereg, "contrast_runs_required"))
-    for key in ("fixed_seed", "identical_invocations", "contrast_invocations",
-                "require_contrast_differs", "compared_files"):
+    for key in (
+        "fixed_seed",
+        "identical_invocations",
+        "contrast_invocations",
+        "require_contrast_differs",
+        "compared_files",
+    ):
         if key not in proto:
             raise PreregistrationError(f"determinism_protocol.{key} missing")
     if int(proto["contrast_invocations"]) != contrast_required:
@@ -1778,7 +1872,9 @@ def check_determinism_fixed_seed(
             f"thresholds.contrast_runs_required {contrast_required}"
         )
     if bool(proto["require_contrast_differs"]):
-        raise PreregistrationError("require_contrast_differs is true but no contrast seed is pre-registered")
+        raise PreregistrationError(
+            "require_contrast_differs is true but no contrast seed is pre-registered"
+        )
     fixed_seed = int(proto["fixed_seed"])
     n_identical = int(proto["identical_invocations"])
     compared = [str(f) for f in proto["compared_files"]]
@@ -1814,7 +1910,9 @@ def check_determinism_fixed_seed(
 
     identity = 0.0
     if len(fixed_runs) < n_identical:
-        problems.append(f"need {n_identical} completed runs at seed {fixed_seed}, found {len(fixed_runs)}")
+        problems.append(
+            f"need {n_identical} completed runs at seed {fixed_seed}, found {len(fixed_runs)}"
+        )
     else:
         try:
             ref = signature(fixed_runs[0])
@@ -1825,18 +1923,25 @@ def check_determinism_fixed_seed(
         except (OSError, ValueError) as exc:
             problems.append(f"could not read compared files: {exc}")
     if other_seeds and contrast_required == 0:
-        problems.append(f"runs at a seed other than {fixed_seed} are not pre-registered: {other_seeds}")
+        problems.append(
+            f"runs at a seed other than {fixed_seed} are not pre-registered: {other_seeds}"
+        )
     return CheckResult(
         "determinism_identity",
         passed=identity >= identity_min and not problems,
         observed={
-            "identity": identity, "fixed_seed_runs": [r.name for r in fixed_runs],
-            "other_seed_runs": other_seeds, "compared_files": compared,
-            "excluded_fields": sorted(excluded), "problems": problems,
+            "identity": identity,
+            "fixed_seed_runs": [r.name for r in fixed_runs],
+            "other_seed_runs": other_seeds,
+            "compared_files": compared,
+            "excluded_fields": sorted(excluded),
+            "problems": problems,
         },
         threshold={
-            "identity_min": identity_min, "fixed_seed": fixed_seed,
-            "identical_invocations": n_identical, "contrast_runs_required": contrast_required,
+            "identity_min": identity_min,
+            "fixed_seed": fixed_seed,
+            "identical_invocations": n_identical,
+            "contrast_runs_required": contrast_required,
         },
         evidence=[_rel(r / f) for r in fixed_runs for f in compared],
     )
@@ -1846,7 +1951,9 @@ def evaluate_g2(
     prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT, skip_tooling: bool = False
 ) -> list[CheckResult]:
     """G2 checks in the order ``verification.checks_in_order`` lists them."""
-    extra = tuple(str(f) for f in section(prereg, "verification").get("additional_run_artifacts", []))
+    extra = tuple(
+        str(f) for f in section(prereg, "verification").get("additional_run_artifacts", [])
+    )
     contract = str(section(prereg, "experiment").get("results_json_contract") or "")
     operation = human_baseline_run.OPERATION
     if f'"{operation}"' not in contract:
@@ -1907,7 +2014,9 @@ def evaluate(
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--gate", required=True)
     ap.add_argument("--artifacts-root", type=Path, default=None)
     ap.add_argument("--skip-tooling", action="store_true")

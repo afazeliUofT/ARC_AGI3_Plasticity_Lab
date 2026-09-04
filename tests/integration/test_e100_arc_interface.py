@@ -57,10 +57,14 @@ def three_runs(tmp_path_factory: pytest.TempPathFactory, prereg: dict[str, Any])
     cfg.write_text(yaml.safe_dump(raw))
     proto = prereg["determinism_protocol"]
     for i in range(int(proto["identical_invocations"])):
-        run_dir, status = rx.run(cfg, seed=int(proto["fixed_seed"]), artifacts_root=root, run_id=f"fixed_{i}")
+        run_dir, status = rx.run(
+            cfg, seed=int(proto["fixed_seed"]), artifacts_root=root, run_id=f"fixed_{i}"
+        )
         assert status == "completed", (run_dir / "stderr.log").read_text()
     for i in range(int(proto["contrast_invocations"])):
-        run_dir, status = rx.run(cfg, seed=int(proto["contrast_seed"]), artifacts_root=root, run_id=f"contrast_{i}")
+        run_dir, status = rx.run(
+            cfg, seed=int(proto["contrast_seed"]), artifacts_root=root, run_id=f"contrast_{i}"
+        )
         assert status == "completed", (run_dir / "stderr.log").read_text()
     return root / raw["experiment_id"]
 
@@ -81,16 +85,22 @@ def test_runs_satisfy_the_g1_artifact_checks(three_runs: Path, prereg: dict[str,
         assert check.passed, (check.name, check.observed)
 
 
-def test_every_game_replays_identically_in_the_verifier(three_runs: Path, prereg: dict[str, Any]) -> None:
+def test_every_game_replays_identically_in_the_verifier(
+    three_runs: Path, prereg: dict[str, Any]
+) -> None:
     vr = _script("verify_run")
     replay = vr.check_replay_final_frame_identity(prereg, three_runs, ROOT)
     assert replay.passed, replay.observed
     assert replay.observed["identity"] == 1.0
     assert replay.observed["network_attempts"] == 0
-    assert replay.observed["games_attempted"] == 3 * int(vr.threshold(prereg, "games_attempted_min"))
+    assert replay.observed["games_attempted"] == 3 * int(
+        vr.threshold(prereg, "games_attempted_min")
+    )
 
 
-def test_all_public_games_attempted_with_no_step_failure(three_runs: Path, prereg: dict[str, Any]) -> None:
+def test_all_public_games_attempted_with_no_step_failure(
+    three_runs: Path, prereg: dict[str, Any]
+) -> None:
     vr = _script("verify_run")
     # terminal_games_min is not asserted here: 50 random actions need not end any game.
     for run in ("fixed_0", "fixed_1", "contrast_0"):

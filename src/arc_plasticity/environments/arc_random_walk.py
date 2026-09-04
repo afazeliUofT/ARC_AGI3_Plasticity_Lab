@@ -90,10 +90,14 @@ class RandomWalkParams:
         games: tuple[str, ...] | None
         if games_raw == "all":
             games = None
-        elif isinstance(games_raw, list) and games_raw and all(isinstance(g, str) for g in games_raw):
+        elif (
+            isinstance(games_raw, list) and games_raw and all(isinstance(g, str) for g in games_raw)
+        ):
             games = tuple(games_raw)
         else:
-            raise RunnerConfigError("runner_params.games must be 'all' or a non-empty list of stems")
+            raise RunnerConfigError(
+                "runner_params.games must be 'all' or a non-empty list of stems"
+            )
         extras_raw = params.get("extra_artifacts", [])
         if not isinstance(extras_raw, list) or not all(isinstance(e, str) for e in extras_raw):
             raise RunnerConfigError("runner_params.extra_artifacts must be a list of file names")
@@ -288,7 +292,9 @@ class ArcRandomWalkRunner:
         self, config: ExperimentConfig, writer: RunArtifactWriter, deadline: Deadline
     ) -> RunOutcome:
         params = RandomWalkParams.from_config(config)
-        stems = list(params.games) if params.games is not None else ai.public_game_stems(PROJECT_ROOT)
+        stems = (
+            list(params.games) if params.games is not None else ai.public_game_stems(PROJECT_ROOT)
+        )
         if not stems:
             raise GameListError("no game stems: docs/EVIDENCE_ARC.md section 1.1 yielded none")
 

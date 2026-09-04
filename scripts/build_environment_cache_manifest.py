@@ -69,7 +69,8 @@ def build_manifest(root: Path, environments_dir: Path, now: datetime) -> dict[st
         seen_stems.add(stem)
         rel_dir = game_dir.relative_to(environments_dir).as_posix()
         files = {
-            rel: digest for rel, digest in hashes.items()
+            rel: digest
+            for rel, digest in hashes.items()
             if rel == rel_dir or rel.startswith(rel_dir + "/")
         }
         if not files:
@@ -106,7 +107,9 @@ def write_manifest(manifest: dict[str, Any], output: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--environments-dir", type=Path, default=ROOT / DEFAULT_ENVIRONMENTS_DIR)
     ap.add_argument("--output", type=Path, default=ROOT / DEFAULT_OUTPUT)
     args = ap.parse_args(argv)

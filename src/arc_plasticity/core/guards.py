@@ -96,9 +96,7 @@ class NetworkGuard:
 class Deadline:
     """A monotonic soft deadline that experiment loops poll between steps."""
 
-    def __init__(
-        self, limit_seconds: float, clock: Callable[[], float] = time.monotonic
-    ) -> None:
+    def __init__(self, limit_seconds: float, clock: Callable[[], float] = time.monotonic) -> None:
         if limit_seconds <= 0:
             raise ValueError("limit_seconds must be positive")
         self.limit_seconds = float(limit_seconds)
@@ -131,7 +129,9 @@ def hard_wallclock_limit(limit_seconds: float) -> Iterator[None]:
     """
     if limit_seconds <= 0:
         raise ValueError("limit_seconds must be positive")
-    if threading.current_thread() is not threading.main_thread() or not hasattr(signal, "setitimer"):
+    if threading.current_thread() is not threading.main_thread() or not hasattr(
+        signal, "setitimer"
+    ):
         yield
         return
 

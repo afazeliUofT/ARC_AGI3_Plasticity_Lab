@@ -1,4 +1,5 @@
 """Smoke tests. These must pass for G0. They are deliberately about the traps."""
+
 from __future__ import annotations
 
 import json
@@ -23,6 +24,7 @@ def test_licence_is_mit_zero() -> None:
 def test_arc_toolkit_imports_and_exposes_the_verified_surface() -> None:
     from arc_agi import Arcade, OperationMode
     from arcengine import GameAction, GameState  # noqa: F401
+
     assert {m.value for m in OperationMode} >= {"normal", "online", "offline", "competition"}
     assert OperationMode.NORMAL.value == "normal", "NORMAL is the default; OFFLINE never downloads"
     assert hasattr(Arcade, "make") and hasattr(Arcade, "get_environments")

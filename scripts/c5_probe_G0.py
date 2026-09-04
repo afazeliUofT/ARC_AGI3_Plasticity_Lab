@@ -180,7 +180,9 @@ def probe_b(vr: ModuleType, excluded: frozenset[str], fixed_seed: int) -> dict[s
         fresh_sig = signature(fresh)
         comparisons = {
             run.name: {
-                "manifest_git_commit": json.loads((run / "manifest.json").read_text())["git_commit"],
+                "manifest_git_commit": json.loads((run / "manifest.json").read_text())[
+                    "git_commit"
+                ],
                 "manifest_git_dirty": json.loads((run / "manifest.json").read_text())["git_dirty"],
                 "identical_to_fresh": signature(run) == fresh_sig,
             }

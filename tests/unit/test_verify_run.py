@@ -66,7 +66,10 @@ def _write_run(
                 "run_id": run_id,
                 "created_utc": f"2026-09-04T00:00:0{seed % 10}Z",
                 "score": value,
-                "nested": {"wallclock_seconds": seed * 1.5, "levels": [{"hostname": run_id, "v": value}]},
+                "nested": {
+                    "wallclock_seconds": seed * 1.5,
+                    "levels": [{"hostname": run_id, "v": value}],
+                },
             }
         ),
         "metrics.csv": f"run_id,metric,value,elapsed_seconds\n{run_id},score,{value},{seed}\n",
@@ -349,7 +352,9 @@ def test_licence_check_on_real_repo(prereg: dict[str, Any]) -> None:
     assert vr.check_licence(prereg, ROOT).passed
 
 
-def test_report_with_skipped_tooling_is_never_a_pass(prereg: dict[str, Any], tmp_path: Path) -> None:
+def test_report_with_skipped_tooling_is_never_a_pass(
+    prereg: dict[str, Any], tmp_path: Path
+) -> None:
     proto = prereg["determinism_protocol"]
     _write_run(tmp_path, "run_a", proto["fixed_seed"], 0.5)
     _write_run(tmp_path, "run_b", proto["fixed_seed"], 0.5)

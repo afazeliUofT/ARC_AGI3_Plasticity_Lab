@@ -67,8 +67,13 @@ def _ls20_game_id() -> str:
 def ls20_recording() -> dict[str, Any]:
     """Play five actions on the real ls20 and record what the E100 runner would record."""
     game_id = _ls20_game_id()
-    actions = [ai.ActionRecord(1), ai.ActionRecord(2), ai.ActionRecord(3), ai.ActionRecord(4),
-               ai.ActionRecord(6, {"x": 3, "y": 4})]
+    actions = [
+        ai.ActionRecord(1),
+        ai.ActionRecord(2),
+        ai.ActionRecord(3),
+        ai.ActionRecord(4),
+        ai.ActionRecord(6, {"x": 3, "y": 4}),
+    ]
     with NetworkGuard(0):
         arcade = ai.open_offline_arcade(ENV_DIR)
         env = ai.make_environment(arcade, game_id, 12345)
@@ -81,14 +86,25 @@ def ls20_recording() -> dict[str, Any]:
             assert nxt is not None
             current = nxt
             transitions.append(
-                {"game_index": 0, "game_id": game_id, "step_index": i, "action": record.action,
-                 "data": dict(record.data), "frame_sha256": current.digest()}
+                {
+                    "game_index": 0,
+                    "game_id": game_id,
+                    "step_index": i,
+                    "action": record.action,
+                    "data": dict(record.data),
+                    "frame_sha256": current.digest(),
+                }
             )
     game = {
-        "game_id": game_id, "seed": 12345, "steps_taken": len(actions),
-        "final_state": current.state, "levels_completed": current.levels_completed,
-        "win_levels": current.win_levels, "terminal": current.terminal,
-        "final_frame_sha256": current.digest(), "step_failed": False,
+        "game_id": game_id,
+        "seed": 12345,
+        "steps_taken": len(actions),
+        "final_state": current.state,
+        "levels_completed": current.levels_completed,
+        "win_levels": current.win_levels,
+        "terminal": current.terminal,
+        "final_frame_sha256": current.digest(),
+        "step_failed": False,
     }
     return {"game": game, "transitions": transitions}
 
@@ -119,10 +135,15 @@ def _fake_games(n: int, terminal: int = 1, failed: int = 0) -> list[dict[str, An
         is_terminal = i < terminal
         games.append(
             {
-                "game_id": f"g{i:03d}-deadbeef", "seed": 1, "steps_taken": 10,
+                "game_id": f"g{i:03d}-deadbeef",
+                "seed": 1,
+                "steps_taken": 10,
                 "final_state": "GAME_OVER" if is_terminal else "NOT_FINISHED",
-                "levels_completed": 0, "win_levels": 1, "terminal": is_terminal,
-                "final_frame_sha256": "0" * 64, "step_failed": i < failed,
+                "levels_completed": 0,
+                "win_levels": 1,
+                "terminal": is_terminal,
+                "final_frame_sha256": "0" * 64,
+                "step_failed": i < failed,
             }
         )
     return games
@@ -177,9 +198,14 @@ def _write_g1_run(
         "git_state.txt": "clean\n",
         "environment_info.json": "{}",
         "throughput.json": json.dumps(
-            {"aggregate": {"steps": steps, "step_seconds": seconds,
-                           "fps": stated_fps if stated_fps is not None else steps / seconds},
-             "per_game": []}
+            {
+                "aggregate": {
+                    "steps": steps,
+                    "step_seconds": seconds,
+                    "fps": stated_fps if stated_fps is not None else steps / seconds,
+                },
+                "per_game": [],
+            }
         ),
     }
     for name, content in files.items():
@@ -194,11 +220,20 @@ def _write_g1_run(
 
 def test_every_g1_threshold_is_read_from_the_preregistration(prereg: dict[str, Any]) -> None:
     for key in (
-        "arc_agi_locked_version", "cached_games_required", "cache_manifest_drift_files_max",
-        "network_calls_allowed", "network_attempts_max", "model_calls_allowed",
-        "games_attempted_min", "terminal_games_min", "step_failures_max",
-        "replay_final_frame_identity_min", "replay_divergent_games_max", "throughput_fps_min",
-        "throughput_min_steps_measured", "excluded_key_max_depth",
+        "arc_agi_locked_version",
+        "cached_games_required",
+        "cache_manifest_drift_files_max",
+        "network_calls_allowed",
+        "network_attempts_max",
+        "model_calls_allowed",
+        "games_attempted_min",
+        "terminal_games_min",
+        "step_failures_max",
+        "replay_final_frame_identity_min",
+        "replay_divergent_games_max",
+        "throughput_fps_min",
+        "throughput_min_steps_measured",
+        "excluded_key_max_depth",
         "excluded_key_container_values_allowed",
     ):
         assert vr.threshold(prereg, key) is not None
@@ -234,18 +269,27 @@ def test_evaluator_order_matches_checks_in_order(
         head = entry.split(" (")[0]
         expected.extend(x.strip() for x in head.split(","))
     expected = [
-        {"uv_sync": "uv_sync_exit_code", "pytest": "pytest_exit_code", "ruff": "ruff_exit_code",
-         "mypy": "mypy_exit_code"}.get(n, n)
+        {
+            "uv_sync": "uv_sync_exit_code",
+            "pytest": "pytest_exit_code",
+            "ruff": "ruff_exit_code",
+            "mypy": "mypy_exit_code",
+        }.get(n, n)
         for n in expected
     ]
     expected.insert(expected.index("pytest_exit_code") + 1, "pytest_min_tests_collected")
     assert names == expected
     assert set(report.skipped) == {
-        "uv_sync_exit_code", "pytest_exit_code", "pytest_min_tests_collected",
-        "ruff_exit_code", "mypy_exit_code",
+        "uv_sync_exit_code",
+        "pytest_exit_code",
+        "pytest_min_tests_collected",
+        "ruff_exit_code",
+        "mypy_exit_code",
     }
     by_name = {c.name: c for c in report.checks}
-    assert by_name["replay_final_frame_identity"].passed, by_name["replay_final_frame_identity"].observed
+    assert by_name["replay_final_frame_identity"].passed, by_name[
+        "replay_final_frame_identity"
+    ].observed
     assert by_name["exclusion_nesting"].passed
     assert by_name["determinism_identity"].passed, by_name["determinism_identity"].observed
     assert by_name["throughput"].passed
@@ -280,7 +324,8 @@ def _synthetic_cache_root(tmp_path: Path, prereg: dict[str, Any]) -> tuple[Path,
     (root / "docs").mkdir(parents=True)
     (root / "docs" / "EVIDENCE_ARC.md").write_text(
         "## 1.1\n\nPublic game ID stems (two mirrors agree):\n\n```\n"
-        + "  ".join(stems) + "\n```\n"
+        + "  ".join(stems)
+        + "\n```\n"
     )
     env_rel = prereg["experiment"]["environments_dir"]
     manifest_rel = prereg["cache_warming"]["manifest_path"]
@@ -289,8 +334,13 @@ def _synthetic_cache_root(tmp_path: Path, prereg: dict[str, Any]) -> tuple[Path,
         gdir = root / env_rel / stem / "0123abcd"
         gdir.mkdir(parents=True)
         (gdir / "metadata.json").write_text(
-            json.dumps({"game_id": f"{stem}-0123abcd", "baseline_actions": [3, 4],
-                        "date_downloaded": "2026-09-04T05:28:00Z"})
+            json.dumps(
+                {
+                    "game_id": f"{stem}-0123abcd",
+                    "baseline_actions": [3, 4],
+                    "date_downloaded": "2026-09-04T05:28:00Z",
+                }
+            )
         )
         (gdir / f"{stem}.py").write_text(f"# {stem}\n")
         files = {
@@ -299,17 +349,27 @@ def _synthetic_cache_root(tmp_path: Path, prereg: dict[str, Any]) -> tuple[Path,
             if p.is_relative_to(gdir)
         }
         games.append(
-            {"stem": stem, "game_id": f"{stem}-0123abcd",
-             "local_dir": gdir.relative_to(root).as_posix(),
-             "date_downloaded": "2026-09-04T05:28:00Z", "baseline_actions_count": 2,
-             "files": files}
+            {
+                "stem": stem,
+                "game_id": f"{stem}-0123abcd",
+                "local_dir": gdir.relative_to(root).as_posix(),
+                "date_downloaded": "2026-09-04T05:28:00Z",
+                "baseline_actions_count": 2,
+                "files": files,
+            }
         )
     manifest_path = root / manifest_rel
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(
-        json.dumps({"schema_version": 1, "generated_utc": "2026-09-04T00:00:00Z",
-                    "environments_dir": env_rel, "games": games,
-                    "totals": {"games": len(games), "files": 2 * len(games)}})
+        json.dumps(
+            {
+                "schema_version": 1,
+                "generated_utc": "2026-09-04T00:00:00Z",
+                "environments_dir": env_rel,
+                "games": games,
+                "totals": {"games": len(games), "files": 2 * len(games)},
+            }
+        )
     )
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "add", manifest_rel], cwd=root, check=True)
@@ -358,8 +418,11 @@ def test_cache_manifest_missing_fails(prereg: dict[str, Any], tmp_path: Path) ->
 
 def test_cache_manifest_untracked_fails(prereg: dict[str, Any], tmp_path: Path) -> None:
     root, _ = _synthetic_cache_root(tmp_path, prereg)
-    subprocess.run(["git", "rm", "-q", "--cached", prereg["cache_warming"]["manifest_path"]],
-                   cwd=root, check=True)
+    subprocess.run(
+        ["git", "rm", "-q", "--cached", prereg["cache_warming"]["manifest_path"]],
+        cwd=root,
+        check=True,
+    )
     result = vr.check_environment_cache_manifest(prereg, root)
     assert not result.passed
     assert result.observed["committed"] is False
@@ -378,18 +441,27 @@ def test_public_stems_parse_from_real_evidence_base(prereg: dict[str, Any]) -> N
 def test_offline_run_passes_and_fails(prereg: dict[str, Any], tmp_path: Path) -> None:
     _write_g1_run(tmp_path, prereg, "run_a", 1, _fake_games(1), [])
     assert vr.check_offline_run(prereg, tmp_path).passed
-    _write_g1_run(tmp_path, prereg, "run_b", 1, _fake_games(1), [],
-                  manifest_overrides={"network_attempts": 1})
+    _write_g1_run(
+        tmp_path, prereg, "run_b", 1, _fake_games(1), [], manifest_overrides={"network_attempts": 1}
+    )
     result = vr.check_offline_run(prereg, tmp_path)
     assert not result.passed
     assert any("run_b: network_attempts" in p for p in result.observed["problems"])
 
 
-def test_offline_run_requires_offline_mode_and_guard(prereg: dict[str, Any], tmp_path: Path) -> None:
+def test_offline_run_requires_offline_mode_and_guard(
+    prereg: dict[str, Any], tmp_path: Path
+) -> None:
     _write_g1_run(
-        tmp_path, prereg, "run_a", 1, _fake_games(1), [],
-        results_overrides={"results": {"operation_mode": "ONLINE", "network_guard": None,
-                                       "games": _fake_games(1)}},
+        tmp_path,
+        prereg,
+        "run_a",
+        1,
+        _fake_games(1),
+        [],
+        results_overrides={
+            "results": {"operation_mode": "ONLINE", "network_guard": None, "games": _fake_games(1)}
+        },
     )
     result = vr.check_offline_run(prereg, tmp_path)
     assert not result.passed
@@ -416,7 +488,9 @@ def test_games_fail_on_too_few_or_no_terminal_or_step_failure(
     assert not vr.check_games_attempted_and_terminal(prereg, tmp_path / "few").passed
     _write_g1_run(tmp_path / "noterm", prereg, "run_a", 1, _fake_games(n, terminal=t - 1), [])
     assert not vr.check_games_attempted_and_terminal(prereg, tmp_path / "noterm").passed
-    _write_g1_run(tmp_path / "fail", prereg, "run_a", 1, _fake_games(n, terminal=t, failed=f + 1), [])
+    _write_g1_run(
+        tmp_path / "fail", prereg, "run_a", 1, _fake_games(n, terminal=t, failed=f + 1), []
+    )
     assert not vr.check_games_attempted_and_terminal(prereg, tmp_path / "fail").passed
 
 
@@ -446,9 +520,20 @@ def test_exclusion_nesting_fails_on_nested_excluded_key(
     prereg: dict[str, Any], tmp_path: Path, excluded: frozenset[str]
 ) -> None:
     _write_g1_run(
-        tmp_path, prereg, "run_a", 1, _fake_games(1), [],
-        results_overrides={"results": {"operation_mode": "OFFLINE", "network_guard": "NetworkGuard",
-                                       "games": _fake_games(1), "wallclock_seconds": 3.0}},
+        tmp_path,
+        prereg,
+        "run_a",
+        1,
+        _fake_games(1),
+        [],
+        results_overrides={
+            "results": {
+                "operation_mode": "OFFLINE",
+                "network_guard": "NetworkGuard",
+                "games": _fake_games(1),
+                "wallclock_seconds": 3.0,
+            }
+        },
     )
     result = vr.check_exclusion_nesting(prereg, tmp_path, excluded)
     assert not result.passed
@@ -458,8 +543,15 @@ def test_exclusion_nesting_fails_on_nested_excluded_key(
 def test_exclusion_nesting_fails_on_container_valued_excluded_key(
     prereg: dict[str, Any], tmp_path: Path, excluded: frozenset[str]
 ) -> None:
-    _write_g1_run(tmp_path, prereg, "run_a", 1, _fake_games(1), [],
-                  results_overrides={"hardware": {"steps": 12}})
+    _write_g1_run(
+        tmp_path,
+        prereg,
+        "run_a",
+        1,
+        _fake_games(1),
+        [],
+        results_overrides={"hardware": {"steps": 12}},
+    )
     result = vr.check_exclusion_nesting(prereg, tmp_path, excluded)
     assert not result.passed
     assert any("container" in p for p in result.observed["problems"])
@@ -489,8 +581,9 @@ def test_replay_divergence_fails(
     result = vr.check_replay_final_frame_identity(prereg, tmp_path, ROOT)
     assert not result.passed
     assert result.observed["divergent"] == [f"run_a/{g['game_id']}"]
-    assert result.observed["runs"]["run_a"]["divergent"][0]["replayed"] == (
-        ls20_recording["game"]["final_frame_sha256"]
+    assert (
+        result.observed["runs"]["run_a"]["divergent"][0]["replayed"]
+        == (ls20_recording["game"]["final_frame_sha256"])
     )
 
 
@@ -520,8 +613,9 @@ def test_replay_ignores_incomplete_runs(
     prereg: dict[str, Any], tmp_path: Path, ls20_recording: dict[str, Any]
 ) -> None:
     g, t = ls20_recording["game"], ls20_recording["transitions"]
-    _write_g1_run(tmp_path, prereg, "run_a", 12345, [g], t,
-                  manifest_overrides={"completion_status": "failed"})
+    _write_g1_run(
+        tmp_path, prereg, "run_a", 12345, [g], t, manifest_overrides={"completion_status": "failed"}
+    )
     result = vr.check_replay_final_frame_identity(prereg, tmp_path, ROOT)
     assert not result.passed
     assert result.observed["games_attempted"] == 0
@@ -554,8 +648,9 @@ def test_throughput_fails_on_too_few_steps(prereg: dict[str, Any], tmp_path: Pat
 
 def test_throughput_fails_when_stated_fps_disagrees(prereg: dict[str, Any], tmp_path: Path) -> None:
     fps_min = float(vr.threshold(prereg, "throughput_fps_min"))
-    _write_g1_run(tmp_path, prereg, "run_a", 1, _fake_games(1), [],
-                  fps=fps_min / 2, stated_fps=fps_min * 4)
+    _write_g1_run(
+        tmp_path, prereg, "run_a", 1, _fake_games(1), [], fps=fps_min / 2, stated_fps=fps_min * 4
+    )
     result = vr.check_throughput(prereg, tmp_path)
     assert not result.passed
     assert any("stated fps" in p for p in result.observed["problems"])
@@ -579,8 +674,10 @@ def test_canonical_frame_digest_matches_preregistered_encoding(prereg: dict[str,
     assert 'separators (",", ":")' in spec
     frames = [[[0, 1], [2, 3]]]
     expected = hashlib.sha256(
-        json.dumps({"state": "WIN", "levels_completed": 2, "win_levels": 2, "frames": frames},
-                   separators=(",", ":")).encode()
+        json.dumps(
+            {"state": "WIN", "levels_completed": 2, "win_levels": 2, "frames": frames},
+            separators=(",", ":"),
+        ).encode()
     ).hexdigest()
     assert ai.canonical_frame_digest("WIN", 2, 2, frames) == expected
     # numpy grids and plain lists digest identically

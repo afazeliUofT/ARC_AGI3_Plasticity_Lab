@@ -93,7 +93,9 @@ class FrameSummary:
         return self.state in TERMINAL_STATES
 
     def digest(self) -> str:
-        return canonical_frame_digest(self.state, self.levels_completed, self.win_levels, self.frames)
+        return canonical_frame_digest(
+            self.state, self.levels_completed, self.win_levels, self.frames
+        )
 
 
 @dataclass(frozen=True)

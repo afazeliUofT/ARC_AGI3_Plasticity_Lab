@@ -107,7 +107,9 @@ def test_edit_tools_cannot_touch_frozen_files(hook_present: None, tool: str) -> 
 
 
 def test_write_tool_may_author_a_new_preregistration_once(hook_present: None) -> None:
-    rc, decision = run_hook("Write", {"file_path": str(ROOT / "preregistration/G99.yaml"), "content": "x"})
+    rc, decision = run_hook(
+        "Write", {"file_path": str(ROOT / "preregistration/G99.yaml"), "content": "x"}
+    )
     assert rc == 0 and not decision, (rc, decision)
 
 

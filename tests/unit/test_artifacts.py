@@ -174,7 +174,9 @@ def test_extra_json_is_written_once_and_sealed(tmp_path: Path) -> None:
         w.write_metrics([])
         w.write_environment_results([], ("env",))
         w.write_manifest(_manifest())
-        w.write_extra_json("throughput.json", {"aggregate": {"steps": 1, "step_seconds": 0.5, "fps": 2.0}})
+        w.write_extra_json(
+            "throughput.json", {"aggregate": {"steps": 1, "step_seconds": 0.5, "fps": 2.0}}
+        )
         with pytest.raises(ArtifactError, match="already written"):
             w.write_extra_json("throughput.json", {})
         digests = w.finalize()

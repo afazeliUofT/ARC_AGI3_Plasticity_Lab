@@ -18,7 +18,9 @@ from arc_plasticity.environments import arc_random_walk as rw
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def _sequence(seed: int, game_index: int, available: tuple[int, ...], n: int = 200) -> list[tuple[int, dict[str, int]]]:
+def _sequence(
+    seed: int, game_index: int, available: tuple[int, ...], n: int = 200
+) -> list[tuple[int, dict[str, int]]]:
     policy = rw.UniformRandomPolicy(rw.game_rng(seed, game_index))
     out: list[tuple[int, dict[str, int]]] = []
     for _ in range(n):

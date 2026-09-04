@@ -52,10 +52,14 @@ def three_runs(tmp_path_factory: pytest.TempPathFactory, prereg: dict[str, Any])
     root = tmp_path_factory.mktemp("artifacts")
     proto = prereg["determinism_protocol"]
     for i in range(int(proto["identical_invocations"])):
-        run_dir, status = rx.run(E000, seed=int(proto["fixed_seed"]), artifacts_root=root, run_id=f"fixed_{i}")
+        run_dir, status = rx.run(
+            E000, seed=int(proto["fixed_seed"]), artifacts_root=root, run_id=f"fixed_{i}"
+        )
         assert status == "completed", run_dir
     for i in range(int(proto["contrast_invocations"])):
-        run_dir, status = rx.run(E000, seed=int(proto["contrast_seed"]), artifacts_root=root, run_id=f"contrast_{i}")
+        run_dir, status = rx.run(
+            E000, seed=int(proto["contrast_seed"]), artifacts_root=root, run_id=f"contrast_{i}"
+        )
         assert status == "completed", run_dir
     return root / "E000_bootstrap"
 
@@ -106,7 +110,9 @@ class _NetworkRunner:
     name = "test_network_runner"
     environment_generator_version = "test-0"
 
-    def run(self, config: ExperimentConfig, writer: RunArtifactWriter, deadline: Deadline) -> RunOutcome:
+    def run(
+        self, config: ExperimentConfig, writer: RunArtifactWriter, deadline: Deadline
+    ) -> RunOutcome:
         socket.getaddrinfo("example.invalid", 443)
         return RunOutcome({}, [], [], ("environment",))
 
@@ -132,9 +138,18 @@ def test_network_attempt_is_recorded_as_failure_not_hidden(tmp_path: Path) -> No
 
 def test_cli_exit_codes(tmp_path: Path) -> None:
     proc = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "run_experiment.py"), "--config", str(E000),
-         "--artifacts-root", str(tmp_path)],
-        capture_output=True, text=True, check=False, cwd=ROOT,
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "run_experiment.py"),
+            "--config",
+            str(E000),
+            "--artifacts-root",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=ROOT,
     )
     assert proc.returncode == 0, proc.stderr
     out = json.loads(proc.stdout.strip().splitlines()[-1])
@@ -142,8 +157,16 @@ def test_cli_exit_codes(tmp_path: Path) -> None:
     assert (Path(out["run_dir"]) / "SHA256SUMS").exists()
 
     bad = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "run_experiment.py"), "--config", str(tmp_path / "missing.yaml")],
-        capture_output=True, text=True, check=False, cwd=ROOT,
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "run_experiment.py"),
+            "--config",
+            str(tmp_path / "missing.yaml"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=ROOT,
     )
     assert bad.returncode == 2
     assert "FAIL config" in bad.stderr
