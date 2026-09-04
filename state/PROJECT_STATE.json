@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T15:44:12Z",
+  "updated_utc": "2026-09-04T15:50:39Z",
   "current_gate": "G2",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T08:05:09Z",
   "last_verified_gate": "G1",
   "last_verified_commit": "1435f81",
   "active_task": {
-    "id": "G2.8",
-    "description": "Two graded E020 runs at the config seed over the 342 human replays; commit the artifact directories",
+    "id": "G2.9",
+    "description": "Run the G2 verifier over the two committed E020 runs and write the C5 adversarial self-review in the ledger",
     "attempt": 1,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T15:44:12Z"
+    "started_utc": "2026-09-04T15:50:39Z"
   },
   "blocked_on": null,
-  "next_action": "G2.8 (one step): confirm 'git status --porcelain' is clean apart from state/ files and artifacts/E020_human_baselines/ is absent; then run twice, sequentially, 'uv run python scripts/run_experiment.py --config configs/experiments/E020_human_baselines.yaml' (no --seed; the config seed is 12345; each run ingests 6.7 GiB, expect ~2-3 min, wallclock limit 600 s). Each must exit 0 with completion_status completed. Read each run's stdout.log and check against the G2.6 loader pass: replay_units_ingested 342, replay_parse_failures 0, replay_units_unmatched 0, public_games_total 25, and the P1/P2 line files_with_disagreement 2 (the two lp85 ragged cards, named in input_manifest.json dataset_agreement_summary.disagreeing_files), files_p2_unavailable 16, files_all_levels_agree 324 (300 with completions + 24 with none). Record the derived_levels, coverage, exact_agreement_fraction and median_abs_relative_difference the runs report, with the sha256 of each run's results.json and human_baselines.json, in the ledger (C4). Verify the two runs' results.json, metrics.csv and human_baselines.json are byte-identical after the G0 exclusions (python -c over strip_keys from scripts/verify_run.py, or simply sha256sum of the three files in both runs). Commit the two artifact directories alone as G2.8 (git add artifacts/E020_human_baselines; never touch data/human_replays/). If any figure differs from the expectation above, do NOT run the verifier: record a failure entry with the artifact paths and diagnose under the ladder (L0 retry once, then L1). Then G2.9: 'uv run python scripts/verify_run.py --gate G2 --report state/verify_G2.json' plus the C5 self-review in the ledger (arguments: A the opening-record reading fixed after the schema survey, B the stem matching hiding a version mismatch, C the vacuous-agreement count; test A by recomputing one lp85 level by hand from the toolkit accounting), then G2.10: referee, whose verdict must record the sha256 of scripts/verify_run.py.",
+  "next_action": "G2.9 (one step): confirm 'git status --porcelain' shows nothing but state/ files (the G2.8 commit holds both E020 runs under artifacts/E020_human_baselines/: 20260904T154531Z_seed12345_2599f0a4 and 20260904T154718Z_seed12345_bff74ab0). Run 'uv run python scripts/verify_run.py --gate G2 --report state/verify_G2.json' (tooling checks included; do not pass --skip-tooling). Read the JSON report: every check must carry passed true, and the nondeterministic_fields check must record the G0 pre-registration digest c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620 as bounds_source. If check_git_clean fails only because state/ files are modified, commit them first and re-run. If any other check fails, do NOT edit the verifier or the pre-registration: record a failure entry with the check name, observed and threshold, and diagnose under the ladder (L0 retry once, L1 smallest patch in the runner or loader with a regression test, then re-run both E020 runs as new run directories, never overwriting). Then write the C5 self-review as a ledger 'decision' entry with the three strongest artifact arguments: A the opening-record reading (record 1 not an action) was fixed after the schema survey and could systematically shift every derived count by one; B stem matching could hide a game-version mismatch between the replays and the cached environment_files (lp85 and vc33, the only two games with official disagreements, are both among the 15 games whose Hugging Face version hash differs from the cache, G2.1 literature entry; check whether the replay data.game_id equals the cached metadata game_id for those two stems in input_manifest.json replay_game_ids_by_stem); C files_all_levels_agree 324 includes 24 vacuous files with no completion, so real P1/P2 agreement is 300 files. Test A by hand: pick one lp85 file with a completion (not one of the two ragged ones), count the records after the opening frame up to the first frame where levels_completed reaches 1, and compare with the toolkit card's actions_by_level pair for level 1 and with per_participant_best_counts_sorted in human_baselines.json; record the file path, the counts and the result. Record the sha256 of state/verify_G2.json and of scripts/verify_run.py in the ledger and in PROJECT_STATE.json verifier_reports.G2. Commit as G2.9. Then G2.10: dispatch the referee subagent for the G2 verdict (docs/decisions/G2_VERDICT.md), which must record the sha256 of scripts/verify_run.py, cite artifact paths and digests, and be re-verified independently. Then the human-authorised housekeeping: ruff format over the 17 drifted files as its own commit, push to the private remote after G2 passes, and the pending additions-only docs/EVIDENCE_ARC.md entries with the E020 digests.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -44,7 +44,8 @@
     "Two tests skip by design now that experiments/human_replays_manifest.json exists (test_e020_human_baselines.py:157, test_verify_run_g2.py:266); pytest 263 passed 2 skipped at G2.6.",
     "Pending additions-only docs/EVIDENCE_ARC.md entries (dated, with URLs) to write together with the E020 digests after G2.8: section 1.4 dataset resolved location (dub.link/vfwCqvb -> Drive folder 1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy, 342 recordings, 6.69 GiB, human_placed 2026-09-04), the recorder schema facts above, the toolkit opening-frame accounting, and the P1/P2 and official-agreement numbers with artifact hashes (C4).",
     "Human authorisations from the G2.5 answer (2026-09-04T15:22Z): push to the private remote after G2; ruff format housekeeping over the 17 drifted files as its own commit (frozen scripts/verify_run.py included, since the human authorised it); referee verdicts from G2 onward record the sha256 of scripts/verify_run.py; supervisor counters now live in gitignored state/counters.json.",
-    "G2.7 (2026-09-04): replay_ingestion_log.jsonl now carries completion_counts, dataset_completion_counts, dataset_actions_total, dataset_agreement and dataset_agreement_all per file, and input_manifest.json carries dataset_agreement_summary; a file with no completion in either path counts as agreeing on all levels (vacuous) and is separately counted under files_no_completion_either_path. Neither file is a determinism compared_file."
+    "G2.7 (2026-09-04): replay_ingestion_log.jsonl now carries completion_counts, dataset_completion_counts, dataset_actions_total, dataset_agreement and dataset_agreement_all per file, and input_manifest.json carries dataset_agreement_summary; a file with no completion in either path counts as agreeing on all levels (vacuous) and is separately counted under files_no_completion_either_path. Neither file is a determinism compared_file.",
+    "G2.8 (2026-09-04): both graded E020 runs record git_dirty true because state/PROJECT_STATE.json carried the supervisor's trailing-newline rewrite at run time (git_state.txt in each run shows only that file). No G2 check reads the manifest's git_dirty; check_git_clean runs at verification time. Note for the referee. The 13 levels where the derived baseline differs from the official one all lie in lp85 (7 levels) and vc33 (6 levels); the other 23 games agree on every level (human_baselines.json in either run, sha256 1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185)."
   ],
   "mechanisms": {
     "M1": {
@@ -122,6 +123,26 @@
         "20260904T074939Z_seed12345_8383cad8": "6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190",
         "20260904T074956Z_seed12345_9e2317b0": "1cdca620dfd0fd26553233a206ea50609cd2d122251d59bf92bbaa89614849dd",
         "20260904T075000Z_seed12346_b801dd9b": "c8503416d8fd7e8103862a0a68e1299530991cbbab7d09459506cfc396c3d928"
+      }
+    }
+  },
+  "experiment_runs": {
+    "E020_human_baselines": {
+      "status": "runs_complete_verifier_pending",
+      "seed": 12345,
+      "runs": {
+        "20260904T154531Z_seed12345_2599f0a4": {
+          "results_json_sha256": "20c8437952a5a1154191b6e0573b6d74c07c1c55ce00dcb831c6300fcaaf1aea",
+          "human_baselines_json_sha256": "1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185",
+          "metrics_csv_sha256": "2686a8eb65954cbab04c41f9f0fa55e70c754e0a93a8a3114bb19150ee90db63",
+          "sha256sums_sha256": "5a7c569312f9a43240680b724a0ccb7453cc6f5da48082c0e5bde68bbc1b8fac"
+        },
+        "20260904T154718Z_seed12345_bff74ab0": {
+          "results_json_sha256": "3cb04ebc4a20461e099288ea6f40c4950232fcae7f0bec9f9826424fb1bd1a65",
+          "human_baselines_json_sha256": "1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185",
+          "metrics_csv_sha256": "2686a8eb65954cbab04c41f9f0fa55e70c754e0a93a8a3114bb19150ee90db63",
+          "sha256sums_sha256": "34c772691cfffa55dea675dc6b15c4c8b6f42a625fddbd14fa3533af6b75fb94"
+        }
       }
     }
   }

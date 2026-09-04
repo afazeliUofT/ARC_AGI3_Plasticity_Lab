@@ -1,0 +1,33 @@
+budgets:
+  action_budget: 0
+  persistent_state_size_cap_bytes: 0
+  simulation_budget: 0
+  token_budget: 0
+description: Per-level human action baselines derived from the released ARC-AGI-3
+  human replays and reconciled with the official metadata baselines; local files only.
+experiment_id: E020_human_baselines
+language_model:
+  identifier: null
+  prompt: null
+model_calls_allowed: 0
+network_calls_allowed: 0
+runner: human_baseline_derivation
+runner_params:
+  action_budget_multiplier: 5
+  cache_manifest: experiments/environment_cache_manifest.json
+  dataset_manifest: experiments/human_replays_manifest.json
+  environments_dir: environment_files
+  extra_artifacts:
+  - human_baselines.json
+  - replay_ingestion_log.jsonl
+  - input_manifest.json
+  - g1_termination_vs_budget.json
+  g1_run_ids:
+  - 20260904T074939Z_seed12345_8383cad8
+  - 20260904T074956Z_seed12345_9e2317b0
+  - 20260904T075000Z_seed12346_b801dd9b
+  g1_runs_dir: artifacts/E100_arc_interface
+  raw_replays_dir: data/human_replays/raw
+schema_version: 1
+seed: 12345
+wallclock_limit_seconds: 600

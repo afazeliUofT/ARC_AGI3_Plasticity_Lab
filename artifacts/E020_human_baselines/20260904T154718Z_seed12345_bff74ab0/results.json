@@ -1,0 +1,29 @@
+{
+  "completion_status": "completed",
+  "config_hash": "6da25a7222b823222edb3d1961a3b5185c2f82dce13943c3b6d9ae080599453c",
+  "created_utc": "2026-09-04T15:47:18Z",
+  "experiment_id": "E020_human_baselines",
+  "extra": {},
+  "results": {
+    "dataset_manifest_sha256": "08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79",
+    "derived_levels": 183,
+    "environment_generator_version": "human-replays-derivation-1.0.0",
+    "exact_agreement_fraction": 0.9289617486338798,
+    "game_id_match_rule": "stem",
+    "human_baseline_level_coverage": 1.0,
+    "median_abs_relative_difference": 0.0,
+    "network_guard": "NetworkGuard",
+    "operation": "offline_local_files",
+    "participant_ids_available": false,
+    "public_games_total": 25,
+    "public_levels_total_from_metadata": 183,
+    "replay_parse_failures": 0,
+    "replay_units_ingested": 342,
+    "replay_units_matched": 342,
+    "replay_units_unmatched": 0,
+    "session_order_source": "file_order"
+  },
+  "run_id": "20260904T154718Z_seed12345_bff74ab0",
+  "seed": 12345,
+  "wallclock_seconds": 98.28854911704548
+}

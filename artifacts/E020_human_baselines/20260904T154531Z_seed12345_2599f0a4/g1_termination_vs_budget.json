@@ -1,0 +1,1238 @@
+{
+  "action_budget_multiplier": 5,
+  "definition": "per game: steps_taken and final_state of each graded G1 run next to multiplier x baseline_actions[1] and multiplier x sum(baseline_actions); observed only, not thresholded (G2 human_baselines.diagnostics_not_thresholded)",
+  "games": [
+    {
+      "baseline_actions": [
+        32,
+        50,
+        75,
+        37,
+        89,
+        159,
+        233,
+        73
+      ],
+      "budget_all_levels": 3740,
+      "budget_level_1": 160,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 85,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 85,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 84,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "ar25-0c556536",
+      "levels": 8,
+      "stem": "ar25"
+    },
+    {
+      "baseline_actions": [
+        21,
+        48,
+        44,
+        38,
+        33,
+        87,
+        86,
+        131,
+        163
+      ],
+      "budget_all_levels": 3255,
+      "budget_level_1": 105,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 42,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 42,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 64,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "bp35-0a0ad940",
+      "levels": 9,
+      "stem": "bp35"
+    },
+    {
+      "baseline_actions": [
+        55,
+        8,
+        41,
+        21,
+        23,
+        23
+      ],
+      "budget_all_levels": 855,
+      "budget_level_1": 275,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "cd82-fb555c5d",
+      "levels": 6,
+      "stem": "cd82"
+    },
+    {
+      "baseline_actions": [
+        29,
+        54,
+        85,
+        300,
+        208,
+        113
+      ],
+      "budget_all_levels": 3945,
+      "budget_level_1": 145,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 75,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 75,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 75,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "cn04-2fe56bfb",
+      "levels": 6,
+      "stem": "cn04"
+    },
+    {
+      "baseline_actions": [
+        59,
+        102,
+        67,
+        98,
+        324,
+        578
+      ],
+      "budget_all_levels": 6140,
+      "budget_level_1": 295,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 128,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 128,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 128,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "dc22-fdcac232",
+      "levels": 6,
+      "stem": "dc22"
+    },
+    {
+      "baseline_actions": [
+        43,
+        12,
+        23,
+        28,
+        65,
+        37
+      ],
+      "budget_all_levels": 1040,
+      "budget_level_1": 215,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 390,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 390,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 1,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 742,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        }
+      ],
+      "game_id": "ft09-0d8bbf25",
+      "levels": 6,
+      "stem": "ft09"
+    },
+    {
+      "baseline_actions": [
+        78,
+        175,
+        179,
+        230,
+        96,
+        54,
+        67
+      ],
+      "budget_all_levels": 4395,
+      "budget_level_1": 390,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 130,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 130,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 130,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "g50t-5849a774",
+      "levels": 7,
+      "stem": "g50t"
+    },
+    {
+      "baseline_actions": [
+        28,
+        109,
+        51,
+        51,
+        33,
+        132,
+        326
+      ],
+      "budget_all_levels": 3650,
+      "budget_level_1": 140,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "ka59-38d34dbb",
+      "levels": 7,
+      "stem": "ka59"
+    },
+    {
+      "baseline_actions": [
+        32,
+        81,
+        60,
+        71,
+        205,
+        148,
+        244,
+        109,
+        164,
+        225
+      ],
+      "budget_all_levels": 6695,
+      "budget_level_1": 160,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 88,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 88,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 98,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "lf52-271a04aa",
+      "levels": 10,
+      "stem": "lf52"
+    },
+    {
+      "baseline_actions": [
+        17,
+        38,
+        31,
+        16,
+        41,
+        60,
+        26,
+        159
+      ],
+      "budget_all_levels": 1940,
+      "budget_level_1": 85,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 526,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 526,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 673,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        }
+      ],
+      "game_id": "lp85-305b61c3",
+      "levels": 8,
+      "stem": "lp85"
+    },
+    {
+      "baseline_actions": [
+        22,
+        123,
+        73,
+        84,
+        96,
+        192,
+        186
+      ],
+      "budget_all_levels": 3880,
+      "budget_level_1": 110,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 129,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 129,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 136,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        }
+      ],
+      "game_id": "ls20-9607627b",
+      "levels": 7,
+      "stem": "ls20"
+    },
+    {
+      "baseline_actions": [
+        30,
+        111,
+        203,
+        26,
+        500,
+        237
+      ],
+      "budget_all_levels": 5535,
+      "budget_level_1": 150,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 151,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 151,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 151,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        }
+      ],
+      "game_id": "m0r0-492f87ba",
+      "levels": 6,
+      "stem": "m0r0"
+    },
+    {
+      "baseline_actions": [
+        22,
+        33,
+        51,
+        26,
+        52,
+        49
+      ],
+      "budget_all_levels": 1165,
+      "budget_level_1": 110,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 60,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 60,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 60,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "r11l-495a7899",
+      "levels": 6,
+      "stem": "r11l"
+    },
+    {
+      "baseline_actions": [
+        26,
+        42,
+        86,
+        108,
+        189,
+        139,
+        424,
+        241
+      ],
+      "budget_all_levels": 6275,
+      "budget_level_1": 130,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 100,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "re86-8af5384d",
+      "levels": 8,
+      "stem": "re86"
+    },
+    {
+      "baseline_actions": [
+        20,
+        89,
+        106,
+        54,
+        162,
+        38,
+        86,
+        83
+      ],
+      "budget_all_levels": 3190,
+      "budget_level_1": 100,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "s5i5-18d95033",
+      "levels": 8,
+      "stem": "s5i5"
+    },
+    {
+      "baseline_actions": [
+        18,
+        28,
+        18,
+        19,
+        31,
+        23,
+        58,
+        18
+      ],
+      "budget_all_levels": 1065,
+      "budget_level_1": 90,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 179,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 179,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 175,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        }
+      ],
+      "game_id": "sb26-7fbdac44",
+      "levels": 8,
+      "stem": "sb26"
+    },
+    {
+      "baseline_actions": [
+        36,
+        6,
+        32,
+        83,
+        143,
+        50
+      ],
+      "budget_all_levels": 1750,
+      "budget_level_1": 180,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 64,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 64,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 58,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "sc25-635fd71a",
+      "levels": 6,
+      "stem": "sc25"
+    },
+    {
+      "baseline_actions": [
+        61,
+        177,
+        101,
+        103,
+        230,
+        181,
+        125,
+        92
+      ],
+      "budget_all_levels": 5350,
+      "budget_level_1": 305,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 300,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 300,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 290,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "sk48-d8078629",
+      "levels": 8,
+      "stem": "sk48"
+    },
+    {
+      "baseline_actions": [
+        39,
+        58,
+        25,
+        148,
+        96,
+        152
+      ],
+      "budget_all_levels": 2590,
+      "budget_level_1": 195,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 30,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 30,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 24,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "sp80-589a99af",
+      "levels": 6,
+      "stem": "sp80"
+    },
+    {
+      "baseline_actions": [
+        22,
+        42,
+        26,
+        115,
+        36,
+        31,
+        8,
+        40,
+        41
+      ],
+      "budget_all_levels": 1805,
+      "budget_level_1": 110,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 90,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 90,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 93,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "su15-1944f8ab",
+      "levels": 9,
+      "stem": "su15"
+    },
+    {
+      "baseline_actions": [
+        32,
+        72,
+        26,
+        40,
+        30,
+        55,
+        62
+      ],
+      "budget_all_levels": 1585,
+      "budget_level_1": 160,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 61,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 61,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 61,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "tn36-ef4dde99",
+      "levels": 7,
+      "stem": "tn36"
+    },
+    {
+      "baseline_actions": [
+        54,
+        58,
+        40,
+        45,
+        71,
+        146
+      ],
+      "budget_all_levels": 2070,
+      "budget_level_1": 270,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 128,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 128,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 128,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "tr87-cd924810",
+      "levels": 6,
+      "stem": "tr87"
+    },
+    {
+      "baseline_actions": [
+        19,
+        16,
+        34,
+        42,
+        123,
+        80,
+        14,
+        23,
+        111
+      ],
+      "budget_all_levels": 2310,
+      "budget_level_1": 95,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "tu93-0768757b",
+      "levels": 9,
+      "stem": "tu93"
+    },
+    {
+      "baseline_actions": [
+        7,
+        18,
+        44,
+        61,
+        131,
+        34,
+        152
+      ],
+      "budget_all_levels": 2235,
+      "budget_level_1": 35,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 50,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": false
+        }
+      ],
+      "game_id": "vc33-5430563c",
+      "levels": 7,
+      "stem": "vc33"
+    },
+    {
+      "baseline_actions": [
+        71,
+        119,
+        183,
+        98,
+        368,
+        68,
+        79,
+        442,
+        415
+      ],
+      "budget_all_levels": 9215,
+      "budget_level_1": 355,
+      "g1_runs": [
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074939Z_seed12345_8383cad8",
+          "seed": 12345,
+          "steps_taken": 200,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T074956Z_seed12345_9e2317b0",
+          "seed": 12345,
+          "steps_taken": 200,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        },
+        {
+          "final_state": "GAME_OVER",
+          "levels_completed": 0,
+          "run_id": "20260904T075000Z_seed12346_b801dd9b",
+          "seed": 12346,
+          "steps_taken": 200,
+          "stop_reason": "terminal",
+          "within_all_levels_budget": true,
+          "within_level_1_budget": true
+        }
+      ],
+      "game_id": "wa30-ee6fef47",
+      "levels": 9,
+      "stem": "wa30"
+    }
+  ],
+  "runs": [
+    {
+      "action_budget_per_game": 5000,
+      "completion_status": "completed",
+      "results_sha256": "2700036d38e78412a63030d4ef1979fc8396a0e18f2aadce9c872e0670ac05d0",
+      "run_id": "20260904T074939Z_seed12345_8383cad8",
+      "seed": 12345
+    },
+    {
+      "action_budget_per_game": 5000,
+      "completion_status": "completed",
+      "results_sha256": "2bbe3e1f4544ad0578c9ec9c2a62fb6b27f44ce3ffd2f33b44d13213dabd32b8",
+      "run_id": "20260904T074956Z_seed12345_9e2317b0",
+      "seed": 12345
+    },
+    {
+      "action_budget_per_game": 5000,
+      "completion_status": "completed",
+      "results_sha256": "0775f27d1805ba652ff888904d6245a6009f5b125118b4b493a72aab66935606",
+      "run_id": "20260904T075000Z_seed12346_b801dd9b",
+      "seed": 12346
+    }
+  ],
+  "schema_version": 1
+}

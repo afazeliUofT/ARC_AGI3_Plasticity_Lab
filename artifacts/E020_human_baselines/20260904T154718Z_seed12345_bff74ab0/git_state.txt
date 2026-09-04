@@ -1,0 +1,5 @@
+commit 8efe71c78e06a27e3d432c40b66581a59ba8c2c3
+dirty true
+status --porcelain:
+ M state/PROJECT_STATE.json
+?? artifacts/E020_human_baselines/

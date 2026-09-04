@@ -1,0 +1,3625 @@
+{
+  "aggregation_rule": "per (game, level): upper median v_(floor(N/2)+1) of the sorted per-participant best first-session attributed action counts; N = 0 -> null",
+  "dataset_manifest_sha256": "08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79",
+  "game_id_match_rule": "stem",
+  "games": [
+    {
+      "game_id": "ar25-0c556536",
+      "levels": [
+        {
+          "derived_baseline_actions": 32,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 32,
+          "per_participant_best_counts_sorted": [
+            15,
+            17,
+            17,
+            21,
+            32,
+            38,
+            42,
+            43,
+            51
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 50,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 50,
+          "per_participant_best_counts_sorted": [
+            15,
+            20,
+            22,
+            35,
+            50,
+            55,
+            67,
+            142,
+            283
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 75,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 75,
+          "per_participant_best_counts_sorted": [
+            46,
+            47,
+            50,
+            53,
+            75,
+            84,
+            86,
+            89,
+            103
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 37,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 37,
+          "per_participant_best_counts_sorted": [
+            26,
+            27,
+            29,
+            31,
+            37,
+            38,
+            53,
+            71,
+            117
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 89,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 89,
+          "per_participant_best_counts_sorted": [
+            29,
+            58,
+            65,
+            71,
+            89,
+            135,
+            214,
+            293,
+            352
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 159,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 159,
+          "per_participant_best_counts_sorted": [
+            76,
+            79,
+            83,
+            102,
+            159,
+            178,
+            192,
+            507
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 233,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 233,
+          "per_participant_best_counts_sorted": [
+            115,
+            121,
+            152,
+            233,
+            508,
+            517
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 73,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 73,
+          "per_participant_best_counts_sorted": [
+            53,
+            66,
+            73,
+            116,
+            267
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "ar25"
+    },
+    {
+      "game_id": "bp35-0a0ad940",
+      "levels": [
+        {
+          "derived_baseline_actions": 21,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 21,
+          "per_participant_best_counts_sorted": [
+            15,
+            17,
+            18,
+            19,
+            20,
+            21,
+            21,
+            22,
+            27,
+            30,
+            76
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 48,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 48,
+          "per_participant_best_counts_sorted": [
+            43,
+            47,
+            47,
+            47,
+            47,
+            48,
+            49,
+            58,
+            72,
+            84,
+            97
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 44,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 44,
+          "per_participant_best_counts_sorted": [
+            34,
+            35,
+            36,
+            37,
+            43,
+            44,
+            44,
+            45,
+            46,
+            73,
+            129
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 38,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 38,
+          "per_participant_best_counts_sorted": [
+            24,
+            26,
+            31,
+            36,
+            37,
+            38,
+            40,
+            46,
+            59,
+            63,
+            101
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 33,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 33,
+          "per_participant_best_counts_sorted": [
+            31,
+            31,
+            31,
+            32,
+            32,
+            33,
+            35,
+            35,
+            36,
+            36,
+            41
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 87,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 87,
+          "per_participant_best_counts_sorted": [
+            42,
+            48,
+            55,
+            66,
+            70,
+            87,
+            89,
+            96,
+            122,
+            134
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 86,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 86,
+          "per_participant_best_counts_sorted": [
+            46,
+            64,
+            77,
+            77,
+            86,
+            95,
+            141,
+            180,
+            381
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 131,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 131,
+          "per_participant_best_counts_sorted": [
+            53,
+            72,
+            73,
+            131,
+            155,
+            256
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 163,
+          "exact_agreement": true,
+          "level": 9,
+          "n_participants_with_completion": 2,
+          "official_baseline_actions": 163,
+          "per_participant_best_counts_sorted": [
+            99,
+            163
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "bp35"
+    },
+    {
+      "game_id": "cd82-fb555c5d",
+      "levels": [
+        {
+          "derived_baseline_actions": 55,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 55,
+          "per_participant_best_counts_sorted": [
+            10,
+            26,
+            41,
+            44,
+            52,
+            55,
+            61,
+            65,
+            71,
+            81
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 8,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 8,
+          "per_participant_best_counts_sorted": [
+            6,
+            6,
+            6,
+            7,
+            7,
+            8,
+            11,
+            12,
+            13,
+            81
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 41,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 41,
+          "per_participant_best_counts_sorted": [
+            24,
+            25,
+            30,
+            33,
+            41,
+            47,
+            75,
+            138
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 21,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 21,
+          "per_participant_best_counts_sorted": [
+            15,
+            16,
+            18,
+            20,
+            21,
+            23,
+            24,
+            28
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 23,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 23,
+          "per_participant_best_counts_sorted": [
+            17,
+            17,
+            19,
+            23,
+            23,
+            31,
+            40,
+            60
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 23,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 23,
+          "per_participant_best_counts_sorted": [
+            16,
+            16,
+            17,
+            20,
+            23,
+            28,
+            30,
+            42
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "cd82"
+    },
+    {
+      "game_id": "cn04-2fe56bfb",
+      "levels": [
+        {
+          "derived_baseline_actions": 29,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 29,
+          "per_participant_best_counts_sorted": [
+            13,
+            15,
+            15,
+            21,
+            27,
+            29,
+            31,
+            34,
+            39,
+            128,
+            152
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 54,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 54,
+          "per_participant_best_counts_sorted": [
+            31,
+            35,
+            36,
+            42,
+            54,
+            84,
+            122,
+            132,
+            156
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 85,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 85,
+          "per_participant_best_counts_sorted": [
+            39,
+            47,
+            58,
+            69,
+            85,
+            104,
+            111,
+            507
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 300,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 300,
+          "per_participant_best_counts_sorted": [
+            164,
+            229,
+            256,
+            300,
+            319,
+            418
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 208,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 208,
+          "per_participant_best_counts_sorted": [
+            79,
+            100,
+            145,
+            208,
+            290,
+            408
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 113,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 113,
+          "per_participant_best_counts_sorted": [
+            64,
+            86,
+            95,
+            113,
+            523,
+            553
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "cn04"
+    },
+    {
+      "game_id": "dc22-fdcac232",
+      "levels": [
+        {
+          "derived_baseline_actions": 59,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 59,
+          "per_participant_best_counts_sorted": [
+            27,
+            31,
+            35,
+            36,
+            54,
+            59,
+            64,
+            72,
+            77,
+            85
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 102,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 102,
+          "per_participant_best_counts_sorted": [
+            64,
+            74,
+            80,
+            84,
+            90,
+            102,
+            105,
+            114,
+            117,
+            184
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 67,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 67,
+          "per_participant_best_counts_sorted": [
+            49,
+            59,
+            61,
+            63,
+            66,
+            67,
+            70,
+            72,
+            79,
+            89
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 98,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 98,
+          "per_participant_best_counts_sorted": [
+            68,
+            78,
+            79,
+            91,
+            98,
+            107,
+            180,
+            190,
+            263
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 324,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 324,
+          "per_participant_best_counts_sorted": [
+            158,
+            244,
+            301,
+            324,
+            380,
+            643
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 578,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 578,
+          "per_participant_best_counts_sorted": [
+            217,
+            550,
+            578,
+            695
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "dc22"
+    },
+    {
+      "game_id": "ft09-0d8bbf25",
+      "levels": [
+        {
+          "derived_baseline_actions": 43,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 43,
+          "per_participant_best_counts_sorted": [
+            15,
+            17,
+            21,
+            35,
+            43,
+            87,
+            92,
+            94
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 12,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 12,
+          "per_participant_best_counts_sorted": [
+            7,
+            9,
+            12,
+            12,
+            13,
+            19,
+            19
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 23,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 23,
+          "per_participant_best_counts_sorted": [
+            15,
+            15,
+            23,
+            32,
+            88
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 28,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 28,
+          "per_participant_best_counts_sorted": [
+            21,
+            22,
+            28,
+            28
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 65,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 65,
+          "per_participant_best_counts_sorted": [
+            25,
+            29,
+            65,
+            119
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 37,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 37,
+          "per_participant_best_counts_sorted": [
+            13,
+            26,
+            37,
+            43
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "ft09"
+    },
+    {
+      "game_id": "g50t-5849a774",
+      "levels": [
+        {
+          "derived_baseline_actions": 78,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 78,
+          "per_participant_best_counts_sorted": [
+            36,
+            44,
+            50,
+            51,
+            60,
+            77,
+            78,
+            95,
+            98,
+            109,
+            112,
+            117,
+            162
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 175,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 175,
+          "per_participant_best_counts_sorted": [
+            40,
+            69,
+            90,
+            125,
+            161,
+            175,
+            213,
+            245,
+            325,
+            358
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 179,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 179,
+          "per_participant_best_counts_sorted": [
+            86,
+            121,
+            174,
+            179,
+            246,
+            314
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 230,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 230,
+          "per_participant_best_counts_sorted": [
+            31,
+            52,
+            230,
+            368
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 96,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 96,
+          "per_participant_best_counts_sorted": [
+            77,
+            96,
+            96,
+            165
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 54,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 54,
+          "per_participant_best_counts_sorted": [
+            48,
+            54,
+            98
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 67,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 67,
+          "per_participant_best_counts_sorted": [
+            43,
+            67,
+            176
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "g50t"
+    },
+    {
+      "game_id": "ka59-38d34dbb",
+      "levels": [
+        {
+          "derived_baseline_actions": 28,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 28,
+          "per_participant_best_counts_sorted": [
+            13,
+            16,
+            19,
+            28,
+            39,
+            42,
+            68
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 109,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 109,
+          "per_participant_best_counts_sorted": [
+            44,
+            82,
+            109,
+            175,
+            182
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 51,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 51,
+          "per_participant_best_counts_sorted": [
+            38,
+            40,
+            51,
+            86,
+            87
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 51,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 51,
+          "per_participant_best_counts_sorted": [
+            39,
+            47,
+            51,
+            70,
+            74
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 33,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 33,
+          "per_participant_best_counts_sorted": [
+            21,
+            32,
+            33,
+            40,
+            45
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 132,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 132,
+          "per_participant_best_counts_sorted": [
+            69,
+            75,
+            132,
+            162
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 326,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 326,
+          "per_participant_best_counts_sorted": [
+            197,
+            326,
+            586
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "ka59"
+    },
+    {
+      "game_id": "lf52-271a04aa",
+      "levels": [
+        {
+          "derived_baseline_actions": 32,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 32,
+          "per_participant_best_counts_sorted": [
+            10,
+            13,
+            16,
+            19,
+            24,
+            32,
+            35,
+            37,
+            46,
+            61,
+            80
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 81,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 81,
+          "per_participant_best_counts_sorted": [
+            51,
+            53,
+            59,
+            80,
+            81,
+            91,
+            92,
+            163
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 60,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 60,
+          "per_participant_best_counts_sorted": [
+            47,
+            52,
+            52,
+            60,
+            60,
+            74,
+            98,
+            130
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 71,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 71,
+          "per_participant_best_counts_sorted": [
+            52,
+            53,
+            54,
+            57,
+            71,
+            80,
+            83,
+            86
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 205,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 205,
+          "per_participant_best_counts_sorted": [
+            109,
+            112,
+            112,
+            118,
+            205,
+            251,
+            343,
+            554
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 148,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 148,
+          "per_participant_best_counts_sorted": [
+            93,
+            142,
+            142,
+            144,
+            148,
+            166,
+            279,
+            330
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 244,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 244,
+          "per_participant_best_counts_sorted": [
+            159,
+            171,
+            189,
+            233,
+            244,
+            272,
+            280,
+            520
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 109,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 109,
+          "per_participant_best_counts_sorted": [
+            71,
+            87,
+            91,
+            101,
+            109,
+            116,
+            127,
+            128
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 164,
+          "exact_agreement": true,
+          "level": 9,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 164,
+          "per_participant_best_counts_sorted": [
+            113,
+            146,
+            146,
+            150,
+            164,
+            174,
+            179,
+            249
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 225,
+          "exact_agreement": true,
+          "level": 10,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 225,
+          "per_participant_best_counts_sorted": [
+            99,
+            203,
+            225,
+            380
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "lf52"
+    },
+    {
+      "game_id": "lp85-305b61c3",
+      "levels": [
+        {
+          "derived_baseline_actions": 18,
+          "exact_agreement": false,
+          "level": 1,
+          "n_participants_with_completion": 40,
+          "official_baseline_actions": 17,
+          "per_participant_best_counts_sorted": [
+            5,
+            5,
+            6,
+            6,
+            6,
+            7,
+            8,
+            8,
+            9,
+            9,
+            9,
+            10,
+            11,
+            11,
+            11,
+            12,
+            13,
+            14,
+            17,
+            18,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            23,
+            25,
+            26,
+            28,
+            29,
+            32,
+            32,
+            33,
+            37,
+            38,
+            40,
+            40,
+            62,
+            158
+          ],
+          "relative_difference": 0.058823529411764705
+        },
+        {
+          "derived_baseline_actions": 39,
+          "exact_agreement": false,
+          "level": 2,
+          "n_participants_with_completion": 32,
+          "official_baseline_actions": 38,
+          "per_participant_best_counts_sorted": [
+            9,
+            10,
+            15,
+            18,
+            18,
+            22,
+            22,
+            22,
+            23,
+            23,
+            26,
+            30,
+            35,
+            35,
+            37,
+            38,
+            39,
+            43,
+            43,
+            44,
+            49,
+            54,
+            97,
+            103,
+            106,
+            112,
+            114,
+            114,
+            178,
+            230,
+            249,
+            477
+          ],
+          "relative_difference": 0.02631578947368421
+        },
+        {
+          "derived_baseline_actions": 43,
+          "exact_agreement": false,
+          "level": 3,
+          "n_participants_with_completion": 29,
+          "official_baseline_actions": 31,
+          "per_participant_best_counts_sorted": [
+            20,
+            20,
+            24,
+            24,
+            26,
+            27,
+            29,
+            29,
+            30,
+            31,
+            31,
+            31,
+            31,
+            34,
+            43,
+            55,
+            58,
+            58,
+            61,
+            61,
+            68,
+            77,
+            77,
+            79,
+            81,
+            86,
+            121,
+            134,
+            196
+          ],
+          "relative_difference": 0.3870967741935484
+        },
+        {
+          "derived_baseline_actions": 23,
+          "exact_agreement": false,
+          "level": 4,
+          "n_participants_with_completion": 28,
+          "official_baseline_actions": 16,
+          "per_participant_best_counts_sorted": [
+            15,
+            15,
+            16,
+            16,
+            17,
+            17,
+            17,
+            18,
+            18,
+            19,
+            21,
+            21,
+            21,
+            22,
+            23,
+            23,
+            26,
+            27,
+            30,
+            33,
+            34,
+            34,
+            36,
+            42,
+            53,
+            54,
+            74,
+            104
+          ],
+          "relative_difference": 0.4375
+        },
+        {
+          "derived_baseline_actions": 39,
+          "exact_agreement": false,
+          "level": 5,
+          "n_participants_with_completion": 23,
+          "official_baseline_actions": 41,
+          "per_participant_best_counts_sorted": [
+            24,
+            24,
+            24,
+            27,
+            27,
+            32,
+            33,
+            33,
+            35,
+            35,
+            37,
+            39,
+            40,
+            41,
+            43,
+            45,
+            56,
+            60,
+            62,
+            81,
+            119,
+            130,
+            349
+          ],
+          "relative_difference": -0.04878048780487805
+        },
+        {
+          "derived_baseline_actions": 60,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 19,
+          "official_baseline_actions": 60,
+          "per_participant_best_counts_sorted": [
+            25,
+            30,
+            34,
+            34,
+            37,
+            38,
+            53,
+            58,
+            60,
+            60,
+            61,
+            65,
+            70,
+            77,
+            84,
+            93,
+            107,
+            119,
+            215
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 57,
+          "exact_agreement": false,
+          "level": 7,
+          "n_participants_with_completion": 18,
+          "official_baseline_actions": 26,
+          "per_participant_best_counts_sorted": [
+            18,
+            18,
+            20,
+            26,
+            27,
+            37,
+            48,
+            51,
+            56,
+            57,
+            61,
+            67,
+            69,
+            73,
+            99,
+            109,
+            202,
+            276
+          ],
+          "relative_difference": 1.1923076923076923
+        },
+        {
+          "derived_baseline_actions": 131,
+          "exact_agreement": false,
+          "level": 8,
+          "n_participants_with_completion": 15,
+          "official_baseline_actions": 159,
+          "per_participant_best_counts_sorted": [
+            50,
+            53,
+            58,
+            67,
+            77,
+            78,
+            112,
+            131,
+            136,
+            157,
+            159,
+            169,
+            173,
+            227,
+            343
+          ],
+          "relative_difference": -0.1761006289308176
+        }
+      ],
+      "stem": "lp85"
+    },
+    {
+      "game_id": "ls20-9607627b",
+      "levels": [
+        {
+          "derived_baseline_actions": 22,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 22,
+          "per_participant_best_counts_sorted": [
+            14,
+            15,
+            15,
+            19,
+            21,
+            22,
+            25,
+            41,
+            62,
+            63,
+            106
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 123,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 123,
+          "per_participant_best_counts_sorted": [
+            45,
+            46,
+            90,
+            109,
+            123,
+            124,
+            129,
+            150,
+            247
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 73,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 73,
+          "per_participant_best_counts_sorted": [
+            39,
+            43,
+            57,
+            67,
+            73,
+            112,
+            121,
+            138
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 84,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 84,
+          "per_participant_best_counts_sorted": [
+            51,
+            54,
+            66,
+            70,
+            84,
+            92,
+            92,
+            140
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 96,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 96,
+          "per_participant_best_counts_sorted": [
+            54,
+            56,
+            62,
+            91,
+            96,
+            188,
+            221,
+            333
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 192,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 192,
+          "per_participant_best_counts_sorted": [
+            86,
+            104,
+            108,
+            192,
+            196,
+            217
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 186,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 186,
+          "per_participant_best_counts_sorted": [
+            106,
+            109,
+            120,
+            186,
+            250,
+            300
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "ls20"
+    },
+    {
+      "game_id": "m0r0-492f87ba",
+      "levels": [
+        {
+          "derived_baseline_actions": 30,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 30,
+          "per_participant_best_counts_sorted": [
+            15,
+            22,
+            23,
+            26,
+            28,
+            30,
+            33,
+            36,
+            39,
+            41,
+            50
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 111,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 111,
+          "per_participant_best_counts_sorted": [
+            29,
+            61,
+            86,
+            106,
+            111,
+            117,
+            145,
+            209,
+            261
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 203,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 203,
+          "per_participant_best_counts_sorted": [
+            83,
+            88,
+            108,
+            119,
+            203,
+            237,
+            241,
+            247,
+            282
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 26,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 26,
+          "per_participant_best_counts_sorted": [
+            13,
+            18,
+            20,
+            25,
+            26,
+            33,
+            43,
+            86,
+            86
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 500,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 500,
+          "per_participant_best_counts_sorted": [
+            139,
+            391,
+            436,
+            444,
+            500,
+            503,
+            620,
+            944
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 237,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 237,
+          "per_participant_best_counts_sorted": [
+            86,
+            126,
+            178,
+            237,
+            306,
+            355,
+            411
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "m0r0"
+    },
+    {
+      "game_id": "r11l-495a7899",
+      "levels": [
+        {
+          "derived_baseline_actions": 22,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 22,
+          "per_participant_best_counts_sorted": [
+            7,
+            10,
+            11,
+            11,
+            13,
+            22,
+            22,
+            23,
+            27,
+            29
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 33,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 33,
+          "per_participant_best_counts_sorted": [
+            20,
+            23,
+            25,
+            27,
+            28,
+            33,
+            42,
+            43,
+            50,
+            93
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 51,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 51,
+          "per_participant_best_counts_sorted": [
+            28,
+            30,
+            30,
+            42,
+            45,
+            51,
+            62,
+            78,
+            119,
+            250
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 26,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 26,
+          "per_participant_best_counts_sorted": [
+            16,
+            18,
+            18,
+            20,
+            21,
+            26,
+            27,
+            30,
+            53,
+            77
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 52,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 52,
+          "per_participant_best_counts_sorted": [
+            34,
+            35,
+            37,
+            37,
+            38,
+            52,
+            55,
+            91,
+            99,
+            114
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 49,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 49,
+          "per_participant_best_counts_sorted": [
+            26,
+            32,
+            40,
+            40,
+            45,
+            49,
+            49,
+            69,
+            114,
+            283
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "r11l"
+    },
+    {
+      "game_id": "re86-8af5384d",
+      "levels": [
+        {
+          "derived_baseline_actions": 26,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 26,
+          "per_participant_best_counts_sorted": [
+            20,
+            24,
+            24,
+            26,
+            26,
+            26,
+            28,
+            35,
+            38,
+            47,
+            129
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 42,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 42,
+          "per_participant_best_counts_sorted": [
+            38,
+            38,
+            40,
+            40,
+            41,
+            42,
+            42,
+            46,
+            46,
+            61,
+            175
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 86,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 86,
+          "per_participant_best_counts_sorted": [
+            52,
+            60,
+            71,
+            83,
+            86,
+            112,
+            198,
+            660
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 108,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 108,
+          "per_participant_best_counts_sorted": [
+            57,
+            60,
+            72,
+            108,
+            108,
+            213,
+            252,
+            493
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 189,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 189,
+          "per_participant_best_counts_sorted": [
+            84,
+            153,
+            161,
+            167,
+            189,
+            222,
+            330,
+            343
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 139,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 139,
+          "per_participant_best_counts_sorted": [
+            81,
+            117,
+            128,
+            135,
+            139,
+            167,
+            172,
+            551
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 424,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 424,
+          "per_participant_best_counts_sorted": [
+            224,
+            328,
+            424,
+            472,
+            572
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 241,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 241,
+          "per_participant_best_counts_sorted": [
+            220,
+            221,
+            241,
+            249,
+            268
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "re86"
+    },
+    {
+      "game_id": "s5i5-18d95033",
+      "levels": [
+        {
+          "derived_baseline_actions": 20,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 20,
+          "per_participant_best_counts_sorted": [
+            17,
+            18,
+            18,
+            19,
+            19,
+            20,
+            21,
+            23,
+            27,
+            27,
+            121
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 89,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 89,
+          "per_participant_best_counts_sorted": [
+            45,
+            50,
+            50,
+            57,
+            62,
+            89,
+            90,
+            106,
+            132,
+            951
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 106,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 106,
+          "per_participant_best_counts_sorted": [
+            69,
+            85,
+            102,
+            106,
+            112,
+            115,
+            160
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 54,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 54,
+          "per_participant_best_counts_sorted": [
+            40,
+            47,
+            54,
+            54,
+            93,
+            178,
+            203
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 162,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 162,
+          "per_participant_best_counts_sorted": [
+            82,
+            137,
+            162,
+            205,
+            257
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 38,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 38,
+          "per_participant_best_counts_sorted": [
+            30,
+            36,
+            38,
+            48,
+            221
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 86,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 86,
+          "per_participant_best_counts_sorted": [
+            64,
+            76,
+            86,
+            104,
+            181
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 83,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 4,
+          "official_baseline_actions": 83,
+          "per_participant_best_counts_sorted": [
+            51,
+            56,
+            83,
+            98
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "s5i5"
+    },
+    {
+      "game_id": "sb26-7fbdac44",
+      "levels": [
+        {
+          "derived_baseline_actions": 18,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 18,
+          "per_participant_best_counts_sorted": [
+            10,
+            12,
+            12,
+            13,
+            16,
+            18,
+            20,
+            23,
+            61,
+            91,
+            117
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 28,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 28,
+          "per_participant_best_counts_sorted": [
+            16,
+            16,
+            23,
+            26,
+            27,
+            28,
+            31,
+            40,
+            77,
+            86
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 18,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 18,
+          "per_participant_best_counts_sorted": [
+            15,
+            15,
+            15,
+            16,
+            16,
+            18,
+            26,
+            36,
+            43,
+            52
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 19,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 19,
+          "per_participant_best_counts_sorted": [
+            15,
+            15,
+            15,
+            16,
+            17,
+            19,
+            23,
+            28,
+            30,
+            31
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 31,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 31,
+          "per_participant_best_counts_sorted": [
+            18,
+            24,
+            24,
+            31,
+            42,
+            65,
+            66
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 23,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 23,
+          "per_participant_best_counts_sorted": [
+            19,
+            19,
+            22,
+            23,
+            24,
+            26,
+            65
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 58,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 58,
+          "per_participant_best_counts_sorted": [
+            17,
+            17,
+            44,
+            58,
+            68,
+            84
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 18,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 18,
+          "per_participant_best_counts_sorted": [
+            17,
+            17,
+            18,
+            31,
+            51
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "sb26"
+    },
+    {
+      "game_id": "sc25-635fd71a",
+      "levels": [
+        {
+          "derived_baseline_actions": 36,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 36,
+          "per_participant_best_counts_sorted": [
+            16,
+            19,
+            24,
+            25,
+            31,
+            32,
+            36,
+            39,
+            39,
+            39,
+            42,
+            82,
+            147
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 6,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 6,
+          "per_participant_best_counts_sorted": [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            6,
+            7,
+            7,
+            7,
+            7,
+            13,
+            35
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 32,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 32,
+          "per_participant_best_counts_sorted": [
+            16,
+            16,
+            18,
+            20,
+            27,
+            31,
+            32,
+            34,
+            37,
+            49,
+            53,
+            60,
+            108
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 83,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 83,
+          "per_participant_best_counts_sorted": [
+            26,
+            31,
+            33,
+            34,
+            42,
+            59,
+            83,
+            87,
+            103,
+            133,
+            147,
+            297,
+            631
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 143,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 143,
+          "per_participant_best_counts_sorted": [
+            54,
+            66,
+            131,
+            134,
+            138,
+            143,
+            147,
+            160,
+            186,
+            189,
+            243
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 50,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 50,
+          "per_participant_best_counts_sorted": [
+            40,
+            41,
+            41,
+            48,
+            48,
+            50,
+            56,
+            64,
+            64,
+            75
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "sc25"
+    },
+    {
+      "game_id": "sk48-d8078629",
+      "levels": [
+        {
+          "derived_baseline_actions": 61,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 14,
+          "official_baseline_actions": 61,
+          "per_participant_best_counts_sorted": [
+            15,
+            18,
+            22,
+            30,
+            37,
+            38,
+            46,
+            61,
+            70,
+            87,
+            94,
+            123,
+            289,
+            343
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 177,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 177,
+          "per_participant_best_counts_sorted": [
+            32,
+            39,
+            41,
+            112,
+            113,
+            163,
+            177,
+            181,
+            182,
+            193,
+            242,
+            368,
+            545
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 101,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 101,
+          "per_participant_best_counts_sorted": [
+            35,
+            38,
+            64,
+            70,
+            73,
+            92,
+            101,
+            105,
+            112,
+            125,
+            146,
+            380,
+            574
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 103,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 103,
+          "per_participant_best_counts_sorted": [
+            36,
+            74,
+            75,
+            91,
+            98,
+            103,
+            113,
+            153,
+            163,
+            749
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 230,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 230,
+          "per_participant_best_counts_sorted": [
+            94,
+            183,
+            189,
+            195,
+            230,
+            279,
+            294,
+            304
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 181,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 181,
+          "per_participant_best_counts_sorted": [
+            42,
+            98,
+            108,
+            114,
+            181,
+            194,
+            323,
+            340
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 125,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 125,
+          "per_participant_best_counts_sorted": [
+            63,
+            67,
+            89,
+            125,
+            125,
+            130,
+            200,
+            575
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 92,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 92,
+          "per_participant_best_counts_sorted": [
+            48,
+            85,
+            90,
+            92,
+            126,
+            195,
+            212
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "sk48"
+    },
+    {
+      "game_id": "sp80-589a99af",
+      "levels": [
+        {
+          "derived_baseline_actions": 39,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 39,
+          "per_participant_best_counts_sorted": [
+            4,
+            7,
+            11,
+            15,
+            33,
+            39,
+            41,
+            41,
+            44,
+            45,
+            80
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 58,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 58,
+          "per_participant_best_counts_sorted": [
+            12,
+            18,
+            39,
+            58,
+            65,
+            185,
+            297
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 25,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 25,
+          "per_participant_best_counts_sorted": [
+            17,
+            17,
+            25,
+            45,
+            46
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 148,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 148,
+          "per_participant_best_counts_sorted": [
+            64,
+            90,
+            148,
+            172,
+            239
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 96,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 96,
+          "per_participant_best_counts_sorted": [
+            65,
+            96,
+            102
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 152,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 2,
+          "official_baseline_actions": 152,
+          "per_participant_best_counts_sorted": [
+            104,
+            152
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "sp80"
+    },
+    {
+      "game_id": "su15-1944f8ab",
+      "levels": [
+        {
+          "derived_baseline_actions": 22,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 22,
+          "per_participant_best_counts_sorted": [
+            12,
+            12,
+            15,
+            16,
+            18,
+            19,
+            22,
+            23,
+            23,
+            29,
+            37,
+            38,
+            82
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 42,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 42,
+          "per_participant_best_counts_sorted": [
+            15,
+            24,
+            25,
+            28,
+            42,
+            54,
+            81,
+            89
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 26,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 26,
+          "per_participant_best_counts_sorted": [
+            19,
+            24,
+            25,
+            25,
+            26,
+            31,
+            44,
+            50
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 115,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 115,
+          "per_participant_best_counts_sorted": [
+            35,
+            94,
+            112,
+            115,
+            151,
+            189
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 36,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 36,
+          "per_participant_best_counts_sorted": [
+            18,
+            36,
+            95
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 31,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 31,
+          "per_participant_best_counts_sorted": [
+            24,
+            31,
+            38
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 8,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 8,
+          "per_participant_best_counts_sorted": [
+            7,
+            8,
+            50
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 40,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 40,
+          "per_participant_best_counts_sorted": [
+            26,
+            40,
+            179
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 41,
+          "exact_agreement": true,
+          "level": 9,
+          "n_participants_with_completion": 3,
+          "official_baseline_actions": 41,
+          "per_participant_best_counts_sorted": [
+            16,
+            41,
+            130
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "su15"
+    },
+    {
+      "game_id": "tn36-ef4dde99",
+      "levels": [
+        {
+          "derived_baseline_actions": 32,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 32,
+          "per_participant_best_counts_sorted": [
+            12,
+            23,
+            25,
+            26,
+            28,
+            32,
+            35,
+            48,
+            72,
+            236
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 72,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 72,
+          "per_participant_best_counts_sorted": [
+            18,
+            22,
+            22,
+            51,
+            72,
+            75,
+            98,
+            120,
+            133
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 26,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 26,
+          "per_participant_best_counts_sorted": [
+            13,
+            15,
+            19,
+            20,
+            26,
+            42,
+            77,
+            81,
+            114
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 40,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 40,
+          "per_participant_best_counts_sorted": [
+            18,
+            28,
+            37,
+            39,
+            40,
+            44,
+            48,
+            82,
+            87
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 30,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 30,
+          "per_participant_best_counts_sorted": [
+            21,
+            24,
+            25,
+            26,
+            30,
+            40,
+            40,
+            46,
+            107
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 55,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 55,
+          "per_participant_best_counts_sorted": [
+            30,
+            30,
+            42,
+            47,
+            55,
+            56,
+            58,
+            63,
+            68
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 62,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 62,
+          "per_participant_best_counts_sorted": [
+            55,
+            57,
+            61,
+            62,
+            80,
+            83
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "tn36"
+    },
+    {
+      "game_id": "tr87-cd924810",
+      "levels": [
+        {
+          "derived_baseline_actions": 54,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 54,
+          "per_participant_best_counts_sorted": [
+            23,
+            37,
+            40,
+            49,
+            53,
+            54,
+            61,
+            67,
+            79,
+            131,
+            153
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 58,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 58,
+          "per_participant_best_counts_sorted": [
+            30,
+            32,
+            41,
+            41,
+            55,
+            58,
+            68,
+            75,
+            108,
+            163,
+            177
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 40,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 40,
+          "per_participant_best_counts_sorted": [
+            26,
+            31,
+            35,
+            36,
+            39,
+            40,
+            41,
+            43,
+            45,
+            50,
+            253
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 45,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 45,
+          "per_participant_best_counts_sorted": [
+            29,
+            32,
+            33,
+            36,
+            38,
+            45,
+            45,
+            48,
+            59,
+            67
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 71,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 71,
+          "per_participant_best_counts_sorted": [
+            48,
+            54,
+            63,
+            68,
+            71,
+            75,
+            96,
+            100,
+            140
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 146,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 146,
+          "per_participant_best_counts_sorted": [
+            96,
+            96,
+            119,
+            146,
+            164,
+            250
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "tr87"
+    },
+    {
+      "game_id": "tu93-0768757b",
+      "levels": [
+        {
+          "derived_baseline_actions": 19,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 19,
+          "per_participant_best_counts_sorted": [
+            18,
+            18,
+            18,
+            18,
+            18,
+            19,
+            19,
+            19,
+            23,
+            23,
+            25,
+            26,
+            26
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 16,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 16,
+          "per_participant_best_counts_sorted": [
+            12,
+            15,
+            15,
+            15,
+            15,
+            16,
+            16,
+            17,
+            22,
+            24,
+            28,
+            29,
+            43
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 34,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 34,
+          "per_participant_best_counts_sorted": [
+            19,
+            20,
+            21,
+            28,
+            29,
+            32,
+            34,
+            35,
+            37,
+            37,
+            41,
+            47,
+            65
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 42,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 42,
+          "per_participant_best_counts_sorted": [
+            17,
+            17,
+            22,
+            26,
+            35,
+            42,
+            43,
+            68,
+            131,
+            133,
+            150
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 123,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 123,
+          "per_participant_best_counts_sorted": [
+            29,
+            50,
+            71,
+            76,
+            123,
+            144,
+            181,
+            194,
+            201
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 80,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 80,
+          "per_participant_best_counts_sorted": [
+            39,
+            45,
+            65,
+            66,
+            80,
+            81,
+            91,
+            114,
+            183
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 14,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 14,
+          "per_participant_best_counts_sorted": [
+            14,
+            14,
+            14,
+            14,
+            14,
+            16,
+            16,
+            18,
+            47
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 23,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 23,
+          "per_participant_best_counts_sorted": [
+            23,
+            23,
+            23,
+            23,
+            23,
+            23,
+            24,
+            25,
+            50
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 111,
+          "exact_agreement": true,
+          "level": 9,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 111,
+          "per_participant_best_counts_sorted": [
+            30,
+            31,
+            57,
+            93,
+            111,
+            115,
+            118,
+            134,
+            226
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "tu93"
+    },
+    {
+      "game_id": "vc33-5430563c",
+      "levels": [
+        {
+          "derived_baseline_actions": 13,
+          "exact_agreement": false,
+          "level": 1,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 7,
+          "per_participant_best_counts_sorted": [
+            7,
+            7,
+            9,
+            12,
+            13,
+            16,
+            18,
+            20,
+            27
+          ],
+          "relative_difference": 0.8571428571428571
+        },
+        {
+          "derived_baseline_actions": 18,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 18,
+          "per_participant_best_counts_sorted": [
+            7,
+            11,
+            15,
+            17,
+            18,
+            25,
+            29,
+            36,
+            49
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 119,
+          "exact_agreement": false,
+          "level": 3,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 44,
+          "per_participant_best_counts_sorted": [
+            28,
+            36,
+            38,
+            38,
+            119,
+            138,
+            154,
+            202
+          ],
+          "relative_difference": 1.7045454545454546
+        },
+        {
+          "derived_baseline_actions": 50,
+          "exact_agreement": false,
+          "level": 4,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 61,
+          "per_participant_best_counts_sorted": [
+            39,
+            44,
+            46,
+            50,
+            78,
+            144,
+            230
+          ],
+          "relative_difference": -0.18032786885245902
+        },
+        {
+          "derived_baseline_actions": 120,
+          "exact_agreement": false,
+          "level": 5,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 131,
+          "per_participant_best_counts_sorted": [
+            87,
+            88,
+            88,
+            120,
+            129,
+            154,
+            330
+          ],
+          "relative_difference": -0.08396946564885496
+        },
+        {
+          "derived_baseline_actions": 39,
+          "exact_agreement": false,
+          "level": 6,
+          "n_participants_with_completion": 7,
+          "official_baseline_actions": 34,
+          "per_participant_best_counts_sorted": [
+            29,
+            35,
+            36,
+            39,
+            44,
+            44,
+            74
+          ],
+          "relative_difference": 0.14705882352941177
+        },
+        {
+          "derived_baseline_actions": 155,
+          "exact_agreement": false,
+          "level": 7,
+          "n_participants_with_completion": 6,
+          "official_baseline_actions": 152,
+          "per_participant_best_counts_sorted": [
+            109,
+            146,
+            155,
+            155,
+            211,
+            341
+          ],
+          "relative_difference": 0.019736842105263157
+        }
+      ],
+      "stem": "vc33"
+    },
+    {
+      "game_id": "wa30-ee6fef47",
+      "levels": [
+        {
+          "derived_baseline_actions": 71,
+          "exact_agreement": true,
+          "level": 1,
+          "n_participants_with_completion": 13,
+          "official_baseline_actions": 71,
+          "per_participant_best_counts_sorted": [
+            35,
+            46,
+            54,
+            56,
+            61,
+            66,
+            71,
+            93,
+            95,
+            96,
+            125,
+            173,
+            273
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 119,
+          "exact_agreement": true,
+          "level": 2,
+          "n_participants_with_completion": 11,
+          "official_baseline_actions": 119,
+          "per_participant_best_counts_sorted": [
+            49,
+            53,
+            58,
+            60,
+            63,
+            119,
+            126,
+            129,
+            133,
+            137,
+            346
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 183,
+          "exact_agreement": true,
+          "level": 3,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 183,
+          "per_participant_best_counts_sorted": [
+            76,
+            83,
+            96,
+            100,
+            177,
+            183,
+            186,
+            259,
+            282,
+            572
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 98,
+          "exact_agreement": true,
+          "level": 4,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 98,
+          "per_participant_best_counts_sorted": [
+            66,
+            74,
+            79,
+            95,
+            98,
+            98,
+            99,
+            113,
+            183,
+            384
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 368,
+          "exact_agreement": true,
+          "level": 5,
+          "n_participants_with_completion": 10,
+          "official_baseline_actions": 368,
+          "per_participant_best_counts_sorted": [
+            115,
+            116,
+            238,
+            250,
+            347,
+            368,
+            372,
+            372,
+            487,
+            499
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 68,
+          "exact_agreement": true,
+          "level": 6,
+          "n_participants_with_completion": 9,
+          "official_baseline_actions": 68,
+          "per_participant_best_counts_sorted": [
+            58,
+            58,
+            63,
+            65,
+            68,
+            71,
+            125,
+            129,
+            148
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 79,
+          "exact_agreement": true,
+          "level": 7,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 79,
+          "per_participant_best_counts_sorted": [
+            54,
+            56,
+            58,
+            73,
+            79,
+            95,
+            186,
+            202
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 442,
+          "exact_agreement": true,
+          "level": 8,
+          "n_participants_with_completion": 8,
+          "official_baseline_actions": 442,
+          "per_participant_best_counts_sorted": [
+            127,
+            130,
+            134,
+            441,
+            442,
+            558,
+            867,
+            1051
+          ],
+          "relative_difference": 0.0
+        },
+        {
+          "derived_baseline_actions": 415,
+          "exact_agreement": true,
+          "level": 9,
+          "n_participants_with_completion": 5,
+          "official_baseline_actions": 415,
+          "per_participant_best_counts_sorted": [
+            132,
+            132,
+            415,
+            574,
+            645
+          ],
+          "relative_difference": 0.0
+        }
+      ],
+      "stem": "wa30"
+    }
+  ],
+  "median_abs_relative_difference_definition": "statistics.median of |(derived - official) / official| over derived levels; null when no level is derived",
+  "public_games_total": 25,
+  "public_levels_total": 183,
+  "schema_version": 1,
+  "totals": {
+    "derived_levels": 183,
+    "exact_agreement_fraction": 0.9289617486338798,
+    "human_baseline_level_coverage": 1.0,
+    "median_abs_relative_difference": 0.0,
+    "replay_parse_failures": 0,
+    "replay_units_ingested": 342
+  }
+}

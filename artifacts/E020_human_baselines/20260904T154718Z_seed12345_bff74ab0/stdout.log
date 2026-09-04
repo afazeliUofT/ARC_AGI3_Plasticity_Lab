@@ -1,0 +1,7 @@
+run_id=20260904T154718Z_seed12345_bff74ab0 experiment=E020_human_baselines runner=human_baseline_derivation seed=12345 config_hash=6da25a7222b823222edb3d1961a3b5185c2f82dce13943c3b6d9ae080599453c git=8efe71c78e06a27e3d432c40b66581a59ba8c2c3 dirty=True wallclock_limit=600s network_allowed=0
+human_baseline_derivation seed=12345 (recorded only) operation=offline_local_files raw_replays_dir=data/human_replays/raw dataset_manifest=experiments/human_replays_manifest.json sha256=08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79
+official games=25 levels=183
+ingested files=342 replay_units=342 parse_failures=0 participant_ids_available=False
+derived_levels=183/183 coverage=1.0000 exact_agreement_fraction=0.9289617486338798 median_abs_relative_difference=0.0
+P1/P2 agreement: files_all_levels_agree=324 files_with_disagreement=2 files_p2_unavailable=16 levels_agree=1617 levels_disagree=9
+completion_status=completed wallclock_seconds=98.289
