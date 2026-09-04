@@ -19,15 +19,21 @@ Two clients share one interface, :class:`ModelClient`:
   usage-limit signature is a refusal (:class:`ModelClientError`), because such a call reached
   no model and the runner then marks the model unavailable rather than burning its budget.
 
-  Credential (the human's answer of 2026-09-04, ``state/escalations/20260904T211800Z.md``):
-  the child receives ``CLAUDE_CODE_OAUTH_TOKEN`` forwarded from the calling process's own
-  environment, and nothing else. If the variable is absent at call time the call is refused
-  **before any process starts** (:class:`CallRefused`, reason
-  ``authentication_unavailable``); the adapter never attempts a login. The value is never
-  logged, never placed in an artifact, a prompt, a ledger entry or an error message. The
-  ``token_file`` parameter (a file outside the repository) is declined for configs by
-  :func:`build_client`, kept only for the unit test that pins secret handling, and is untested
-  against the real binary.
+  Credential (the human's answers of 2026-09-04, ``state/escalations/20260904T211800Z.md``
+  and ``20260904T214700Z.md``): the child receives ``CLAUDE_CODE_OAUTH_TOKEN`` and nothing
+  else. Claude Code strips that one variable from the environment of its own tool
+  subprocesses, so a runner started inside a turn never has it; the supervisor therefore
+  carries the same value under the alias :data:`TOKEN_ALIAS_ENV_KEY`
+  (``PLASTICITY_LAB_OAUTH_TOKEN``, route (a) of the second answer). The adapter maps the alias
+  to ``CLAUDE_CODE_OAUTH_TOKEN`` **in its child's environment only**, never re-exports the
+  alias into that child or any other process, and never records either value. If neither
+  variable is present at call time the call is refused **before any process starts**
+  (:class:`CallRefused`, reason ``authentication_unavailable``); the adapter never attempts a
+  login. Neither value is ever logged, placed in an artifact, a prompt, a ledger entry or an
+  error message, and the alias *name* is kept out of artifacts too (``token_source`` records
+  ``environment_alias`` instead). The ``token_file`` parameter (a file outside the
+  repository) is declined for configs by :func:`build_client`, kept only for the unit test
+  that pins secret handling, and is untested against the real binary.
 
 Every call is described by a :class:`ModelRequest` and answered by a :class:`ModelResponse`
 whose fields are exactly what ``model_calls.jsonl`` records: model as sent and as reported,
@@ -77,6 +83,12 @@ EXIT_CODE_NOT_STARTED = -2
 STRIPPED_ENV_PREFIXES: tuple[str, ...] = ("ARC_",)
 STRIPPED_ENV_KEYS: tuple[str, ...] = ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")
 TOKEN_ENV_KEY = "CLAUDE_CODE_OAUTH_TOKEN"
+# The supervisor's alias for the same value (human's answer 2026-09-04T21:47Z, route (a)),
+# chosen because the CLI strips TOKEN_ENV_KEY from its tool subprocesses and passes every
+# other key through. Read by the adapter only; mapped to TOKEN_ENV_KEY in the child; never
+# forwarded under its own name.
+TOKEN_ALIAS_ENV_KEY = "PLASTICITY_LAB_OAUTH_TOKEN"
+TOKEN_SOURCES: tuple[str, ...] = ("none", "environment", "environment_alias", "file")
 # Refusal reasons of CallRefused. The first two come from a failed process; the third is
 # raised before any process starts, when the credential variable is absent.
 REFUSAL_AUTH = "auth"
@@ -276,19 +288,38 @@ def _tail(text: str, limit: int) -> str:
 def child_environment(
     parent: Mapping[str, str], token: str | None
 ) -> tuple[dict[str, str], list[str]]:
-    """The environment a headless call receives: ``parent`` minus every stripped key, plus
-    the token under :data:`TOKEN_ENV_KEY` when one was read from a file. Returns the
-    environment and the sorted list of keys removed (recorded per call; values never are)."""
+    """The environment a headless call receives: ``parent`` minus every stripped key and
+    minus the alias :data:`TOKEN_ALIAS_ENV_KEY`, plus :data:`TOKEN_ENV_KEY` set from, in
+    order of precedence, ``token`` (read from a file), the parent's own ``TOKEN_ENV_KEY``, or
+    the parent's alias value. Returns the environment and the sorted list of keys removed
+    (recorded per call; values never are). The alias is not listed among the removed keys so
+    that its name reaches no artifact; :attr:`HeadlessCliClient.token_source` says where the
+    credential came from."""
     env: dict[str, str] = {}
     stripped: list[str] = []
     for key, value in parent.items():
+        if key == TOKEN_ALIAS_ENV_KEY:
+            continue
         if key in STRIPPED_ENV_KEYS or key.startswith(STRIPPED_ENV_PREFIXES):
             stripped.append(key)
         else:
             env[key] = value
     if token is not None:
         env[TOKEN_ENV_KEY] = token
+    elif not env.get(TOKEN_ENV_KEY) and parent.get(TOKEN_ALIAS_ENV_KEY):
+        env[TOKEN_ENV_KEY] = parent[TOKEN_ALIAS_ENV_KEY]
     return env, sorted(stripped)
+
+
+def token_source_of(parent: Mapping[str, str], token_from_file: bool) -> str:
+    """Which of :data:`TOKEN_SOURCES` the child's credential comes from."""
+    if token_from_file:
+        return "file"
+    if parent.get(TOKEN_ENV_KEY):
+        return "environment"
+    if parent.get(TOKEN_ALIAS_ENV_KEY):
+        return "environment_alias"
+    return "none"
 
 
 def classify_refusal(exit_code: int, texts: Sequence[str]) -> str | None:
@@ -328,7 +359,10 @@ class HeadlessCliClient:
     """One ``claude -p`` subprocess per call. See the module docstring.
 
     The credential is ``CLAUDE_CODE_OAUTH_TOKEN`` forwarded from ``environment`` (default: this
-    process's own); a call with no such variable is refused before anything is spawned.
+    process's own) or, when that variable is absent, the same value read from the supervisor's
+    alias :data:`TOKEN_ALIAS_ENV_KEY` and placed under ``CLAUDE_CODE_OAUTH_TOKEN`` in the child
+    only (``token_source`` ``environment_alias``); a call with neither is refused before
+    anything is spawned.
     ``token_file`` (a file outside the repository read once into the child's environment only)
     is a declined route: no config may name it (:func:`build_client`), it exists for the unit
     test pinning that a token is never recorded, and it is untested against the real binary.
@@ -355,7 +389,6 @@ class HeadlessCliClient:
             raise ModelClientError("call_wallclock_seconds must be a positive number")
         self.call_wallclock_seconds = float(call_wallclock_seconds)
         self.repository_root = (repository_root or Path.cwd()).resolve()
-        self.token_source = "none"
         token: str | None = None
         if token_file is not None:
             path = Path(token_file).expanduser().resolve()
@@ -366,11 +399,10 @@ class HeadlessCliClient:
             token = path.read_text(encoding="utf-8").strip()
             if not token:
                 raise ModelClientError(f"token_file {path} is empty")
-            self.token_source = "file"
-        elif (environment if environment is not None else os.environ).get(TOKEN_ENV_KEY):
-            self.token_source = "environment"
         parent = dict(environment if environment is not None else os.environ)
+        self.token_source = token_source_of(parent, token is not None)
         self._env, self.stripped_env_keys = child_environment(parent, token)
+        assert TOKEN_ALIAS_ENV_KEY not in self._env
         self._clock = clock
         self.calls_made = 0
 
@@ -396,7 +428,7 @@ class HeadlessCliClient:
             raise CallRefused(
                 REFUSAL_AUTHENTICATION_UNAVAILABLE,
                 f"call {request.call_index} not attempted: {TOKEN_ENV_KEY} is absent from "
-                "the environment of the calling process",
+                "the environment of the calling process and no alias carries it",
                 {
                     "channel": self.kind,
                     "argv": argv,
@@ -592,7 +624,9 @@ __all__ = [
     "REFUSAL_USAGE_LIMIT",
     "STRIPPED_ENV_KEYS",
     "STRIPPED_ENV_PREFIXES",
+    "TOKEN_ALIAS_ENV_KEY",
     "TOKEN_ENV_KEY",
+    "TOKEN_SOURCES",
     "USAGE_KEYS",
     "USAGE_LIMIT_SIGNATURES",
     "CallRefused",

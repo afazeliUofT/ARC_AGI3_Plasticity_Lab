@@ -627,6 +627,7 @@ class RefGameRun:
                 "response_path": f"{MODEL_CALLS_DIR}/{call_index}.response.json",
                 "history_length_at_call": len(self.history),
                 "is_error": bool(response.extra.get("is_error", False)),
+                "token_source": response.raw.get("token_source"),
                 "program_returned": bool(response.text.strip()) and response.exit_code == 0,
                 "call_wallclock_seconds_max": request.wallclock_seconds_max,
                 "model_wallclock_seconds_total_after": self.model_wallclock_seconds_total,

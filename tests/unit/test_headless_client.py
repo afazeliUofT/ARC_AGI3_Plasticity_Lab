@@ -29,11 +29,20 @@ ENV_DIR = ROOT / "environment_files"
 # A stand-in credential with the real prefix shape, so the leak scan below is meaningful.
 TEST_TOKEN = "sk-ant-oat01-TESTTOKEN-not-a-real-credential"
 SECRET_PATTERN = "sk-ant-"
+# The leak scan (human's condition 2026-09-04T21:47Z) covers the credential prefix, the exact
+# stand-in values and the alias variable's NAME: none may reach an artifact.
+LEAK_MARKERS: tuple[str, ...] = (SECRET_PATTERN, TEST_TOKEN, mc.TOKEN_ALIAS_ENV_KEY)
 
 
 def _env(**extra: str) -> dict[str, str]:
-    """A parent environment carrying the credential, as a turn's would after forwarding."""
+    """A parent environment carrying the credential under the CLI's own variable."""
     return {"PATH": os.environ["PATH"], mc.TOKEN_ENV_KEY: TEST_TOKEN, **extra}
+
+
+def _alias_env(**extra: str) -> dict[str, str]:
+    """A parent environment as a turn's Bash shell really has it: the CLI variable stripped,
+    the supervisor's alias present (route (a), state/escalations/20260904T214700Z.md)."""
+    return {"PATH": os.environ["PATH"], mc.TOKEN_ALIAS_ENV_KEY: TEST_TOKEN, **extra}
 
 
 def _fake_claude(tmp_path: Path, stdout: str, exit_code: int = 0, sleep: float = 0) -> Path:
@@ -184,6 +193,57 @@ def test_headless_refuses_before_spawning_without_credential(tmp_path: Path) -> 
     with pytest.raises(mc.CallRefused, match="authentication_unavailable"):
         empty.call(_request())
     assert not (tmp_path / "record.json").exists()
+    # An empty alias counts as absent too.
+    empty_alias = mc.HeadlessCliClient(
+        executable=str(script),
+        repository_root=ROOT,
+        environment=_alias_env(**{mc.TOKEN_ALIAS_ENV_KEY: ""}),
+    )
+    assert empty_alias.token_source == "none"
+    with pytest.raises(mc.CallRefused, match="authentication_unavailable"):
+        empty_alias.call(_request())
+    assert not (tmp_path / "record.json").exists()
+
+
+def test_headless_alias_is_mapped_into_the_child_only(tmp_path: Path) -> None:
+    """Route (a) of the human's answer of 2026-09-04T21:47Z: the alias the supervisor exports
+    becomes CLAUDE_CODE_OAUTH_TOKEN in the child, the alias itself is never re-exported, and
+    neither its name nor its value appears in anything the call records."""
+    script = _fake_claude(tmp_path, _success_json())
+    client = mc.HeadlessCliClient(
+        executable=str(script),
+        call_wallclock_seconds=30,
+        repository_root=ROOT,
+        environment=_alias_env(ARC_API_KEY="k", KEEP_ME="yes"),
+    )
+    assert client.token_source == "environment_alias" and client.credential_present
+    assert client.stripped_env_keys == ["ARC_API_KEY"]  # the alias is not listed by name
+    response = client.call(_request())
+    record = json.loads((tmp_path / "record.json").read_text())
+    assert record["env"]["CLAUDE_CODE_OAUTH_TOKEN"] == TEST_TOKEN
+    assert mc.TOKEN_ALIAS_ENV_KEY not in record["env"] and record["env"]["KEEP_ME"] == "yes"
+    recorded = mc.canonical_response_text(response.raw) + json.dumps(dict(response.extra))
+    for marker in LEAK_MARKERS:
+        assert marker not in recorded, marker
+    assert response.raw["token_source"] == "environment_alias"
+    # When both variables are present the CLI's own wins and the alias is still dropped.
+    both = mc.HeadlessCliClient(
+        executable=str(script),
+        repository_root=ROOT,
+        environment=_env(**{mc.TOKEN_ALIAS_ENV_KEY: "sk-ant-oat01-OTHER"}),
+    )
+    assert both.token_source == "environment"
+    both.call(_request(index=2))
+    record = json.loads((tmp_path / "record.json").read_text())
+    assert record["env"]["CLAUDE_CODE_OAUTH_TOKEN"] == TEST_TOKEN
+    assert mc.TOKEN_ALIAS_ENV_KEY not in record["env"]
+    # A refusal message names neither the alias nor a value.
+    refused = mc.HeadlessCliClient(
+        executable=str(script), repository_root=ROOT, environment={"PATH": os.environ["PATH"]}
+    )
+    with pytest.raises(mc.CallRefused) as info:
+        refused.call(_request(index=3))
+    assert mc.TOKEN_ALIAS_ENV_KEY not in str(info.value) and SECRET_PATTERN not in str(info.value)
 
 
 def test_headless_per_request_wallclock_override_tightens_the_call_limit(tmp_path: Path) -> None:
@@ -215,8 +275,9 @@ def test_headless_per_request_wallclock_override_tightens_the_call_limit(tmp_pat
 
 def test_no_run_artifact_carries_the_credential(tmp_path: Path) -> None:
     """The human's test (2026-09-04): a full synthetic game-run through the headless adapter
-    with the credential in the parent environment; no file the run writes may contain a value
-    matching the credential prefix, and the child did receive it."""
+    with the credential in the parent environment under the supervisor's alias (the real
+    deployment shape); no file the run writes may contain the credential prefix, the stand-in
+    value or the alias name, and the child did receive the credential under the CLI's key."""
     from arc_plasticity.core.artifacts import RunArtifactWriter
     from arc_plasticity.core.guards import Deadline
     from arc_plasticity.hypotheses.sandbox import SandboxGuards
@@ -229,8 +290,9 @@ def test_no_run_artifact_carries_the_credential(tmp_path: Path) -> None:
         executable=str(script),
         call_wallclock_seconds=60,
         repository_root=ROOT,
-        environment=_env(ARC_API_KEY="benchmark-key-must-not-leak"),
+        environment=_alias_env(ARC_API_KEY="benchmark-key-must-not-leak"),
     )
+    assert client.token_source == "environment_alias"
     params = trw._params(model_client={"kind": "headless_cli"}, spend_calls_per_run_max=5)
     run_dir = tmp_path / "leak_scan_run"
     with RunArtifactWriter(run_dir, trw.rwm.EXTRA_ARTIFACTS) as writer:
@@ -263,14 +325,20 @@ def test_no_run_artifact_carries_the_credential(tmp_path: Path) -> None:
         writer.finalize()
     record = json.loads((tmp_path / "record.json").read_text())
     assert record["env"]["CLAUDE_CODE_OAUTH_TOKEN"] == TEST_TOKEN
-    assert "ARC_API_KEY" not in record["env"]
+    assert "ARC_API_KEY" not in record["env"] and mc.TOKEN_ALIAS_ENV_KEY not in record["env"]
     assert report.model_calls >= 1 and report.hypotheses_certified >= 1
     files = sorted(p for p in run_dir.rglob("*") if p.is_file())
     assert len(files) > 12 and any(p.name == "model_calls.jsonl" for p in files)
     for path in files:
         text = path.read_bytes().decode("utf-8", errors="replace")
-        assert SECRET_PATTERN not in text, path
-        assert TEST_TOKEN not in text and "benchmark-key-must-not-leak" not in text, path
+        for marker in (*LEAK_MARKERS, "benchmark-key-must-not-leak"):
+            assert marker not in text, (path, marker)
+    rows = [
+        json.loads(line)
+        for line in (run_dir / "model_calls.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+    assert rows and all(r["token_source"] == "environment_alias" for r in rows)
     results = json.loads((run_dir / "results.json").read_text())["results"]
     assert results["model_client_kind"] == "headless_cli"
     assert results["model_wallclock_seconds_total"] > 0
@@ -431,6 +499,24 @@ def test_classify_refusal_and_child_environment() -> None:
     assert mc.classify_refusal(1, ["", None]) is None  # type: ignore[list-item]
     env, stripped = mc.child_environment({"ARC_API_KEY": "k", "X": "1"}, "tok")
     assert env == {"X": "1", "CLAUDE_CODE_OAUTH_TOKEN": "tok"} and stripped == ["ARC_API_KEY"]
+    alias = mc.TOKEN_ALIAS_ENV_KEY
+    # Alias only: mapped to the CLI key, alias dropped and not listed among stripped keys.
+    env, stripped = mc.child_environment({alias: "a", "X": "1"}, None)
+    assert env == {"X": "1", "CLAUDE_CODE_OAUTH_TOKEN": "a"} and stripped == []
+    # Both: the CLI key wins; the alias is still dropped.
+    env, _ = mc.child_environment({alias: "a", "CLAUDE_CODE_OAUTH_TOKEN": "c"}, None)
+    assert env == {"CLAUDE_CODE_OAUTH_TOKEN": "c"}
+    # An empty CLI key falls back to the alias; a file token beats both.
+    env, _ = mc.child_environment({alias: "a", "CLAUDE_CODE_OAUTH_TOKEN": ""}, None)
+    assert env == {"CLAUDE_CODE_OAUTH_TOKEN": "a"}
+    env, _ = mc.child_environment({alias: "a", "CLAUDE_CODE_OAUTH_TOKEN": "c"}, "f")
+    assert env == {"CLAUDE_CODE_OAUTH_TOKEN": "f"}
+    assert mc.token_source_of({}, False) == "none"
+    assert mc.token_source_of({alias: ""}, False) == "none"
+    assert mc.token_source_of({alias: "a"}, False) == "environment_alias"
+    assert mc.token_source_of({alias: "a", "CLAUDE_CODE_OAUTH_TOKEN": "c"}, False) == "environment"
+    assert mc.token_source_of({alias: "a"}, True) == "file"
+    assert set(mc.TOKEN_SOURCES) == {"none", "environment", "environment_alias", "file"}
 
 
 # --------------------------------------------------------------------------- encoding

@@ -402,3 +402,23 @@ Each is [VERIFY-ON-MACHINE]. Bootstrap records the observed value and the date h
    call before any process starts (`CallRefused`, reason `authentication_unavailable`; the
    repeated probe at 21:27:28Z: exit_code -2, 0.0 s, no temporary directory created, no login
    attempted). Item 4 above stands; this extends it.
+   **Extended 2026-09-04T21:53Z (G3.5 close; ledger entry for task G3.5 dated 2026-09-04
+   after 21:53Z in `state/LEDGER.jsonl`) — the alias route authenticates.** The supervisor
+   (`scripts/supervisor.py`, the human's commit d249587) exports the same value under
+   `PLASTICITY_LAB_OAUTH_TOKEN`; the CLI passes that name through to the turn's Bash shell
+   (presence checked by name only), and the adapter places its value under
+   `CLAUDE_CODE_OAUTH_TOKEN` in the child's environment alone. The probe through the adapter
+   from inside a turn (`claude -p --output-format json --model claude-fable-5-1 --effort low
+   --tools "" --permission-prompts none --no-session-persistence`, prompt `ping` on stdin,
+   2.1.260): exit **0**, `is_error: false`, result `pong`, 3.0 s wall-clock, `modelUsage`
+   reporting `claude-fable-5-1`, `usage` `input_tokens 2`, `output_tokens 4`,
+   `cache_creation_input_tokens 4234` (all `ephemeral_1h`), `cache_read_input_tokens 0`,
+   `total_cost_usd 0.0849`, `service_tier standard`. So a tool-free single-turn call carries
+   a fixed overhead of about 4.2 k cache-creation input tokens (the CLI's own system prompt)
+   even for a four-byte prompt, and the reported `total_cost_usd` is the API-price
+   equivalent, not a subscription charge
+   ([code.claude.com/docs/en/headless](https://code.claude.com/docs/en/headless);
+   [code.claude.com/docs/en/costs](https://code.claude.com/docs/en/costs)). Consequence for
+   the G3 cost pre-flight: the per-call floor is ~4.2 k input-side tokens before any history
+   is sent; whether the 1-hour cache is reused across the serial calls of one game-run is
+   measured by the first E300_ref run (`cache_read_input_tokens` per call).

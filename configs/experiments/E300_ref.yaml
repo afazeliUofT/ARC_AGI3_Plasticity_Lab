@@ -18,11 +18,13 @@
 # subprocess per call, fresh session, tools disabled, prompt on stdin, cwd a temporary
 # directory outside the repository, ARC_* stripped from the environment; each call is bounded
 # by call_wallclock_seconds (an internal design choice frozen by the config hash). The
-# credential is CLAUDE_CODE_OAUTH_TOKEN forwarded from the runner's own environment; a call
-# with no such variable is refused before anything is spawned (authentication_unavailable).
-# token_file is a declined route and is refused by the adapter (human's answer 2026-09-04,
-# state/escalations/20260904T211800Z.md). Tests replace the channel with kind recorded (a
-# canned-response file).
+# credential is CLAUDE_CODE_OAUTH_TOKEN in the child only: forwarded from the runner's own
+# environment when present, else mapped from the supervisor's alias PLASTICITY_LAB_OAUTH_TOKEN
+# (Claude Code strips the original from its tool subprocesses; human's answer 2026-09-04,
+# state/escalations/20260904T214700Z.md, route (a)); a call with neither variable is refused
+# before anything is spawned (authentication_unavailable). token_file is a declined route and
+# is refused by the adapter (human's answer 2026-09-04, state/escalations/20260904T211800Z.md).
+# Tests replace the channel with kind recorded (a canned-response file).
 #
 # spend_control (same answer): calls are strictly serial; a run makes at most
 # calls_per_run_max model calls or model_wallclock_per_run_seconds of cumulative nested

@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -340,9 +341,35 @@ def test_verify_on_machine_parsing_counts_only_dated_resolutions() -> None:
     assert unresolved[0].startswith("2.")
 
 
+G0_GRADED_COMMIT = "72edbae"
+# Section 11 item count at HEAD on 2026-09-04 (item 9, the G3.5 headless probe, commit b0442cf).
+SECTION_11_ITEMS_AT_HEAD_2026_09_04 = 9
+
+
 def test_verify_on_machine_check_reads_real_document(prereg: dict[str, Any]) -> None:
-    result = vr.check_verify_on_machine(prereg, ROOT)
-    assert result.observed["items_total"] == vr.threshold(prereg, "verify_on_machine_items_total")
+    """Pins both states of a known discrepancy (human's decision 2026-09-04T21:47Z,
+    state/escalations/20260904T214700Z.md, Ask 2 option (ii); ledger failure kind
+    verifier_regression). The G0 pre-registration locks ``verify_on_machine_items_total`` as an
+    exact count (8) over docs/EVIDENCE_TOOLING.md section 11, an additions-only document; the
+    G3.5 probe observation of commit b0442cf is item 9, so the check no longer passes at HEAD.
+    The G0 verdict stands at its graded commit 72edbae, where the document has exactly the
+    locked count; the pre-registration is write-once and is not amended. Durable rule (CLAUDE.md
+    'Thresholds over append-only documents'): such a threshold is a minimum, evaluated at the
+    graded commit, never an equality at HEAD."""
+    locked = int(vr.threshold(prereg, "verify_on_machine_items_total"))
+    assert locked == 8
+    at_head = vr.check_verify_on_machine(prereg, ROOT)
+    assert at_head.observed["items_total"] >= SECTION_11_ITEMS_AT_HEAD_2026_09_04 > locked
+    assert not at_head.passed  # the documented discrepancy; the referee is told
+    graded = subprocess.run(
+        ["git", "show", f"{G0_GRADED_COMMIT}:docs/EVIDENCE_TOOLING.md"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    total_at_grading, _, _ = vr.parse_verify_on_machine(graded)
+    assert total_at_grading == locked
 
 
 # ------------------------------------------------------------------ licence and report
