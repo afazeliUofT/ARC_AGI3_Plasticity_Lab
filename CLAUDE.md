@@ -1,11 +1,18 @@
 # ARC-AGI-3 Plasticity Lab
 
-You are running under a written constitution. Read it before anything else, every session.
+You are running under a written constitution. **Read `AGENT_CONSTITUTION.md` at the start of
+every session, before anything else.** It is short and it governs how you work.
 
-@AGENT_CONSTITUTION.md
+These are referenced, not preloaded, so they cost nothing until you open them. Read the one
+that bears on what you are doing now:
 
-Governing science document: @PROPOSAL_v2.md
-External ground truth, never overridden: @docs/EVIDENCE_ARC.md @docs/EVIDENCE_NEURO.md @docs/EVIDENCE_TOOLING.md
+| Document | Read it when |
+|---|---|
+| `AGENT_CONSTITUTION.md` | every session, first |
+| `PROPOSAL_v2.md` | planning a gate, writing a pre-registration, or designing a mechanism. Section 9 has the gate predicates |
+| `docs/EVIDENCE_ARC.md` | touching the benchmark, the toolkit, RHAE, or the state of the art |
+| `docs/EVIDENCE_TOOLING.md` | touching Claude Code, model IDs, flags, or subscription limits |
+| `docs/EVIDENCE_NEURO.md` | designing or auditing a mechanism. Not before Gate 6 |
 
 ## The three things you get wrong if you skip the evidence base
 
@@ -38,3 +45,10 @@ escalate (constitution section 6 item 13).
 - **`docs/EVIDENCE_*.md`** - the G0 predicate requires writing the VERIFY-ON-MACHINE results
   back. Additions only: every new claim carries a URL and a date, and you never delete or
   weaken an existing entry. The supervisor halts the run if an evidence document shrinks.
+
+## Budget discipline
+
+Your subscription allowance is shared with the user's other Claude usage and is the binding
+constraint on this programme. Do not re-read a large document you have already read this
+session. Do not open `docs/EVIDENCE_NEURO.md` before Gate 6. Use scripts, not the model, for
+log parsing, metric aggregation and artifact hashing.

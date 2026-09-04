@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T05:55:00Z",
+  "updated_utc": "2026-09-04T06:07:20Z",
   "current_gate": "G0",
-  "gate_status": "in_progress",
+  "gate_status": "blocked",
   "gate_entered_utc": "2026-09-04T05:39:13Z",
   "last_verified_gate": null,
   "last_verified_commit": null,
   "active_task": {
     "id": "G0.1",
     "description": "Complete the G0 exit predicate: lint, type check, tests, determinism, licence, tooling verification",
-    "attempt": 2,
+    "attempt": 3,
     "escalation_level": 7,
     "started_utc": "2026-09-04T05:39:13Z"
   },
-  "blocked_on": "state/ESCALATION.md (turn 2): (1) blockReadsOutsideWorkingDirectories still auto-denies every python/uv/pytest invocation and every git add/commit, so nothing can be verified or committed; (2) hook forbids creating scripts/verify_run.py; (3) hook forbids the append to docs/EVIDENCE_TOOLING.md that the G0 predicate requires. Human must append '## ANSWER' to state/ESCALATION.md.",
-  "next_action": "After the block clears: read the newest file in state/escalations/ for the answers. Run 'git status --porcelain'; if preregistration/G0.yaml, state/PINNED_HASHES.json, state/escalations/ or state files are uncommitted, commit them (message: 'G0.1: pre-registration G0.yaml and turn 1-2 state'). Confirm 'sha256sum preregistration/G0.yaml' still equals c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620 and record it. Run 'python3 scripts/verify_state.py' and 'uv run pytest -q'; record both outputs in the ledger. Then set gate_status to in_progress and start the first G0 item: write configs/nondeterministic_fields.yaml within the categories fixed in preregistration/G0.yaml.",
+  "blocked_on": "state/ESCALATION.md (turn 3): the read block is still enforced for the headless session even though .claude/settings.json now sets blockReadsOutsideWorkingDirectories false ('cat ~/.claude/settings.json' refused with the read-block message). No script, test, uv, or git write can run. Human must append '## ANSWER' to state/ESCALATION.md.",
+  "next_action": "After the block clears: read the newest file in state/escalations/ for the answer. FIRST test execution with 'python3 scripts/verify_state.py' and 'git status --porcelain'; if either is denied, escalate immediately, do not build. If they run: commit anything uncommitted (configs/nondeterministic_fields.yaml, state/PINNED_HASHES.json, state/escalations/, state files; message 'G0.1: nondeterministic_fields.yaml and turn 3 state'). Run 'uv run pytest -q', 'uv run ruff check .', 'uv run mypy'; record outputs. Set gate_status to in_progress. Then write scripts/verify_run.py: loads thresholds ONLY from preregistration/<gate>.yaml, reads configs/nondeterministic_fields.yaml and checks it against the pre-registration's category bounds, and implements the G0 checks (SHA256SUMS, determinism identity plus contrast seed, git clean, licence text, exit codes); add tests/unit/test_verify_run.py; run them.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 01:27; hashes not yet recorded)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11",

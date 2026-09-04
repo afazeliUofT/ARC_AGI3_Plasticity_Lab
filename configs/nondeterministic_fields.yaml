@@ -1,0 +1,55 @@
+# Fields excluded when two seed-fixed runs are compared for byte identity.
+#
+# Governed by preregistration/G0.yaml, determinism_protocol. That file (write-once,
+# SHA-256 c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620) bounds what may
+# appear here: only run identifiers, timestamps, durations, and host or hardware descriptors.
+# Nothing in never_excluded may ever be added to excluded_fields. scripts/verify_run.py reads
+# this file and also checks it against the pre-registration's category bounds; a field here
+# that falls outside those categories fails the gate rather than widening the exclusion.
+#
+# PROPOSAL_v2.md section 9, row G0: results.json and metrics.csv must be byte-identical across
+# two seed-fixed invocations after excluding the fields named here. manifest.json is not
+# compared for identity; it is expected to differ and is checked for completeness instead.
+
+schema_version: 1
+governed_by: preregistration/G0.yaml
+compared_files:
+  - results.json
+  - metrics.csv
+
+# How a name matches. In results.json a name matches a key at any nesting depth. In
+# metrics.csv a name matches a column header; the whole column is dropped before comparison.
+matching: exact_name_any_depth
+
+excluded_fields:
+  run_identifiers:
+    - run_id
+    - guid
+    - session_id
+  timestamps:
+    - created_utc
+    - started_utc
+    - finished_utc
+    - updated_utc
+    - timestamp_utc
+  durations:
+    - wallclock_seconds
+    - elapsed_seconds
+    - duration_seconds
+  host_descriptors:
+    - hostname
+    - hardware
+    - python_executable_path
+    - pid
+
+# Forbidden from exclusion, verbatim from preregistration/G0.yaml
+# determinism_protocol.excluded_field_categories_forbidden. Listed here so the verifier can
+# refuse any future edit that tries to hide nondeterminism in a result field.
+never_excluded:
+  - seed
+  - config_hash
+  - prompt_hash
+  - dependency_lock_hash
+  - git_commit
+  - any metric or result value
+  - action, transition, hypothesis or memory-operation records

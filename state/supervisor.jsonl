@@ -7,3 +7,5 @@
 {"ts":"2026-09-04T05:56:50Z","event":"turn","kind":"ok","returncode":0,"elapsed_s":238,"ledger_grew":true,"committed":false,"no_progress":2,"effort":"high"}
 {"ts":"2026-09-04T05:56:55Z","event":"blocked","reason":"state/ESCALATION.md (turn 2): (1) blockReadsOutsideWorkingDirectories still auto-denies every python/uv/pytest invocation and every git add/commit, so nothing can be verified or committed; (2) hook forbids creating scripts/verify_run.py; (3) hook forbids the append to docs/EVIDENCE_TOOLING.md that the G0 predicate requires. Human must append '## ANSWER' to state/ESCALATION.md."}
 {"ts":"2026-09-04T05:56:55Z","event":"sleep","why":"waiting for a human answer","window":null,"seconds":917,"wake_utc":"2026-09-04T06:12:12Z"}
+{"ts":"2026-09-04T06:08:38Z","event":"rate_limit","window":"five_hour","returncode":0}
+{"ts":"2026-09-04T06:08:38Z","event":"sleep","why":"five_hour limit hit","window":"five_hour","seconds":1832,"wake_utc":"2026-09-04T06:39:10Z"}

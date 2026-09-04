@@ -98,14 +98,29 @@ EFFORT_BY_GATE_STATUS = {
     "failed": "high",
 }
 
+# These are applied ONLY to the error channel, never to the agent's own output.
+# The evidence base documents these very strings, so matching them in stdout
+# classified a successful turn as a rate limit.
 RATE_LIMIT_PAT = re.compile(
-    r"(hit your (session|weekly|usage) limit|rate.?limit(ed)?|429|"
-    r"usage limit reached|quota exceeded)", re.I)
+    r"(you'?ve hit your (session|weekly|usage) limit"
+    r"|usage limit reached"
+    r"|\brate_limit_error\b"
+    r"|\b429\b[^0-9]{0,40}(too many|rate)"
+    r"|(too many requests)[^0-9]{0,40}\b429\b)", re.I)
 AUTH_PAT = re.compile(
-    r"(login expired|please run /login|profile login expired|"
-    r"unauthorized|invalid api key|authentication)", re.I)
+    r"(login expired"
+    r"|please run /login"
+    r"|profile login expired"
+    r"|\bauthentication_error\b"
+    r"|invalid[ _]api[ _]key"
+    r"|\b401\b[^0-9]{0,40}unauthor)", re.I)
 TRANSIENT_PAT = re.compile(
-    r"(\b5[0-9]{2}\b|overloaded|timed? ?out|connection reset|temporarily unavailable)", re.I)
+    r"(\b(500|502|503|504|529)\b[^0-9]{0,40}(error|overload|unavailable|gateway|timeout)"
+    r"|overloaded_error"
+    r"|api_error"
+    r"|connection (reset|refused|aborted)"
+    r"|temporarily unavailable"
+    r"|read timed out)", re.I)
 
 FIVE_HOURS = 5 * 3600
 SEVEN_DAYS = 7 * 24 * 3600
@@ -347,24 +362,44 @@ class Supervisor:
         except subprocess.TimeoutExpired:
             return Outcome("transient", 124, detail="turn exceeded the 3 hour ceiling")
 
-        blob = (r.stdout or "") + "\n" + (r.stderr or "")
-        if r.returncode != 0:
-            append_jsonl(TOOL_ERRORS, {
-                "ts": iso(), "returncode": r.returncode,
-                "stderr": (r.stderr or "")[-4000:], "stdout_tail": (r.stdout or "")[-2000:]})
+        out, err = r.stdout or "", r.stderr or ""
 
-        if r.returncode == 0 and not RATE_LIMIT_PAT.search(blob):
-            return Outcome("ok", 0, r.stdout or "", r.stderr or "")
-        if RATE_LIMIT_PAT.search(blob):
-            window = "seven_day" if re.search(r"week", blob, re.I) else "five_hour"
-            m = re.search(r"resets?[_ ]?at\D{0,10}(\d{10})", blob)
-            return Outcome("rate_limit", r.returncode, r.stdout or "", r.stderr or "",
+        # Prefer the structured signal. --output-format json emits one JSON
+        # object; is_error distinguishes a failed turn from a successful one
+        # whose text happens to mention failure.
+        payload = None
+        try:
+            lines = [ln for ln in out.strip().splitlines() if ln.strip().startswith("{")]
+            if lines:
+                payload = json.loads(lines[-1])
+        except Exception:
+            payload = None
+        is_err = bool(payload.get("is_error")) if isinstance(payload, dict) else False
+
+        if r.returncode == 0 and not is_err:
+            return Outcome("ok", 0, out, err)
+
+        append_jsonl(TOOL_ERRORS, {
+            "ts": iso(), "returncode": r.returncode, "is_error": is_err,
+            "stderr": err[-4000:], "stdout_tail": out[-2000:]})
+
+        # Classify from the ERROR CHANNEL ONLY. The agent's own prose lives in
+        # stdout and documents these very strings; matching it there is what
+        # produced a false rate limit at 21% real usage.
+        text = err
+        if isinstance(payload, dict) and is_err:
+            text += "\n" + str(payload.get("result") or payload.get("error") or "")
+
+        if RATE_LIMIT_PAT.search(text):
+            window = "seven_day" if re.search(r"week", text, re.I) else "five_hour"
+            m = re.search(r"resets?[_ ]?at\D{0,10}(\d{10})", text)
+            return Outcome("rate_limit", r.returncode, out, err,
                            resets_at=int(m.group(1)) if m else None, window=window)
-        if AUTH_PAT.search(blob):
-            return Outcome("auth", r.returncode, r.stdout or "", r.stderr or "")
-        if TRANSIENT_PAT.search(blob):
-            return Outcome("transient", r.returncode, r.stdout or "", r.stderr or "")
-        return Outcome("unknown", r.returncode, r.stdout or "", r.stderr or "")
+        if AUTH_PAT.search(text):
+            return Outcome("auth", r.returncode, out, err)
+        if TRANSIENT_PAT.search(text):
+            return Outcome("transient", r.returncode, out, err)
+        return Outcome("unknown", r.returncode, out, err)
 
     # -- sleeping -----------------------------------------------------------
     def sleep_until(self, target_epoch: int | None, window: str | None, why: str) -> None:
@@ -432,7 +467,7 @@ class Supervisor:
                 self.log("blocked", reason=why)
                 if self.once or self.dry_run:
                     return 0
-                self.sleep_until(None, None, "waiting for a human answer")
+                self.sleep_until(int(time.time()) + 600, None, "waiting for a human answer")
                 continue
 
             breach = self.budget_breach(bud)
