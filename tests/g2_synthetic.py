@@ -86,26 +86,60 @@ def _sha256(path: Path) -> str:
 def _events(
     game_id: str, participant: str, counts: list[int], start_ts: int
 ) -> list[dict[str, Any]]:
+    """A recording in the released shape: opening frame, one record per action, scorecard.
+
+    Record 1 is the play-start RESET frame (action id 0, not an issued action); the scorecard's
+    ``actions_by_level`` carries the toolkit's ``(level, actions_so_far)`` pairs so path P2
+    agrees with the step log by construction.
+    """
     cumulative: list[int] = []
     total = 0
     for c in counts:
         total += c
         cumulative.append(total)
+    guid = f"{participant}-{game_id}-{start_ts}"
     events: list[dict[str, Any]] = []
-    for i in range(1, total + 1):
+    for i in range(total + 1):
         completed = sum(1 for c in cumulative if c <= i)
         events.append(
             {
                 "timestamp": start_ts + i,
                 "participant_id": participant,
-                "guid": f"{participant}-{game_id}-{start_ts}",
+                "guid": guid,
                 "data": {
                     "game_id": game_id,
                     "levels_completed": completed,
-                    "action_input": {"id": 1},
+                    "state": "WIN" if completed == len(counts) and counts else "NOT_FINISHED",
+                    "action_input": {"id": 0 if i == 0 else 1},
                 },
             }
         )
+    events.append(
+        {
+            "timestamp": start_ts + total + 1,
+            "data": {
+                "won": int(bool(counts)),
+                "played": 1,
+                "total_actions": total,
+                "levels_completed": len(counts),
+                "cards": {
+                    game_id: {
+                        "game_id": game_id,
+                        "total_plays": 1,
+                        "guids": [guid],
+                        "levels_completed": [len(counts)],
+                        "states": ["WIN" if counts else "NOT_FINISHED"],
+                        "actions": [total],
+                        "actions_by_level": [
+                            [[level, c] for level, c in enumerate(cumulative, start=1)]
+                        ],
+                        "resets": [0],
+                        "total_actions": total,
+                    }
+                },
+            },
+        }
+    )
     return events
 
 

@@ -14,10 +14,19 @@ The rules implemented here are the ones hash-locked in the G2 pre-registration
   counts; ``N = 0`` yields ``None`` (no derived baseline).
 
 Everything in the derivation is integer arithmetic on the input records; no seed, no float, no
-environment. The loader (``ingest_directory``) reads the documented ARC-AGI-3 recorder format,
-one JSON event per line, and records the SHA-256 of every file it reads. Files that do not
-parse are counted, never silently skipped, because the pre-registration thresholds parse
-failures at zero.
+environment. The loader (``ingest_directory``) reads the released ARC-AGI-3 recorder format
+(``<guid>.recording.jsonl``, one JSON record per line): record 1 is the frame returned by the
+play-start RESET, every later record is the frame returned by one issued action (RESET
+included), and the last record is the toolkit scorecard (``data.cards``), whose
+``actions_by_level`` pairs are the dataset-supplied per-level counts (pre-registration
+``ingestion_paths`` path P2). Path P1, the step-log attribution above, feeds the derivation;
+P2 is parsed alongside and the per-level agreement is exposed on every session so the run can
+log it. The opening record is not an issued action because that is how the toolkit counts
+(``arc_agi.scorecard.Card``: ``inc_play_count`` opens a play at 0 actions; ``inc_action_count``
+and ``inc_reset_count`` each add 1), and the pre-registered attribution rule states that it
+applies the toolkit's accounting. The loader records the SHA-256 of every file it reads. Files
+that do not parse are counted, never silently skipped, because the pre-registration thresholds
+parse failures at zero.
 """
 
 from __future__ import annotations
@@ -50,6 +59,22 @@ GAME_ID_KEYS: tuple[str, ...] = ("game_id", "environment", "game")
 LEVELS_COMPLETED_KEYS: tuple[str, ...] = ("levels_completed",)
 #: Candidate field names for a per-event timestamp used to order a participant's sessions.
 TIMESTAMP_KEYS: tuple[str, ...] = ("timestamp", "ts", "time")
+#: A record whose ``data`` carries this key is the recorder's closing toolkit scorecard.
+SCORECARD_KEY = "cards"
+#: The mapping in the scorecard that holds one entry per play, keyed as in ``arc_agi``.
+SCORECARD_PLAY_FIELDS: tuple[str, ...] = (
+    "guids",
+    "levels_completed",
+    "states",
+    "actions",
+    "actions_by_level",
+    "resets",
+)
+#: The opening-record rule, recorded verbatim in every session's field mapping.
+OPENING_RECORD_RULE = (
+    "record 1 is the frame returned by the play-start RESET and is not an issued action; "
+    "record k >= 2 is issued action k - 1, RESET included"
+)
 
 
 class HumanReplayError(ValueError):
@@ -64,6 +89,11 @@ class ReplaySession:
     completion of that level in the session, in occurrence order. Path P1 (step logs) yields at
     most one count per level, by construction of ``attribute_levels``; path P2 (per-level counts
     supplied by the dataset) may carry several, and the per-participant best takes the minimum.
+
+    ``dataset_completion_counts`` holds the P2 counts when the dataset supplies them (the
+    toolkit scorecard's ``actions_by_level``), ``None`` when it does not; ``completion_counts``
+    is what the derivation consumes. ``dataset_actions_total`` is the scorecard's own action
+    count for the play, recorded next to ``actions_total`` and never used in a derived number.
     """
 
     game_id: str
@@ -73,6 +103,19 @@ class ReplaySession:
     source_file: str = ""
     actions_total: int = 0
     session_id: str | None = None
+    dataset_completion_counts: Mapping[int, tuple[int, ...]] | None = None
+    dataset_actions_total: int | None = None
+
+    @property
+    def dataset_agreement(self) -> dict[int, bool] | None:
+        """Per level, whether P1 and P2 agree; ``None`` when the dataset supplied no P2."""
+        if self.dataset_completion_counts is None:
+            return None
+        levels = set(self.completion_counts) | set(self.dataset_completion_counts)
+        return {
+            level: self.completion_counts.get(level) == self.dataset_completion_counts.get(level)
+            for level in sorted(levels)
+        }
 
     def __post_init__(self) -> None:
         if not isinstance(self.game_id, str) or not self.game_id:
@@ -87,13 +130,21 @@ class ReplaySession:
             raise HumanReplayError(f"actions_total must be an int, got {self.actions_total!r}")
         if self.actions_total < 0:
             raise HumanReplayError(f"actions_total must be >= 0, got {self.actions_total}")
-        for level, counts in self.completion_counts.items():
-            if isinstance(level, bool) or not isinstance(level, int) or level < 1:
-                raise HumanReplayError(f"level keys must be positive ints, got {level!r}")
-            if not isinstance(counts, tuple):
-                raise HumanReplayError(f"level {level}: counts must be a tuple, got {counts!r}")
-            for count in counts:
-                _require_positive_int(count, f"level {level} completion count")
+        _validate_completion_counts(self.completion_counts, "completion_counts")
+        if self.dataset_completion_counts is not None:
+            _validate_completion_counts(self.dataset_completion_counts, "dataset_completion_counts")
+        if self.dataset_actions_total is not None:
+            _require_non_negative_int(self.dataset_actions_total, "dataset_actions_total")
+
+
+def _validate_completion_counts(counts_by_level: Mapping[int, tuple[int, ...]], what: str) -> None:
+    for level, counts in counts_by_level.items():
+        if isinstance(level, bool) or not isinstance(level, int) or level < 1:
+            raise HumanReplayError(f"{what}: level keys must be positive ints, got {level!r}")
+        if not isinstance(counts, tuple):
+            raise HumanReplayError(f"{what}: level {level}: counts must be a tuple, got {counts!r}")
+        for count in counts:
+            _require_positive_int(count, f"{what}: level {level} completion count")
 
 
 @dataclass(frozen=True)
@@ -201,6 +252,30 @@ def attribute_levels(levels_completed_after_each_action: Sequence[int]) -> list[
     for index in completion_index:
         attributed.append(index - previous)
         previous = index
+    return attributed
+
+
+def attribute_levels_from_pairs(pairs: Sequence[Sequence[Any]]) -> list[int]:
+    """The same first-reach attribution from ``(levels_completed, actions_so_far)`` pairs.
+
+    This is the shape of the toolkit scorecard's ``actions_by_level`` (path P2): one pair
+    appended whenever ``levels_completed`` changed, carrying the toolkit's action count at that
+    point. Level ``l`` is completed at the count of the first pair reaching at least ``l``; a
+    later drop and re-completion never change it, exactly as in ``attribute_levels``.
+    """
+    completion_count: list[int] = []
+    for position, pair in enumerate(pairs, start=1):
+        if not isinstance(pair, Sequence) or isinstance(pair, str) or len(pair) != 2:
+            raise HumanReplayError(f"actions_by_level entry {position} is not a pair: {pair!r}")
+        completed = _require_non_negative_int(pair[0], f"actions_by_level entry {position} level")
+        count = _require_non_negative_int(pair[1], f"actions_by_level entry {position} actions")
+        while len(completion_count) < completed:
+            completion_count.append(count)
+    attributed: list[int] = []
+    previous = 0
+    for count in completion_count:
+        attributed.append(count - previous)
+        previous = count
     return attributed
 
 
@@ -345,50 +420,165 @@ def _lookup(event: Mapping[str, Any], keys: Sequence[str]) -> tuple[str | None, 
     return None, None
 
 
+def _is_scorecard(event: Mapping[str, Any]) -> bool:
+    data = event.get("data")
+    return isinstance(data, Mapping) and SCORECARD_KEY in data
+
+
+def split_records(
+    events: Sequence[Mapping[str, Any]], source_file: str = ""
+) -> tuple[list[Mapping[str, Any]], Mapping[str, Any] | None]:
+    """``(frame records, scorecard data or None)``; a scorecard may only be the last record."""
+    where = source_file or "step log"
+    if not events:
+        raise HumanReplayError(f"{where}: no records")
+    scorecards = [
+        position for position, event in enumerate(events, start=1) if _is_scorecard(event)
+    ]
+    if len(scorecards) > 1:
+        raise HumanReplayError(f"{where}: {len(scorecards)} scorecard records, expected at most 1")
+    if scorecards and scorecards[0] != len(events):
+        raise HumanReplayError(
+            f"{where}: scorecard record at position {scorecards[0]} of {len(events)}, not last"
+        )
+    if scorecards:
+        return list(events[:-1]), events[-1]["data"]
+    return list(events), None
+
+
+def parse_scorecard(
+    scorecard: Mapping[str, Any], game_id: str, session_id: str | None, source_file: str = ""
+) -> tuple[Mapping[int, tuple[int, ...]] | None, int | None, dict[str, str | None]]:
+    """Path P2 from the toolkit scorecard: the play's ``actions_by_level`` and ``actions``.
+
+    The card is ``cards[game_id]`` when present, else the only card. The play is the last one
+    whose ``guids`` entry equals ``session_id`` (``arc_agi.scorecard.Card.index_of_guid``), else
+    the last play. Returns ``(completion counts or None, actions or None, field mapping)``;
+    a card without ``actions_by_level`` yields ``None`` counts (P2 unavailable), an empty list
+    yields ``{}`` (P2 says nothing was completed).
+    """
+    where = source_file or "step log"
+    cards = scorecard.get(SCORECARD_KEY)
+    if not isinstance(cards, Mapping) or not cards:
+        raise HumanReplayError(f"{where}: scorecard has no cards")
+    if game_id in cards:
+        card_key, card = f"data.cards[{game_id!r}]", cards[game_id]
+    elif len(cards) == 1:
+        ((only_key, card),) = cards.items()
+        card_key = f"data.cards[{only_key!r}]"
+    else:
+        raise HumanReplayError(
+            f"{where}: scorecard has {len(cards)} cards and none for {game_id!r}"
+        )
+    if not isinstance(card, Mapping):
+        raise HumanReplayError(f"{where}: {card_key} is not a mapping")
+    plays: dict[str, list[Any]] = {}
+    for name in SCORECARD_PLAY_FIELDS:
+        value = card.get(name)
+        if value is not None and not isinstance(value, list):
+            raise HumanReplayError(f"{where}: {card_key}.{name} is not a list")
+        if value is not None:
+            plays[name] = value
+    guids = plays.get("guids")
+    if guids and session_id is not None and session_id in guids:
+        play = len(guids) - 1 - guids[::-1].index(session_id)
+        play_source = "guid"
+    else:
+        lengths = [len(v) for v in plays.values()]
+        if not lengths or max(lengths) == 0:
+            raise HumanReplayError(f"{where}: {card_key} records no play")
+        play, play_source = max(lengths) - 1, "last_play"
+    by_level = plays.get("actions_by_level")
+    counts: Mapping[int, tuple[int, ...]] | None
+    if by_level is None:
+        counts = None
+    else:
+        pairs = by_level[play] if play < len(by_level) else []
+        if not isinstance(pairs, list):
+            raise HumanReplayError(f"{where}: {card_key}.actions_by_level[{play}] is not a list")
+        counts = {
+            level: (count,)
+            for level, count in enumerate(attribute_levels_from_pairs(pairs), start=1)
+        }
+    actions = plays.get("actions")
+    actions_total: int | None = None
+    if actions is not None and play < len(actions):
+        actions_total = _require_non_negative_int(actions[play], f"{card_key}.actions[{play}]")
+    mapping: dict[str, str | None] = {
+        "scorecard": "data.cards",
+        "scorecard_play": f"{card_key} play {play} by {play_source}",
+        "dataset_completion_counts": (
+            None if by_level is None else f"{card_key}.actions_by_level[{play}]"
+        ),
+        "dataset_actions_total": None if actions_total is None else f"{card_key}.actions[{play}]",
+    }
+    return counts, actions_total, mapping
+
+
 def parse_step_log_events(
     events: Sequence[Mapping[str, Any]], source_file: str = ""
 ) -> tuple[ReplaySession, dict[str, str | None]]:
-    """One session from the documented recorder format: one event per action.
+    """One session from the released recorder format (module docstring).
 
-    Every event is one issued action (RESET included), matching ``level_attribution_rule``.
-    ``session_index`` is set to 1 here; ``ingest_directory`` re-numbers sessions per
-    participant and game by timestamp when every event carries one, else by file order.
+    Record 1 is the opening frame (not an issued action); records 2..n are one issued action
+    each, RESET included; a trailing scorecard record supplies path P2. ``session_index`` is
+    set to 1 here; ``ingest_directory`` re-numbers sessions per participant and game by
+    timestamp when every event carries one, else by file order.
     """
-    if not events:
-        raise HumanReplayError(f"{source_file or 'step log'}: no events")
-    first = events[0]
+    where = source_file or "step log"
+    frames, scorecard = split_records(events, source_file)
+    if not frames:
+        raise HumanReplayError(f"{where}: no frame records before the scorecard")
+    first = frames[0]
     game_key, game_id = _lookup(first, GAME_ID_KEYS)
     if game_key is None or not isinstance(game_id, str) or not game_id:
-        raise HumanReplayError(f"{source_file or 'step log'}: first event has no game_id")
+        raise HumanReplayError(f"{where}: first record has no game_id")
     participant_key, participant = _lookup(first, PARTICIPANT_KEYS)
     session_key, session_id = _lookup(first, SESSION_ID_KEYS)
     timestamp_key, _ = _lookup(first, TIMESTAMP_KEYS)
     levels_key: str | None = None
-    levels_after: list[int] = []
-    for position, event in enumerate(events, start=1):
+    levels_seen: list[int] = []
+    for position, event in enumerate(frames, start=1):
         key, value = _lookup(event, LEVELS_COMPLETED_KEYS)
         if key is None:
-            raise HumanReplayError(
-                f"{source_file or 'step log'}: event {position} has no levels_completed"
-            )
+            raise HumanReplayError(f"{where}: record {position} has no levels_completed")
         levels_key = levels_key or key
-        levels_after.append(
-            _require_non_negative_int(value, f"levels_completed at event {position}")
+        levels_seen.append(
+            _require_non_negative_int(value, f"levels_completed at record {position}")
         )
         _, this_game = _lookup(event, GAME_ID_KEYS)
         if this_game != game_id:
             raise HumanReplayError(
-                f"{source_file or 'step log'}: event {position} game_id {this_game!r} != {game_id!r}"
+                f"{where}: record {position} game_id {this_game!r} != {game_id!r}"
             )
-    attributed = attribute_levels(levels_after)
+    if levels_seen[0] != 0:
+        raise HumanReplayError(
+            f"{where}: opening record reports levels_completed {levels_seen[0]} before any action"
+        )
+    attributed = attribute_levels(levels_seen[1:])
+    session_text = None if session_id is None else str(session_id)
+    dataset_counts: Mapping[int, tuple[int, ...]] | None = None
+    dataset_actions: int | None = None
+    scorecard_mapping: dict[str, str | None] = {
+        "scorecard": None,
+        "scorecard_play": None,
+        "dataset_completion_counts": None,
+        "dataset_actions_total": None,
+    }
+    if scorecard is not None:
+        dataset_counts, dataset_actions, scorecard_mapping = parse_scorecard(
+            scorecard, game_id, session_text, source_file
+        )
     session = ReplaySession(
         game_id=game_id,
         participant=None if participant is None else str(participant),
         session_index=1,
         completion_counts={level: (count,) for level, count in enumerate(attributed, start=1)},
         source_file=source_file,
-        actions_total=len(events),
-        session_id=None if session_id is None else str(session_id),
+        actions_total=len(frames) - 1,
+        session_id=session_text,
+        dataset_completion_counts=dataset_counts,
+        dataset_actions_total=dataset_actions,
     )
     mapping: dict[str, str | None] = {
         "game_id": game_key,
@@ -396,6 +586,8 @@ def parse_step_log_events(
         "session_id": session_key,
         "timestamp": timestamp_key,
         "levels_completed": levels_key,
+        "opening_record": OPENING_RECORD_RULE,
+        **scorecard_mapping,
     }
     return session, mapping
 
@@ -506,6 +698,8 @@ def ingest_directory(raw_dir: Path) -> IngestionResult:
             source_file=session.source_file,
             actions_total=session.actions_total,
             session_id=session.session_id,
+            dataset_completion_counts=session.dataset_completion_counts,
+            dataset_actions_total=session.dataset_actions_total,
         )
         new_mapping = dict(mapping)
         new_mapping["session_order_source"] = source

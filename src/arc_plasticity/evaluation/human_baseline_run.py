@@ -360,6 +360,8 @@ def match_sessions(
                 source_file=session.source_file,
                 actions_total=session.actions_total,
                 session_id=session.session_id,
+                dataset_completion_counts=session.dataset_completion_counts,
+                dataset_actions_total=session.dataset_actions_total,
             )
         )
     return matched, {s: sorted(v) for s, v in sorted(seen.items())}, dict(sorted(unmatched.items()))

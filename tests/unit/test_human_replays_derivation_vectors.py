@@ -200,8 +200,15 @@ def _event(
 
 
 def _write_log(path: Path, events: list[dict[str, Any]]) -> None:
+    """Write ``events`` as issued actions, preceded by the opening (play-start) frame.
+
+    The opening frame copies the first action's identity fields with ``levels_completed`` 0,
+    matching the released recorder format where record 1 is not an issued action.
+    """
+    opening = json.loads(json.dumps(events[0]))
+    opening["data"]["levels_completed"] = 0
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(e) + "\n" for e in events), encoding="utf-8")
+    path.write_text("".join(json.dumps(e) + "\n" for e in [opening, *events]), encoding="utf-8")
 
 
 def _synthetic_raw(root: Path) -> Path:
