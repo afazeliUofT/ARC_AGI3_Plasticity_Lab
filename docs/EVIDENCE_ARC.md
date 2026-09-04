@@ -91,6 +91,25 @@ Full IDs take the form `<stem>-<version hash>`, for example `ls20-016295f7601e`.
 hashes differ between mirrors — treat the four-character stem as stable and the hash as
 mutable.** Only three games (`ls20`, `ft09`, `vc33`) are reachable with an anonymous key.
 
+**Substrate observation, this project, 2026-09-04 (G1, experiment E100, artifact-cited per
+C4).** Under a uniform-random policy drawn from `available_actions` (RESET excluded, ACTION6
+coordinates uniform on 0–63) with 5,000 actions allowed per game, **every one of the 25 public
+games ends in `GAME_OVER`; none reaches `WIN`**, in each of three offline runs
+(`artifacts/E100_arc_interface/`, run directories and `SHA256SUMS` digests:
+`20260904T074939Z_seed12345_8383cad8` `6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190`;
+`20260904T074956Z_seed12345_9e2317b0` `1cdca620dfd0fd26553233a206ea50609cd2d122251d59bf92bbaa89614849dd`;
+`20260904T075000Z_seed12346_b801dd9b` `c8503416d8fd7e8103862a0a68e1299530991cbbab7d09459506cfc396c3d928`;
+verifier report `state/verify_G1.json`
+`19870d345c1ae2296eaf64c34b01035d1f173af411d684ff7d256b811a0a57c1`). Per-game step counts are
+in each run's `results.json` (`results.games[].steps_taken`, covered by the `SHA256SUMS` above):
+the longest game lasts 526 actions at policy seed 12345 and 742 at seed 12346, so the 5,000
+budget never binds; ten games stop at round counts (30, 42, 50, 100, 200, 300), consistent with
+per-game action caps ending the game rather than a random death. One level was completed in
+all 75 game-runs: `ft09` at seed 12346 (`levels_completed` 1 of `win_levels` 6, then `GAME_OVER`
+at step 742). Random play therefore carries no information about difficulty, and the human
+baselines of §1.4 remain the first real performance reference. Source: this repository at
+commit `b69a19a` (local; no URL — project-produced numbers cite artifacts, not sources).
+
 ### 1.2 Action space — eight commands
 
 | Command | Semantics | Parameters |
@@ -256,6 +275,22 @@ offline."* The engine is pure Python plus numpy and targets a floor of 1,000 FPS
 A third mode, `OperationMode.COMPETITION`, is required to appear on the unverified
 leaderboard; it forces API-only interaction, scoring across all environments, and a single
 interaction per environment.
+
+**Two offline-mode observations, this project, 2026-09-04 (G1 C5 self-review, artifact-cited
+per C4).** (a) **The `seed` argument to `Arcade.make()` has no observable effect on any of the
+25 public games** (`arc-agi` 0.9.9, `arcengine` 0.9.3, from `uv.lock`): replaying every
+recorded action list of run `20260904T074939Z_seed12345_8383cad8` (made with seed 12345) under
+`make(..., seed=7)` reproduces the recorded `final_frame_sha256` for 25 of 25 games with the
+same final state (ledger `decision` entry, kind `c5_self_review`, 2026-09-04). The public games
+are pure functions of the action sequence; a replay-identity check therefore certifies
+action-log fidelity, not seed handling, and any experiment that wants environment variation must
+obtain it from the policy or from the game set, never from this seed. (b) **All-in throughput,
+including `reset()` and digest time, is about half the step-only figure.** From the three run
+manifests (`manifest.wallclock_seconds`, covered by the `SHA256SUMS` digests in §1.1) against
+`throughput.json` step counts: 3,306 steps in 4.20 s and 4.25 s, 3,820 steps in 4.64 s, giving
+777–823 frames per second all-in versus 1,577–1,640 step-only; both are above the ~1,000 FPS
+engine target's practical floor of 500 the G1 pre-registration adopted, and below the ~2,000 FPS
+figure quoted above. Source: this repository at commit `b69a19a`.
 
 ### 3.2 Open source status
 
