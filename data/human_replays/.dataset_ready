@@ -1,0 +1,7 @@
+{
+  "replay_units": 342,
+  "raw": "data/human_replays/raw",
+  "extras": "data/human_replays/extras",
+  "retrieval_utc": "2026-09-04",
+  "retrieval_method": "human_placed"
+}

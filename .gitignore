@@ -21,3 +21,4 @@ state/PINNED_HASHES.json
 state/supervisor.out
 state/supervisor.jsonl
 state/counters.json
+data/human_replays/extras/
