@@ -81,6 +81,27 @@ def environment_score(levels: Sequence[LevelOutcome], *, game_id: str | None = N
     return float(calculator.to_score().score)
 
 
+def level_scores(levels: Sequence[LevelOutcome], *, game_id: str | None = None) -> list[float]:
+    """Per-level percents as the toolkit calculator computed them, in level order.
+
+    Added for G3 (``metrics.csv`` ``rhae_level_score``). It builds the calculator exactly as
+    :func:`environment_score` does and reads the calculator's own ``level_scores`` list, so
+    the per-level number is the toolkit's, not a re-derivation.
+    """
+    calculator = EnvironmentScoreCalculator(id=game_id)
+    for position, level in enumerate(levels):
+        if not isinstance(level, LevelOutcome):
+            raise RhaeInputError(f"level {position} is not a LevelOutcome: {level!r}")
+        calculator.add_level(
+            level_index=position + 1,
+            completed=level.completed,
+            actions_taken=level.agent_actions,
+            baseline_actions=level.human_baseline_actions,
+            game_id=game_id,
+        )
+    return [float(s) for s in calculator.level_scores]
+
+
 def total_score(env_scores: Sequence[float]) -> float:
     """Plain (unweighted) mean of per-environment percent scores.
 
