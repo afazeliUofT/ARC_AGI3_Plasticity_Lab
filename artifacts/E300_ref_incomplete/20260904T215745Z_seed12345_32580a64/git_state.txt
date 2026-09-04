@@ -1,0 +1,4 @@
+commit 3f68598356e6b2b58176958f3d88ca8f0017fd07
+dirty true
+status --porcelain:
+ M state/PROJECT_STATE.json
