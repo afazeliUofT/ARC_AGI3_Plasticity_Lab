@@ -2,7 +2,7 @@
   "gate": "G0",
   "preregistration_path": "preregistration/G0.yaml",
   "preregistration_sha256": "c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620",
-  "passed": false,
+  "passed": true,
   "skipped": [],
   "checks": [
     {
@@ -182,15 +182,10 @@
     },
     {
       "name": "git_status_clean",
-      "passed": false,
+      "passed": true,
       "observed": {
-        "lines": 4,
-        "sample": [
-          " M docs/EVIDENCE_TOOLING.md",
-          " M state/BUDGET.json",
-          " M state/PROJECT_STATE.json",
-          "?? tests/integration/test_control_surface_hook.py"
-        ],
+        "lines": 0,
+        "sample": [],
         "exit": 0
       },
       "threshold": {
@@ -234,7 +229,7 @@
       "passed": true,
       "observed": 0,
       "threshold": 0,
-      "detail": "Checked 43 packages in 0.30ms\n",
+      "detail": "Checked 43 packages in 0.28ms\n",
       "skipped": false,
       "evidence": []
     },
@@ -243,7 +238,7 @@
       "passed": true,
       "observed": 0,
       "threshold": 0,
-      "detail": "........................................................................ [ 80%]\n.................                                                        [100%]\n89 passed in 1.51s\n",
+      "detail": "........................................................................ [ 80%]\n.................                                                        [100%]\n89 passed in 1.40s\n",
       "skipped": false,
       "evidence": []
     },
