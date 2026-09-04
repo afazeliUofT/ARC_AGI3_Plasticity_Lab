@@ -13,7 +13,7 @@
     "escalation_level": 7,
     "started_utc": "2026-09-04T05:39:13Z"
   },
-  "blocked_on": "state/ESCALATION.md (turn 3): the read block is still enforced for the headless session even though .claude/settings.json now sets blockReadsOutsideWorkingDirectories false ('cat ~/.claude/settings.json' refused with the read-block message). No script, test, uv, or git write can run. Human must append '## ANSWER' to state/ESCALATION.md.",
+  "blocked_on": null,
   "next_action": "After the block clears: read the newest file in state/escalations/ for the answer. FIRST test execution with 'python3 scripts/verify_state.py' and 'git status --porcelain'; if either is denied, escalate immediately, do not build. If they run: commit anything uncommitted (configs/nondeterministic_fields.yaml, state/PINNED_HASHES.json, state/escalations/, state files; message 'G0.1: nondeterministic_fields.yaml and turn 3 state'). Run 'uv run pytest -q', 'uv run ruff check .', 'uv run mypy'; record outputs. Set gate_status to in_progress. Then write scripts/verify_run.py: loads thresholds ONLY from preregistration/<gate>.yaml, reads configs/nondeterministic_fields.yaml and checks it against the pre-registration's category bounds, and implements the G0 checks (SHA256SUMS, determinism identity plus contrast seed, git clean, licence text, exit codes); add tests/unit/test_verify_run.py; run them.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 01:27; hashes not yet recorded)",
