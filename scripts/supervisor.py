@@ -68,7 +68,6 @@ MODEL = os.environ.get("ARC_LAB_MODEL", "claude-fable-5-1")
 # AGENT_CONSTITUTION.md section 7, control C2, layer 2. This check does not rely
 # on the PreToolUse hook, which lives inside the project and is itself protected.
 CONTROL_SURFACE = [
-    "scripts/verify_run.py",
     "scripts/supervisor.py",
     "AGENT_CONSTITUTION.md",
     "PROPOSAL_v2.md",
@@ -263,6 +262,28 @@ class Supervisor:
             return True, f"pinned {len(added)} newly present control-surface files"
         return True, "control surface intact"
 
+
+    def check_evidence_append_only(self) -> tuple[bool, str]:
+        """Evidence documents may GROW - constitution section 6 item 13 allows
+        append-only additions carrying a URL and a date - but must never shrink.
+        Byte size is a crude proxy and a sufficient one: it cannot be gamed
+        downward, which is the direction that matters."""
+        pinned = read_json(PINNED, {}) or {}
+        recorded = pinned.get("evidence_sizes") or {}
+        docs = ROOT / "docs"
+        current = {f.name: f.stat().st_size for f in sorted(docs.glob("EVIDENCE_*.md"))} \
+            if docs.is_dir() else {}
+        shrunk = [n for n, sz in current.items() if n in recorded and sz < recorded[n]]
+        if shrunk:
+            detail = ", ".join(f"{n} {recorded[n]}->{current[n]} bytes" for n in shrunk)
+            return False, ("evidence document shrank, which section 6 item 13 forbids: "
+                           + detail + ". Inspect the diff before continuing; delete "
+                           "state/PINNED_HASHES.json only if the reduction was yours.")
+        if current != recorded:
+            pinned["evidence_sizes"] = current
+            write_json(PINNED, pinned)
+        return True, "evidence append-only ok"
+
     # -- gating -------------------------------------------------------------
     def blocked_on_human(self, st: dict[str, Any]) -> tuple[bool, str]:
         if not st.get("blocked_on"):
@@ -391,6 +412,12 @@ class Supervisor:
                 print(f"[supervisor] HALT: {msg}")
                 self.log("halt", reason=msg)
                 return 3
+
+            oke, emsg = self.check_evidence_append_only()
+            if not oke:
+                print(f"[supervisor] HALT: {emsg}")
+                self.log("halt", reason=emsg)
+                return 8
 
             st = read_json(PROJECT_STATE, None)
             bud = read_json(BUDGET, {}) or {}

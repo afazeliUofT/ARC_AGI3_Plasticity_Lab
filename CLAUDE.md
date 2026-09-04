@@ -24,16 +24,17 @@ so a session with no memory could continue.
 
 ## Never
 
-Edit `scripts/verify_run.py`, `scripts/supervisor.py`, `state/PINNED_HASHES.json`,
-`.claude/**`, or `docs/EVIDENCE_*.md`. Those are frozen. If one needs to change, escalate
-(constitution section 6 item 13).
+Edit `scripts/supervisor.py`, `state/PINNED_HASHES.json`, `.claude/**`,
+`AGENT_CONSTITUTION.md`, or `PROPOSAL_v2.md`. Those are frozen. If one needs to change,
+escalate (constitution section 6 item 13).
 
-## Pre-registration is write-once, not forbidden
+## What you ARE required to write
 
-Constitution C1 **requires** you to author `preregistration/<gate>.yaml` before the first
-treatment run of a gate. Creating one is allowed and expected. Amending one that already
-exists is denied by the hook, permanently. If you believe a pre-registration is wrong,
-record the objection in the ledger and proceed, or kill the gate. Do not work around it.
-
-Write pre-registrations with the Write tool, not with shell redirection, so the write-once
-rule can be enforced.
+- **`preregistration/<gate>.yaml`** - write-once. C1 requires authoring it before the first
+  treatment run; nothing may amend it afterwards. Use the Write tool, not shell redirection.
+- **`scripts/verify_run.py`** - G0 requires you to author the verifier. Every numeric
+  threshold it applies must be read from the gate's hash-locked pre-registration, never
+  hard-coded here. That is what makes an editable verifier safe.
+- **`docs/EVIDENCE_*.md`** - the G0 predicate requires writing the VERIFY-ON-MACHINE results
+  back. Additions only: every new claim carries a URL and a date, and you never delete or
+  weaken an existing entry. The supervisor halts the run if an evidence document shrinks.

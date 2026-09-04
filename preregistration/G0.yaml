@@ -1,0 +1,142 @@
+# Pre-registration: Gate G0 (Bootstrap)
+#
+# Authored by the autonomous agent under AGENT_CONSTITUTION.md section 7, control C1,
+# before any G0 result artifact exists. This file is write-once: the PreToolUse hook denies
+# every later modification. If a threshold below turns out to be wrong, the objection goes
+# in state/LEDGER.jsonl and the gate proceeds or is killed; this file is never edited.
+#
+# Source of the predicate: PROPOSAL_v2.md section 9, row G0. This file restates every item
+# as a machine-checkable threshold and records the reasoning that fixed each value, as C2
+# requires. scripts/verify_run.py reads thresholds from here, never from the prose.
+
+schema_version: 1
+gate: G0
+title: Bootstrap - repository, environment, lockfile, lint, type check, tests, seeds, smoke experiment
+authored_utc: "2026-09-04T06:05:00Z"
+authored_at_commit: da4ef0c
+author: agent (Claude Fable 5.1, turn 2)
+governing_predicate: PROPOSAL_v2.md section 9, row G0
+mechanism: none
+mandated_baselines: []
+revision_limit: 0          # G0 is infrastructure; there is no mechanism to revise.
+
+hypothesis: >
+  G0 carries no scientific hypothesis. The claim under test is that the laboratory is
+  reproducible and self-checking: a seed-fixed experiment run through the single canonical
+  entry point produces result artifacts that are byte-identical across invocations once the
+  pre-declared nondeterministic fields are excluded, every artifact is hash-verifiable, and the
+  code base passes its lint, type and unit checks from a clean clone.
+
+primary_metric:
+  name: determinism_identity
+  definition: >
+    1.0 if results.json and metrics.csv from two invocations of the smoke experiment with the
+    same seed are byte-identical after excluding exactly the fields listed in
+    configs/nondeterministic_fields.yaml; 0.0 otherwise.
+  pass_value: 1.0
+  reasoning: >
+    Whole-artifact identity is the wrong test because manifest.json necessarily differs (run
+    id, timestamps, wall-clock, host). Identity of the two result files after a declared,
+    bounded exclusion list is the strongest test that is actually achievable, and any value
+    below 1.0 means the run is not reproducible.
+
+smoke_experiment:
+  experiment_id: E000_bootstrap
+  config: configs/experiments/E000_bootstrap.yaml
+  entry_point: "uv run python scripts/run_experiment.py --config configs/experiments/E000_bootstrap.yaml"
+  network_calls_allowed: 0
+  model_calls_allowed: 0
+  wallclock_limit_seconds: 600
+  reasoning: >
+    The smoke experiment exercises the canonical entry point, the artifact contract and the
+    provenance layer, and nothing else. It uses no network and no model so that a G0 failure
+    can only be a laboratory failure, never a benchmark or a model failure. The ARC interface
+    is G1's job. 600 s is generous for a run that steps a trivial environment; the constitution
+    forbids running any experiment with no declared limit.
+
+determinism_protocol:
+  fixed_seed: 12345
+  identical_invocations: 2
+  contrast_seed: 12346
+  contrast_invocations: 1
+  require_contrast_differs: true
+  excluded_fields_source: configs/nondeterministic_fields.yaml
+  excluded_field_categories_allowed:
+    - run identifiers (run_id, guid)
+    - timestamps (created_utc, started_utc, finished_utc, updated_utc)
+    - durations (wallclock_seconds, elapsed_seconds)
+    - host and hardware descriptors (hostname, hardware, python_executable_path)
+  excluded_field_categories_forbidden:
+    - any metric or result value
+    - seed
+    - config hash, prompt hash, dependency-lock hash, git commit
+    - action, transition, hypothesis or memory-operation records
+  reasoning: >
+    Two same-seed runs must match; that is the predicate. The contrast run with a different
+    seed must NOT match, otherwise identity could be achieved trivially by an implementation
+    that ignores its seed. The exclusion list is bounded by category so it cannot later be
+    widened to hide nondeterminism in a result field; the forbidden list names the fields that
+    matter most. This mirrors the G4 generator determinism rule (same seed twice identical,
+    different seeds different) so the two gates use one standard.
+
+thresholds:
+  uv_sync_exit_code: 0
+  pytest_exit_code: 0
+  pytest_min_tests_collected: 1
+  ruff_exit_code: 0
+  mypy_exit_code: 0
+  determinism_identity_min: 1.0
+  contrast_seed_must_differ: true
+  sha256sums_verified_fraction_min: 1.0
+  sha256sums_must_list_every_artifact_file: true
+  git_status_porcelain_lines_max: 0
+  licence_required_text: "MIT No Attribution"
+  verify_on_machine_items_total: 8
+  verify_on_machine_items_resolved_min: 8
+
+threshold_reasoning:
+  uv_sync_exit_code: "From a clean clone, the lockfile must resolve. Any non-zero is a broken environment."
+  pytest_exit_code: "All tests pass. Skips are permitted only when marked with a reason string."
+  pytest_min_tests_collected: >
+    The predicate floor is one test. Five smoke tests already exist, so the floor is not
+    binding; it is kept at the predicate's value because test count is not a quality measure
+    and raising it would reward padding.
+  ruff_exit_code: "Lint is part of the definition of a competently built substrate."
+  mypy_exit_code: "Typed code is a constitution section 4 requirement; mypy at exit 0 is the mechanical form."
+  determinism_identity_min: "See primary_metric.reasoning; anything below 1.0 is a failure."
+  sha256sums_verified_fraction_min: >
+    Every hash verifies. A single mismatch means an artifact was rewritten after hashing,
+    which the raw-evidence rule forbids.
+  sha256sums_must_list_every_artifact_file: >
+    An unlisted file is an artifact with no integrity record. The referee needs to certify
+    files, not the graded party's own list, so the list must be complete.
+  git_status_porcelain_lines_max: "The commit submitted for verdict describes the tree exactly. Untracked or modified files mean it does not."
+  licence_required_text: "MIT-0 from the first commit (PROPOSAL_v2 section 0.2, EVIDENCE_ARC section 4). Plain MIT would fail the ARC prize terms."
+  verify_on_machine_items_resolved_min: >
+    All eight open items in docs/EVIDENCE_TOOLING.md section 11 must be resolved. Resolved
+    means an observed value with a date and the command or artifact path that produced it, OR
+    an explicit statement that the value could not be observed and why, with a date. A
+    hypothesis left standing is not a resolution. The record is append-only.
+
+verification:
+  verifier: scripts/verify_run.py
+  verifier_reads_thresholds_from: preregistration/G0.yaml
+  artifacts_root: artifacts/E000_bootstrap/
+  referee_inspects:
+    - artifacts/E000_bootstrap/<run_id>/SHA256SUMS against recomputed sha256sum of every file
+    - configs/nondeterministic_fields.yaml against excluded_field_categories_allowed above
+    - docs/EVIDENCE_TOOLING.md section 11 entries for dates and sources
+  cited_evidence_required: every number in the verdict cites an artifact path and its SHA-256
+
+kill_rule: >
+  Not applicable. G0 has no mechanism to kill. A failed predicate item is fixed and the gate
+  re-run under the escalation ladder (constitution section 5). A failure that can only be fixed
+  by changing the control surface is escalated under section 6 item 13.
+
+known_conflicts_at_authoring:
+  - >
+    The PreToolUse hook freezes docs/EVIDENCE_*.md and scripts/verify_run.py for every write,
+    yet the G0 predicate requires writing resolved values back into docs/EVIDENCE_TOOLING.md
+    and constitution section 7 says the agent authors verify_run.py. Both are raised in the
+    turn-2 escalation. This pre-registration does not weaken either requirement; it records
+    that the mechanism for satisfying them is a human decision.

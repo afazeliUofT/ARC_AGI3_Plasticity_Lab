@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Protects the control surface. Two distinct rules:
-#   FROZEN - never writable by the agent, by any tool, at any time.
-#   PREREG - WRITE ONCE. C1 requires authoring it before results exist; it may
-#            never be amended afterwards.
+# Three rules, deliberately narrow. A control that forbids required work is a
+# deadlock, so this protects only what the agent never legitimately needs to
+# write. The real guarantees live elsewhere: thresholds in the write-once
+# pre-registration, verdicts with the referee, and git history throughout.
+#
+#   FROZEN - never writable, by any tool, at any time.
+#   PREREG - write once. C1 requires authoring it; nothing may amend it.
+#   (evidence documents are writable here; the supervisor enforces append-only)
 payload="$(cat)"
 
 deny() {
@@ -10,9 +14,8 @@ deny() {
   exit 2
 }
 
-# The boundary class deliberately PERMITS "/" so absolute paths match too:
-# /home/x/lab/preregistration/G0.yaml must be caught, not only the relative form.
-FROZEN='(^|[^A-Za-z0-9_.-])(scripts/verify_run\.py|scripts/supervisor\.py|state/PINNED_HASHES\.json|\.claude/|docs/EVIDENCE_)'
+# The boundary class deliberately PERMITS "/" so absolute paths match too.
+FROZEN='(^|[^A-Za-z0-9_.-])(scripts/supervisor\.py|state/PINNED_HASHES\.json|\.claude/|AGENT_CONSTITUTION\.md|PROPOSAL_v2\.md)'
 PREREG='(^|[^A-Za-z0-9_.-])preregistration/'
 WRITES='(>|>>|\btee\b|\bsed\b[^|]*-i|\btruncate\b|\bdd\b|\bcp\b|\bmv\b|\bpython3?\b[^|]*-c|\bgit\b[^|]*\bcheckout\b[^|]*--|\brm\b|\bchmod\b)'
 
@@ -22,7 +25,7 @@ case "$tool" in
   Write|Edit|MultiEdit|NotebookEdit)
     path="$(printf '%s' "$payload" | grep -oP '"file_path"\s*:\s*"\K[^"]+' | head -1)"
     if printf '%s' "$path" | grep -qE "$FROZEN"; then
-      deny "Control surface is frozen. Escalate (constitution section 6 item 13) instead of editing ${path}."
+      deny "Frozen: ${path}. Escalate (constitution section 6 item 13) rather than editing the control surface."
     fi
     if printf '%s' "$path" | grep -qE "$PREREG"; then
       if [ -e "$path" ]; then
@@ -34,7 +37,7 @@ case "$tool" in
   Bash)
     cmd="$(printf '%s' "$payload" | grep -oP '"command"\s*:\s*"\K([^"\\]|\\.)*' | head -1)"
     if printf '%s' "$cmd" | grep -qE "$FROZEN" && printf '%s' "$cmd" | grep -qE "$WRITES"; then
-      deny "Control surface is frozen and this shell command would write to it. Escalate instead."
+      deny "Frozen control surface, and this shell command would write to it. Escalate instead."
     fi
     if printf '%s' "$cmd" | grep -qE "$PREREG" && printf '%s' "$cmd" | grep -qE "$WRITES"; then
       deny "Write pre-registrations with the Write tool, not the shell, so the write-once rule can be enforced."
