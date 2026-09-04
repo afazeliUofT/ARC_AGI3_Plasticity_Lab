@@ -359,8 +359,12 @@ class Supervisor:
         env.setdefault("CLAUDE_PROJECT_DIR", str(ROOT))
 
         try:
+            # start_new_session detaches the child into its own session, so a
+            # SIGHUP aimed at the launching terminal cannot reach it. Without
+            # this, closing the window killed turns mid-flight with rc 129:
+            # nohup protects the supervisor, not the process it spawns.
             r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
-                               timeout=3 * 3600, env=env)
+                               timeout=3 * 3600, env=env, start_new_session=True)
         except subprocess.TimeoutExpired:
             return Outcome("transient", 124, detail="turn exceeded the 3 hour ceiling")
 
@@ -524,7 +528,14 @@ class Supervisor:
             # Did anything actually happen? A turn that produced only prose made no progress.
             grew = ledger_len() > before_ledger
             committed = head_commit() != before_commit
-            progressed = grew and committed
+            # A commit IS progress, with or without a ledger entry. Requiring
+            # both meant an interrupted turn that had already committed real
+            # work counted as thrashing, and three of those dispatch a
+            # retrospective while five halt the run.
+            progressed = grew or committed
+            if committed and not grew:
+                self.log("ledger_missing",
+                         note="turn committed but appended no ledger entry")
 
             st = read_json(PROJECT_STATE, st) or st
             if progressed:
