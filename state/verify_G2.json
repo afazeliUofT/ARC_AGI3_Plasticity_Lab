@@ -1,0 +1,773 @@
+{
+  "gate": "G2",
+  "preregistration_path": "preregistration/G2.yaml",
+  "preregistration_sha256": "f6539aa1a1ddfad220651050d88f7d73e8a7fe3d0455318f65266117720b7344",
+  "passed": true,
+  "skipped": [],
+  "checks": [
+    {
+      "name": "public_level_count",
+      "passed": true,
+      "observed": {
+        "games": 25,
+        "levels_sum": 183,
+        "per_game": {
+          "ar25": 8,
+          "bp35": 9,
+          "cd82": 6,
+          "cn04": 6,
+          "dc22": 6,
+          "ft09": 6,
+          "g50t": 7,
+          "ka59": 7,
+          "lf52": 10,
+          "lp85": 8,
+          "ls20": 7,
+          "m0r0": 6,
+          "r11l": 6,
+          "re86": 8,
+          "s5i5": 8,
+          "sb26": 8,
+          "sc25": 6,
+          "sk48": 8,
+          "sp80": 6,
+          "su15": 9,
+          "tn36": 7,
+          "tr87": 6,
+          "tu93": 9,
+          "vc33": 7,
+          "wa30": 9
+        },
+        "problems": []
+      },
+      "threshold": {
+        "public_games_total": 25,
+        "public_levels_total": 183,
+        "metadata_baseline_levels_must_equal_public_levels_total": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "experiments/environment_cache_manifest.json",
+        "environment_files"
+      ]
+    },
+    {
+      "name": "rhae_synthetic_vectors",
+      "passed": true,
+      "observed": {
+        "cases": 8,
+        "failing": 0,
+        "tags_seen": [
+          "cap_1_15",
+          "completion_cap",
+          "level_weighting",
+          "parity",
+          "plain_mean_over_environments",
+          "superseded_form_discriminator",
+          "zero_completion"
+        ],
+        "delegates": true,
+        "per_case": [
+          {
+            "id": "C1_parity",
+            "ok": true,
+            "expected": [
+              100.0,
+              100.0
+            ],
+            "got": [
+              100.0,
+              100.0
+            ]
+          },
+          {
+            "id": "C2_cap_then_completion_cap",
+            "ok": true,
+            "expected": [
+              100.0,
+              100.0
+            ],
+            "got": [
+              100.0,
+              100.0
+            ]
+          },
+          {
+            "id": "C3_cap_discriminator",
+            "ok": true,
+            "expected": [
+              55.0,
+              55.0
+            ],
+            "got": [
+              55.0,
+              55.0
+            ]
+          },
+          {
+            "id": "C4_square_inside_discriminator",
+            "ok": true,
+            "expected": [
+              53.416666666666664,
+              53.416666666666664
+            ],
+            "got": [
+              53.416666666666664,
+              53.416666666666664
+            ]
+          },
+          {
+            "id": "C5_three_way_discriminator",
+            "ok": true,
+            "expected": [
+              55.0,
+              55.0
+            ],
+            "got": [
+              55.0,
+              55.0
+            ]
+          },
+          {
+            "id": "C6_level_weighting",
+            "ok": true,
+            "expected": [
+              62.5,
+              62.5
+            ],
+            "got": [
+              62.5,
+              62.5
+            ]
+          },
+          {
+            "id": "C7_completion_cap_binding",
+            "ok": true,
+            "expected": [
+              50.0,
+              50.0
+            ],
+            "got": [
+              50.0,
+              50.0
+            ]
+          },
+          {
+            "id": "C8_plain_mean_over_environments",
+            "ok": true,
+            "expected": [
+              100.0,
+              0.0,
+              50.0
+            ],
+            "got": [
+              100.0,
+              0.0,
+              50.0
+            ]
+          }
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "rhae_synthetic_cases_min": 6,
+        "rhae_synthetic_cases_max": 8,
+        "rhae_synthetic_abs_tolerance": 1e-09,
+        "rhae_synthetic_required_tags": [
+          "cap_1_15",
+          "level_weighting",
+          "completion_cap",
+          "superseded_form_discriminator",
+          "plain_mean_over_environments"
+        ],
+        "rhae_synthetic_all_cases_must_pass": true,
+        "rhae_adapter_must_delegate_to_toolkit": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "src/arc_plasticity/evaluation/rhae.py",
+        "preregistration"
+      ]
+    },
+    {
+      "name": "baseline_derivation_vectors",
+      "passed": true,
+      "observed": {
+        "cases": 9,
+        "failing": 0,
+        "per_case": [
+          {
+            "id": "D1_single_value",
+            "ok": true,
+            "expected": 5,
+            "got": 5
+          },
+          {
+            "id": "D2_odd_count_median",
+            "ok": true,
+            "expected": 7,
+            "got": 7
+          },
+          {
+            "id": "D3_even_count_upper_median",
+            "ok": true,
+            "expected": 8,
+            "got": 8
+          },
+          {
+            "id": "D4_even_count_unsorted_input",
+            "ok": true,
+            "expected": 6,
+            "got": 6
+          },
+          {
+            "id": "D5_best_within_first_session",
+            "ok": true,
+            "expected": 7,
+            "got": 7
+          },
+          {
+            "id": "D6_second_session_excluded",
+            "ok": true,
+            "expected": 8,
+            "got": 8
+          },
+          {
+            "id": "D6b_second_session_excluded_changes_answer",
+            "ok": true,
+            "expected": 8,
+            "got": 8
+          },
+          {
+            "id": "D7_no_completion_not_derived",
+            "ok": true,
+            "expected": null,
+            "got": null
+          },
+          {
+            "id": "D8_step_log_attribution",
+            "ok": true,
+            "expected": [
+              3,
+              3,
+              4
+            ],
+            "got": [
+              3,
+              3,
+              4
+            ]
+          }
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "derivation_vectors_min": 6,
+        "derivation_vectors_all_must_pass": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "src/arc_plasticity/evaluation/human_replays.py",
+        "preregistration"
+      ]
+    },
+    {
+      "name": "dataset_manifest",
+      "passed": true,
+      "observed": {
+        "manifest": "experiments/human_replays_manifest.json",
+        "raw_dir": "data/human_replays/raw",
+        "committed": true,
+        "files": 342,
+        "drift": [],
+        "provenance": {
+          "source_url": "https://drive.google.com/drive/folders/1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy?usp=sharing",
+          "retrieval_utc": "2026-09-04T14:59:05Z",
+          "retrieval_method": "human_placed",
+          "revision": "dub.link/vfwCqvb -> Drive folder; Google Drive export drive-download-20260904T145905Z-1-001..003.zip; no ETag"
+        },
+        "problems": []
+      },
+      "threshold": {
+        "dataset_manifest_required_fields": [
+          "source_url",
+          "retrieval_utc",
+          "retrieval_method",
+          "files"
+        ],
+        "dataset_manifest_min_files": 1,
+        "dataset_manifest_drift_files_max": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "experiments/human_replays_manifest.json",
+        "data/human_replays/raw"
+      ]
+    },
+    {
+      "name": "run_artifact_completeness",
+      "passed": true,
+      "observed": {
+        "runs": 2,
+        "problems": []
+      },
+      "threshold": {
+        "files": [
+          "manifest.json",
+          "resolved_config.yaml",
+          "results.json",
+          "metrics.csv",
+          "environment_results.csv",
+          "transitions.jsonl",
+          "hypotheses.jsonl",
+          "memory_operations.jsonl",
+          "stdout.log",
+          "stderr.log",
+          "git_state.txt",
+          "environment_info.json",
+          "SHA256SUMS",
+          "human_baselines.json",
+          "replay_ingestion_log.jsonl",
+          "input_manifest.json",
+          "g1_termination_vs_budget.json"
+        ],
+        "manifest_keys": [
+          "experiment_id",
+          "run_id",
+          "timestamp_utc",
+          "git_commit",
+          "git_dirty",
+          "python_version",
+          "dependency_lock_hash",
+          "config_hash",
+          "environment_generator_version",
+          "seed",
+          "model_identifier",
+          "prompt_hash",
+          "action_budget",
+          "simulation_budget",
+          "token_budget",
+          "persistent_state_size_cap",
+          "hardware",
+          "wallclock_limit_seconds",
+          "completion_status"
+        ]
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0"
+      ]
+    },
+    {
+      "name": "sha256sums_verify",
+      "passed": true,
+      "observed": {
+        "listed": 32,
+        "verified": 32,
+        "fraction": 1.0,
+        "problems": []
+      },
+      "threshold": {
+        "fraction_min": 1.0,
+        "must_list_every_file": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/SHA256SUMS",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/SHA256SUMS"
+      ]
+    },
+    {
+      "name": "offline_run",
+      "passed": true,
+      "observed": {
+        "runs": {
+          "20260904T154531Z_seed12345_2599f0a4": {
+            "network_calls_allowed": 0,
+            "network_attempts": 0,
+            "model_calls_allowed": 0,
+            "model_calls": 0,
+            "operation": "offline_local_files",
+            "network_guard": "NetworkGuard"
+          },
+          "20260904T154718Z_seed12345_bff74ab0": {
+            "network_calls_allowed": 0,
+            "network_attempts": 0,
+            "model_calls_allowed": 0,
+            "model_calls": 0,
+            "operation": "offline_local_files",
+            "network_guard": "NetworkGuard"
+          }
+        },
+        "problems": []
+      },
+      "threshold": {
+        "network_calls_allowed": 0,
+        "network_attempts_max": 0,
+        "model_calls_allowed": 0,
+        "operation": "offline_local_files",
+        "network_guard": "NetworkGuard"
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/manifest.json",
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/results.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/manifest.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/results.json"
+      ]
+    },
+    {
+      "name": "replay_ingestion",
+      "passed": true,
+      "observed": {
+        "runs": {
+          "20260904T154531Z_seed12345_2599f0a4": {
+            "replay_units_ingested": 342,
+            "replay_parse_failures": 0,
+            "participant_ids_available": false,
+            "session_order_source": "file_order",
+            "dataset_manifest_sha256": "08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79",
+            "input_manifest_equals_dataset_manifest": true,
+            "raw_files_read": 342
+          },
+          "20260904T154718Z_seed12345_bff74ab0": {
+            "replay_units_ingested": 342,
+            "replay_parse_failures": 0,
+            "participant_ids_available": false,
+            "session_order_source": "file_order",
+            "dataset_manifest_sha256": "08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79",
+            "input_manifest_equals_dataset_manifest": true,
+            "raw_files_read": 342
+          }
+        },
+        "dataset_manifest_sha256": "08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79",
+        "problems": []
+      },
+      "threshold": {
+        "replay_units_min": 342,
+        "replay_parse_failures_max": 0,
+        "input_manifest_must_equal_dataset_manifest": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/results.json",
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/input_manifest.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/results.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/input_manifest.json",
+        "experiments/human_replays_manifest.json"
+      ]
+    },
+    {
+      "name": "human_baseline_coverage",
+      "passed": true,
+      "observed": {
+        "runs": {
+          "20260904T154531Z_seed12345_2599f0a4": {
+            "games": 25,
+            "levels": 183,
+            "derived_levels": 183,
+            "coverage": 1.0,
+            "reported_coverage": 1.0,
+            "reported_derived_levels": 183,
+            "exact_agreement_fraction": 0.9289617486338798,
+            "reported_exact_agreement_fraction": 0.9289617486338798,
+            "median_abs_relative_difference": 0.0
+          },
+          "20260904T154718Z_seed12345_bff74ab0": {
+            "games": 25,
+            "levels": 183,
+            "derived_levels": 183,
+            "coverage": 1.0,
+            "reported_coverage": 1.0,
+            "reported_derived_levels": 183,
+            "exact_agreement_fraction": 0.9289617486338798,
+            "reported_exact_agreement_fraction": 0.9289617486338798,
+            "median_abs_relative_difference": 0.0
+          }
+        },
+        "problems": []
+      },
+      "threshold": {
+        "human_baseline_level_coverage_min": 0.8,
+        "public_levels_total": 183,
+        "public_games_total": 25,
+        "derived_baselines_positive_integers": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/results.json",
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/human_baselines.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/results.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/human_baselines.json"
+      ]
+    },
+    {
+      "name": "exclusion_nesting",
+      "passed": true,
+      "observed": {
+        "hits": {
+          "20260904T154531Z_seed12345_2599f0a4": [
+            {
+              "key": "created_utc",
+              "depth": 1,
+              "container": false,
+              "file": "results.json"
+            },
+            {
+              "key": "run_id",
+              "depth": 1,
+              "container": false,
+              "file": "results.json"
+            },
+            {
+              "key": "wallclock_seconds",
+              "depth": 1,
+              "container": false,
+              "file": "results.json"
+            }
+          ],
+          "20260904T154718Z_seed12345_bff74ab0": [
+            {
+              "key": "created_utc",
+              "depth": 1,
+              "container": false,
+              "file": "results.json"
+            },
+            {
+              "key": "run_id",
+              "depth": 1,
+              "container": false,
+              "file": "results.json"
+            },
+            {
+              "key": "wallclock_seconds",
+              "depth": 1,
+              "container": false,
+              "file": "results.json"
+            }
+          ]
+        },
+        "excluded_fields": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "excluded_key_max_depth": 1,
+        "excluded_key_container_values_allowed": false,
+        "files": [
+          "results.json",
+          "human_baselines.json"
+        ]
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/results.json",
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/human_baselines.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/results.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/human_baselines.json"
+      ]
+    },
+    {
+      "name": "nondeterministic_fields_within_bounds",
+      "passed": true,
+      "observed": {
+        "excluded_names": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "allowed_categories": [
+          "run identifiers (run_id, guid)",
+          "timestamps (created_utc, started_utc, finished_utc, updated_utc)",
+          "durations (wallclock_seconds, elapsed_seconds)",
+          "host and hardware descriptors (hostname, hardware, python_executable_path)"
+        ],
+        "forbidden": [
+          "action",
+          "action,_transition,_hypothesis_or_memory_operation_records",
+          "any_metric_or_result_value",
+          "config_hash",
+          "dependency_lock_hash",
+          "git_commit",
+          "hypothesis_or_memory_operation_records",
+          "prompt_hash",
+          "seed",
+          "transition"
+        ],
+        "bounds_source": {
+          "preregistration": "preregistration/G0.yaml",
+          "sha256": "c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620"
+        }
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "configs/nondeterministic_fields.yaml",
+        "preregistration"
+      ]
+    },
+    {
+      "name": "determinism_identity",
+      "passed": true,
+      "observed": {
+        "identity": 1.0,
+        "fixed_seed_runs": [
+          "20260904T154531Z_seed12345_2599f0a4",
+          "20260904T154718Z_seed12345_bff74ab0"
+        ],
+        "other_seed_runs": [],
+        "compared_files": [
+          "results.json",
+          "metrics.csv",
+          "human_baselines.json"
+        ],
+        "excluded_fields": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "identity_min": 1.0,
+        "fixed_seed": 12345,
+        "identical_invocations": 2,
+        "contrast_runs_required": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/results.json",
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/metrics.csv",
+        "artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/human_baselines.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/results.json",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/metrics.csv",
+        "artifacts/E020_human_baselines/20260904T154718Z_seed12345_bff74ab0/human_baselines.json"
+      ]
+    },
+    {
+      "name": "git_status_clean",
+      "passed": true,
+      "observed": {
+        "lines": 0,
+        "sample": [],
+        "exit": 0
+      },
+      "threshold": {
+        "lines_max": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "licence_text",
+      "passed": true,
+      "observed": "MIT No Attribution",
+      "threshold": "MIT No Attribution",
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "uv_sync_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "Checked 43 packages in 0.24ms\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "pytest_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": ".................................s...................................... [ 26%]\n........................................................................ [ 53%]\n........................................................................ [ 80%]\n...................................s...............                      [100%]\n265 passed, 2 skipped in 14.54s\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "pytest_min_tests_collected",
+      "passed": true,
+      "observed": 265,
+      "threshold": 1,
+      "detail": "",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "ruff_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "All checks passed!\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "mypy_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "Success: no issues found in 22 source files\n",
+      "skipped": false,
+      "evidence": []
+    }
+  ]
+}
