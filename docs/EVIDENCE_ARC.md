@@ -168,6 +168,46 @@ Efficiency statistics derive from 1,614 level completions across 340 sessions.
 These replays are of the public set only. They are legitimate as **human-efficiency reference
 data** and as imitation material; they are not an evaluation signal.
 
+**Resolved download location, this project, 2026-09-04 (G2, resolves §6 item 6).** The
+[human dataset blog](https://arcprize.org/blog/arc-agi-3-human-dataset) links only the
+shortener `https://dub.link/vfwCqvb`, which resolves to the Google Drive folder
+[`1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy`](https://drive.google.com/drive/folders/1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy).
+The shortener answers HTTP 429 then 403 to a non-browser fetch, so the files were placed by the
+human (`retrieval_method human_placed`, `retrieval_utc 2026-09-04T14:59:05Z`, Google Drive export
+`drive-download-20260904T145905Z-1-001..003.zip`, no ETag) under `data/human_replays/raw/`, which
+is gitignored. Inventory: `experiments/human_replays_manifest.json` (sha256
+`08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79`, generated
+2026-09-04T15:36:01Z): **342 recordings, 7,179,719,072 bytes (6.69 GiB), 0 parse failures,
+`participant_ids_available false`**, every file digested. The graded ingestion run
+`artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/` (`SHA256SUMS`
+`5a7c569312f9a43240680b724a0ccb7453cc6f5da48082c0e5bde68bbc1b8fac`) records in `results.json`
+(`20c8437952a5a1154191b6e0573b6d74c07c1c55ce00dcb831c6300fcaaf1aea`): `replay_units_ingested 342`,
+`replay_parse_failures 0`, `replay_units_matched 342`, `replay_units_unmatched 0`, 25 games
+matched by stem to the cached `environment_files/`.
+
+**Recorder format as released (same run, `input_manifest.json`
+`71aa97fb82869a874f671981896ba949d665639861856c3ac6d30c7d86c7a1bc` and
+`replay_ingestion_log.jsonl` `3572a5bfe9336b1a`…, 342 lines, `field_mapping` per file).** One
+session per file, `raw/arc_agi_3_public_demo_human_testing/<stem>/<uuid>.recording.jsonl`, one
+JSON object `{timestamp, data}` per line. Frame records carry `data.action_input`, `frame`,
+`state`, `levels_completed`, `win_levels`, `guid`, `full_reset`, `available_actions` and
+`game_id`; the closing record is the toolkit scorecard (`data.cards[<game_id>]` with
+`actions`, `actions_by_level`, `total_plays`). **No participant identity exists anywhere in the
+release**, so a "participant" is a session; the only other released file,
+`extras/testing_feedback_ratings.csv`, keys on the recording uuid. 23 recordings (cn04 12,
+tr87 4, m0r0 3, dc22 2, lf52 2) use an older format with string action ids. Opening-frame
+accounting, fixed by the toolkit source rather than the data: **record 1 is the play-start
+frame, not an issued action**; record k ≥ 2 is issued action k−1; level l is completed at the
+first record with `levels_completed ≥ l`; the per-level count is the difference of successive
+completion indices. Basis: `arc_agi.scorecard.Card` in `arc-agi` 0.9.9 (`scorecard.py` sha256
+`1cc830e48008bec60b8a98ae14d3e9312e8408f102a9878bad42744aa9e489b7`). Under this rule the step-log
+attribution equals the scorecard's own `actions_by_level` pairs per level in every recording that
+carries them (`input_manifest.json` `dataset_agreement_summary`: 342 files, 324 all levels agree
+of which 24 have no completion in either path, 16 have a card without the key, 2 lp85 cards are
+ragged with fewer pair lists than plays, 1617 levels agree, 9 disagree, all 9 in those 2 ragged
+cards and confirmed equal by hand). Verdict: `docs/decisions/G2_VERDICT.md` sha256
+`8f4e980c65be78a41f3495b5271130fd72bc52aa9c2fb0c61c12a1d7d97c57e7`, GO at commit `9e66b0d`.
+
 ---
 
 ## 2. Scoring: RHAE
@@ -218,6 +258,37 @@ scores `(10/100)² = 1%`.
 Secondary quantities reported alongside RHAE: levels completed, environments cleared, total
 actions, and USD cost. The leaderboard's x-axis is cost, and *"Only systems which required
 less than $10,000 to run are shown."*
+
+**Reproduction of the official human baselines from the released replays, this project,
+2026-09-04 (G2, artifact-cited per C4).** Applying the documented rule (upper median of the
+per-participant best first-session action count per level, sorted value at 1-based index
+⌊N/2⌋+1, one session per participant because no identity is released, §1.4) to all 342
+recordings, run `artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4/`
+(`SHA256SUMS` `5a7c569312f9a43240680b724a0ccb7453cc6f5da48082c0e5bde68bbc1b8fac`;
+`results.json` `20c8437952a5a1154191b6e0573b6d74c07c1c55ce00dcb831c6300fcaaf1aea`;
+`human_baselines.json` `1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185`;
+`metrics.csv` `2686a8eb65954cbab04c41f9f0fa55e70c754e0a93a8a3114bb19150ee90db63`) derives a
+value for **183 of 183 public levels** (`human_baseline_level_coverage 1.0`) and reproduces the
+official `metadata.json` `baseline_actions` **exactly on 170 of 183 levels**
+(`exact_agreement_fraction 0.9289617486338798`, `median_abs_relative_difference 0.0`). The 13
+disagreeing levels all lie in two games; the other 23 games agree on every level:
+
+| Game | Levels | Derived (this project) | Official `metadata.json` |
+|---|---|---|---|
+| lp85 (`305b61c3`) | 1, 2, 3, 4, 5, 7, 8 of 8 | 18, 39, 43, 23, 39, 57, 131 | 17, 38, 31, 16, 41, 26, 159 |
+| vc33 (`5430563c`) | 1, 3, 4, 5, 6, 7 of 7 | 13, 119, 50, 120, 39, 155 | 7, 44, 61, 131, 34, 152 |
+
+The differences are not an accounting offset (official minus derived across lp85 levels 1–8 is
+−1, −1, −12, −7, +2, 0, −31, +28), and for vc33 level 3 the official 44 is not among the eight
+released level-3 values, so no order statistic of the release yields it. The released population
+for lp85 is also not the study's: 54 sessions recorded over two months (2025-12-03 to
+2026-01-30) against 10–15 sessions inside a 1–5 day window for every other game. The referee's
+independent parser reproduced all 183 derived values from the raw bytes. **Operational rule from
+G2 onward (`preregistration/G2.yaml` `canonical_scoring_baseline`):** every RHAE computation
+uses the official `metadata.json` value as *h*, delegated to `arc_agi.scorecard`; the derived
+table is the reproduction check and the source of per-level human distributions, and any use of
+its lp85 or vc33 rows carries this caveat. Verdict: `docs/decisions/G2_VERDICT.md` sha256
+`8f4e980c65be78a41f3495b5271130fd72bc52aa9c2fb0c61c12a1d7d97c57e7` (sections 6 and 9(a)).
 
 ---
 
@@ -301,6 +372,43 @@ Private and semi-private environments are not public.
 
 UNCONFIRMED: the exact license applied to the public game environment files themselves, as
 distinct from the toolkit.
+
+### 3.3 Public environment file versions drift, and the replays name two versions
+
+**This project, 2026-09-04 (G2).** Environment file directories are versioned by an eight-hex
+hash (`environment_files/<stem>/<hash>/`, `metadata.json` `game_id` = `<stem>-<hash>`). The
+local cache downloaded 2026-09-04 (pinned by `experiments/environment_cache_manifest.json`,
+sha256 `023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af`) lists a **different
+version hash from the third-party
+[Hugging Face mirror](https://huggingface.co/datasets/zarczynski/arc-agi-3-public) (revision
+`f5757d68`, dated 2026-04-02) for 15 of the 25 public games**: ar25, cn04, dc22, ka59, m0r0,
+r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36, tu93, vc33 (ledger `literature` entry, G2.1).
+The other ten (bp35, cd82, ft09, g50t, lf52, lp85, ls20, sb26, tr87, wa30) carry the same hash
+in both.
+
+**The released human recordings (§1.4) carry two game ids per record, and for exactly those 15
+games they disagree.** The frame-side `data.game_id` equals the cached `metadata.json` `game_id`
+for all 25 games (run A `input_manifest.json`
+`71aa97fb82869a874f671981896ba949d665639861856c3ac6d30c7d86c7a1bc`, `replay_game_ids_by_stem`).
+The client-side `data.action_input.data.game_id` names, for the 15 games above, the Hugging Face
+version instead (ar25 `e3c63847`, cn04 `65d47d14`, dc22 `4c9bff3e`, ka59 `9f096b4a`, m0r0
+`dadda488`, r11l `aa269680`, re86 `4e57566e`, s5i5 `a48e4b1d`, sc25 `f9b21a2f`, sk48 `41055498`,
+sp80 `0ee2d095`, su15 `4c352900`, tn36 `ab4f63cc`, tu93 `2b534c15`, vc33 `9851e02b`, against
+frame-side `0c556536`, `2fe56bfb`, `fdcac232`, `38d34dbb`, `492f87ba`, `495a7899`, `8af5384d`,
+`18d95033`, `635fd71a`, `d8078629`, `589a99af`, `1944f8ab`, `ef4dde99`, `0768757b`, `5430563c`);
+found by the G2 referee and reproduced by this agent's scan of all 342 files. lp85 is **not**
+among them (both ids `305b61c3`); the ledger's G2.8 decision (c) placing it there is wrong. The
+recordings are dated 2025-11-10 to 2026-03-20, before the mirror snapshot, so the clients
+requested the versions current at the time and the frame-side ids name versions that appeared
+later; whether the frames were regenerated on the newer versions or only relabelled cannot be
+decided from the files. 13 of the 15 affected games reproduce the official baselines exactly
+(§2); vc33 does not, and neither does the unaffected lp85. Consequences: the replays are
+evidence about the frame-side (cached) versions only; any later gate names the cached versions
+it runs and records this discrepancy; a re-download on another day may change hashes and
+requires a cache-manifest regeneration, not a drift diagnosis. Verdict:
+`docs/decisions/G2_VERDICT.md` sha256
+`8f4e980c65be78a41f3495b5271130fd72bc52aa9c2fb0c61c12a1d7d97c57e7` (section 9, argument B;
+section 10 items 1–2).
 
 ---
 
@@ -432,6 +540,15 @@ date here, and moving it out of this list.
 7. License applied to public game environment files specifically.
 8. Which evaluation set the Opus 5 30.16% figure is measured on.
 9. Milestone #1 numeric scores.
+
+**Resolutions (additions only; the numbered list above is never edited).**
+- Item 6 **RESOLVED 2026-09-04**: `https://dub.link/vfwCqvb` resolves to Google Drive folder
+  [`1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy`](https://drive.google.com/drive/folders/1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy);
+  342 recordings, 7,179,719,072 bytes, human-placed, inventoried in
+  `experiments/human_replays_manifest.json`
+  (`08ea6ef9898dd0e493bd682131f25e257d61ef2b56a2710b37c25ba85c9bfd79`). Details in §1.4. The
+  shortener is not fetchable by script (HTTP 429/403), so a fresh machine needs a human or a
+  browser to obtain the files.
 
 ---
 
