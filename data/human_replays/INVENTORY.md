@@ -1,33 +1,64 @@
 # Human replay dataset — inventory
 
-Placed by the human on 2026-09-04 from the public Drive folder linked by `https://dub.link/vfwCqvb` → `https://drive.google.com/drive/folders/1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy`.
+Last corrected 2026-09-04T15:38:02Z. **Supersedes the version written by `fix_g2_dataset.sh`, which double-counted macOS AppleDouble sidecars as recordings.** See the ledger entry of the same date.
 
-Google Drive split the download into three zips (`drive-download-20260904T145905Z-1-001..003.zip`); all three were extracted into `raw/`. Files are unmodified and carry their original names.
+Placed by the human on 2026-09-04 from the public Drive folder linked by `https://dub.link/vfwCqvb` → `https://drive.google.com/drive/folders/1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy`. Drive split the download into three zips (`drive-download-20260904T145905Z-1-001..003.zip`), all extracted into `raw/`. Files are unmodified and carry their original names.
 
-`raw/` and `extras/` are **gitignored** — 6.7 GiB, and one file exceeds GitHub's 100 MB hard limit. This inventory is the tracked record of them.
+`raw/` and `extras/` are gitignored, as is `*.recording.jsonl` anywhere in the tree and any `.zip` under `data/`. One file in `extras/` exceeds GitHub's 100 MB hard limit. This inventory is the tracked record of all of it.
 
-- replay units in `raw/`: **342**
-- total size of `raw/`: 6.69 GiB
+## `raw/` — the manifest input
+
+- recordings: **342**
+- total size: 6.69 GiB
 - naming: `<uuid>.recording.jsonl`
+- nesting depth below `raw/`: {2: 342} (0 = flat)
+- directories: 25
 
-## First-record keys (3 sampled files)
+| directory below `raw/` | recordings |
+|---|---|
+| `arc_agi_3_public_demo_human_testing/ar25` | 10 |
+| `arc_agi_3_public_demo_human_testing/bp35` | 14 |
+| `arc_agi_3_public_demo_human_testing/cd82` | 11 |
+| `arc_agi_3_public_demo_human_testing/cn04` | 12 |
+| `arc_agi_3_public_demo_human_testing/dc22` | 11 |
+| `arc_agi_3_public_demo_human_testing/ft09` | 10 |
+| `arc_agi_3_public_demo_human_testing/g50t` | 14 |
+| `arc_agi_3_public_demo_human_testing/ka59` | 10 |
+| `arc_agi_3_public_demo_human_testing/lf52` | 11 |
+| `arc_agi_3_public_demo_human_testing/lp85` | 54 |
+| `arc_agi_3_public_demo_human_testing/ls20` | 13 |
+| `arc_agi_3_public_demo_human_testing/m0r0` | 11 |
+| `arc_agi_3_public_demo_human_testing/r11l` | 10 |
+| `arc_agi_3_public_demo_human_testing/re86` | 11 |
+| `arc_agi_3_public_demo_human_testing/s5i5` | 11 |
+| `arc_agi_3_public_demo_human_testing/sb26` | 12 |
+| `arc_agi_3_public_demo_human_testing/sc25` | 15 |
+| `arc_agi_3_public_demo_human_testing/sk48` | 14 |
+| `arc_agi_3_public_demo_human_testing/sp80` | 12 |
+| `arc_agi_3_public_demo_human_testing/su15` | 13 |
+| `arc_agi_3_public_demo_human_testing/tn36` | 14 |
+| `arc_agi_3_public_demo_human_testing/tr87` | 12 |
+| `arc_agi_3_public_demo_human_testing/tu93` | 13 |
+| `arc_agi_3_public_demo_human_testing/vc33` | 10 |
+| `arc_agi_3_public_demo_human_testing/wa30` | 14 |
 
-- `00589449-cfb4-4b98-a31e-2a344db66f89.recording.jsonl` → `['data', 'timestamp']`
-- `03665144-5518-4e4b-af99-ec7fe6ab546d.recording.jsonl` → `['data', 'timestamp']`
-- `0cf890a2-b328-47f3-a845-0fa379d29358.recording.jsonl` → `['data', 'timestamp']`
+Walk the tree; do not glob one level. AppleDouble sidecars (`._*`) are excluded from every figure here and must be excluded from the manifest too.
 
-## Record counts (3 sampled files)
+## `extras/` — shipped alongside, not manifest input
 
-- `00589449-cfb4-4b98-a31e-2a344db66f89.recording.jsonl`: 1557 JSON records, 20.2 MiB
-- `03665144-5518-4e4b-af99-ec7fe6ab546d.recording.jsonl`: 970 JSON records, 12.6 MiB
-- `0cf890a2-b328-47f3-a845-0fa379d29358.recording.jsonl`: 1035 JSON records, 13.3 MiB
+### `arc_agi_3_public_demo_human_testing.zip`
 
-## `extras/` — present in the download, not replay units
+- 111,142,305 bytes — sha256 `99a32ffc3b9e55bc3077b979d00906f256c26354b5fada0b052690b2f5cd634a`
+- entries: 706 — of which **366 are macOS metadata** (`__MACOSX/` mirror and `._` sidecars)
+- real recordings: **340**; real non-recordings: 0
+- already present in `raw/`: **340**
+- genuinely absent from `raw/`: **0**
+- present in `raw/` but not in the zip: 2
+- uncompressed size of the real entries: 6.36 GiB
+- verdict: **subset of `raw/` — do NOT extract.** Every recording it contains is already present. Extracting it adds no information.
 
-- `arc_agi_3_public_demo_human_testing.zip` — 111,142,305 bytes — sha256 `99a32ffc3b9e55bc3077b979d00906f256c26354b5fada0b052690b2f5cd634a`
-  - central directory: 706 entries, 680 `*.recording.jsonl`
-  - basenames also present in `raw/`: **340/680**
-  - verdict: **340 replay file(s) inside are NOT in `raw/`** — extract only those, then re-count
+### `testing_feedback_ratings.csv`
 
-- `testing_feedback_ratings.csv` — 6,797 bytes — sha256 `919db1b8f2e068a5f933cffdb1f30a9335806f3075534ee6109dd10f1900a511`
+- 6,797 bytes — sha256 `919db1b8f2e068a5f933cffdb1f30a9335806f3075534ee6109dd10f1900a511`
+- human ratings collected during the public demo; not a replay unit.
 

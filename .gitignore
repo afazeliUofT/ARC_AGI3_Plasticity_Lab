@@ -22,3 +22,5 @@ state/supervisor.out
 state/supervisor.jsonl
 state/counters.json
 data/human_replays/extras/
+*.recording.jsonl
+data/**/*.zip

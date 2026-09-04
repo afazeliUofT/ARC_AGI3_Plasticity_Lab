@@ -2,6 +2,11 @@
   "replay_units": 342,
   "raw": "data/human_replays/raw",
   "extras": "data/human_replays/extras",
+  "nesting_depths": {
+    "2": 342
+  },
+  "directories": 25,
   "retrieval_utc": "2026-09-04",
-  "retrieval_method": "human_placed"
+  "retrieval_method": "human_placed",
+  "inventory_corrected_utc": "2026-09-04T15:38:02Z"
 }
