@@ -111,8 +111,20 @@ class RunArtifactWriter:
     directory unsealed, which the verifier reports as incomplete.
     """
 
-    def __init__(self, run_dir: Path) -> None:
+    def __init__(self, run_dir: Path, extra_files: Sequence[str] = ()) -> None:
+        """``extra_files`` are the additional one-shot JSON artifacts this run may write.
+
+        They come from the experiment config (``runner_params.extra_artifacts``), so a run
+        can only add files the config declared; ``write_extra_json`` refuses any other name.
+        ``finalize`` hashes every file in the directory, so extras are sealed like the rest.
+        """
         self.run_dir = run_dir
+        self.extra_files: tuple[str, ...] = tuple(extra_files)
+        for name in self.extra_files:
+            if name in CONTRACT_FILES:
+                raise ArtifactError(f"{name} is a contract file, not an extra artifact")
+            if not name.endswith(".json") or "/" in name or "\\" in name or name.startswith("."):
+                raise ArtifactError(f"extra artifact {name!r} must be a plain .json file name")
         self._streams: dict[str, IO[str]] = {}
         self._sealed = False
         self._opened = False
@@ -212,6 +224,21 @@ class RunArtifactWriter:
 
     def write_manifest(self, manifest: RunManifest) -> Path:
         return self._write_once("manifest.json", _canonical_json(manifest.to_dict()))
+
+    def write_extra_json(self, name: str, obj: Mapping[str, Any]) -> Path:
+        """Write one declared extra artifact, once. ``name`` must be in ``extra_files``."""
+        self._guard(name)
+        if name not in self.extra_files:
+            raise ArtifactError(
+                f"{name} is not a declared extra artifact of this run; declared: "
+                f"{list(self.extra_files)}"
+            )
+        path = self.run_dir / name
+        if path.exists():
+            raise ArtifactError(f"{path} already written; raw evidence is never overwritten")
+        with path.open("x", encoding="utf-8") as fh:
+            fh.write(_canonical_json(dict(obj)))
+        return path
 
     # ----------------------------------------------------------------- seal
 

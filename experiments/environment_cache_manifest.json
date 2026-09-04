@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-09-04T07:44:50Z",
+  "environments_dir": "environment_files",
+  "games": [
+    {
+      "stem": "ar25",
+      "game_id": "ar25-0c556536",
+      "local_dir": "environment_files/ar25/0c556536",
+      "date_downloaded": "2026-09-04T05:27:55.964169+00:00",
+      "baseline_actions_count": 8,
+      "files": {
+        "ar25/0c556536/ar25.py": "b965d2faaa4a4d9119c20eb51af0fb2b657fb52fb9884919863a48f2230c4272",
+        "ar25/0c556536/metadata.json": "15b74b0045fffe3bd93f8958cdafd432534ebf76fee9e42b4c86ea73239d3962"
+      }
+    },
+    {
+      "stem": "bp35",
+      "game_id": "bp35-0a0ad940",
+      "local_dir": "environment_files/bp35/0a0ad940",
+      "date_downloaded": "2026-09-04T05:27:56.535322+00:00",
+      "baseline_actions_count": 9,
+      "files": {
+        "bp35/0a0ad940/bp35.py": "e9aecb52c629c3e742276c2db04b81f91555051d8617b6cbc58bac410824867f",
+        "bp35/0a0ad940/metadata.json": "23dc5a8580f2dd0d2cbcc30beb9dc6be4467353db072a8deace4fd0174a00a94"
+      }
+    },
+    {
+      "stem": "cd82",
+      "game_id": "cd82-fb555c5d",
+      "local_dir": "environment_files/cd82/fb555c5d",
+      "date_downloaded": "2026-09-04T05:27:57.063054+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "cd82/fb555c5d/cd82.py": "dafeabff60a3a99b5c93629f8da0d8f555b873ef16a522247d6197b1b3addbcb",
+        "cd82/fb555c5d/metadata.json": "daa6d703aabb1d60508daecaf9f88a384dfbc0b89c1d4bb29e5ee5ed4f1a67dc"
+      }
+    },
+    {
+      "stem": "cn04",
+      "game_id": "cn04-2fe56bfb",
+      "local_dir": "environment_files/cn04/2fe56bfb",
+      "date_downloaded": "2026-09-04T05:27:57.463451+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "cn04/2fe56bfb/cn04.py": "29977e145a0374b5842d360507f045029c3f4b22373612152e713c14691e01dc",
+        "cn04/2fe56bfb/metadata.json": "e2084f44e6797892f9d23fca4fe01198525e82c982bfdbcd08bb354934546b99"
+      }
+    },
+    {
+      "stem": "dc22",
+      "game_id": "dc22-fdcac232",
+      "local_dir": "environment_files/dc22/fdcac232",
+      "date_downloaded": "2026-09-04T05:27:57.822659+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "dc22/fdcac232/dc22.py": "74abe3523bd6bc8a0948991caa0ca71855e38542ba2123653a03485e064f252e",
+        "dc22/fdcac232/metadata.json": "2f4e71de5a59d8a040a7d9d1ea8cc7c2de74a55fb44d23e1d5aee755085cdecf"
+      }
+    },
+    {
+      "stem": "ft09",
+      "game_id": "ft09-0d8bbf25",
+      "local_dir": "environment_files/ft09/0d8bbf25",
+      "date_downloaded": "2026-09-04T05:27:58.272790+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "ft09/0d8bbf25/ft09.py": "aa5b54f48a29da9f276c3df0dc04de728002f523384ab868c85d56d819cd0783",
+        "ft09/0d8bbf25/metadata.json": "10b6c4450e81f04f67163afa27d3023b81c28fb89bbdfcdb29e93ca07f2ffa8c"
+      }
+    },
+    {
+      "stem": "g50t",
+      "game_id": "g50t-5849a774",
+      "local_dir": "environment_files/g50t/5849a774",
+      "date_downloaded": "2026-09-04T05:27:58.586199+00:00",
+      "baseline_actions_count": 7,
+      "files": {
+        "g50t/5849a774/g50t.py": "6f21f2065744e484ac38534f940158034e69f39add3b10a3d9fd258de7293aa9",
+        "g50t/5849a774/metadata.json": "e89446a2cb26b71355c54b077004083f361fd097e8658e407ec16502c6b38d91"
+      }
+    },
+    {
+      "stem": "ka59",
+      "game_id": "ka59-38d34dbb",
+      "local_dir": "environment_files/ka59/38d34dbb",
+      "date_downloaded": "2026-09-04T05:27:58.985351+00:00",
+      "baseline_actions_count": 7,
+      "files": {
+        "ka59/38d34dbb/ka59.py": "3e8341f4c317ceb9992ca54e8ad453ee4e8a04547b27a907f4a560a9a30d857e",
+        "ka59/38d34dbb/metadata.json": "b48241d5d672e22ec9885943424c7cf61c84e59e8d30dbd0e8bf8ef4e78fa375"
+      }
+    },
+    {
+      "stem": "lf52",
+      "game_id": "lf52-271a04aa",
+      "local_dir": "environment_files/lf52/271a04aa",
+      "date_downloaded": "2026-09-04T05:27:59.474396+00:00",
+      "baseline_actions_count": 10,
+      "files": {
+        "lf52/271a04aa/lf52.py": "a6b01973a0905a447f6b92d77745719ebb001f9f94ff5bb0076200ef16839030",
+        "lf52/271a04aa/metadata.json": "8580d023795bc7dff5fc4832df1a7e8257b81ee107054049b48fbb158aab5bf2"
+      }
+    },
+    {
+      "stem": "lp85",
+      "game_id": "lp85-305b61c3",
+      "local_dir": "environment_files/lp85/305b61c3",
+      "date_downloaded": "2026-09-04T05:27:59.879760+00:00",
+      "baseline_actions_count": 8,
+      "files": {
+        "lp85/305b61c3/lp85.py": "7d10baec7dd29d07e574bd47ee1ec7912542a72632077a5446798221f41c4ae9",
+        "lp85/305b61c3/metadata.json": "9d0fc34d4234a3935e1d680ab931615799d682047656e600e3ff215b07fc8207"
+      }
+    },
+    {
+      "stem": "ls20",
+      "game_id": "ls20-9607627b",
+      "local_dir": "environment_files/ls20/9607627b",
+      "date_downloaded": "2026-09-04T05:28:00.335175+00:00",
+      "baseline_actions_count": 7,
+      "files": {
+        "ls20/9607627b/ls20.py": "298c810da2850d557c95d92a2cbd846df29a45d7134e20888617bedf5dafcd92",
+        "ls20/9607627b/metadata.json": "5fa0545117c35a388dd1ad0476bd9c055cce2815cfea91447832b21f80419849"
+      }
+    },
+    {
+      "stem": "m0r0",
+      "game_id": "m0r0-492f87ba",
+      "local_dir": "environment_files/m0r0/492f87ba",
+      "date_downloaded": "2026-09-04T05:28:00.685253+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "m0r0/492f87ba/m0r0.py": "fc3954236f712759c2a5baaada09bb3244e217e022086dc9ec8f6e6fe101d797",
+        "m0r0/492f87ba/metadata.json": "f4537f33240e869e874fcfd336860f8ba16a07235c80602b16773775b05c35bd"
+      }
+    },
+    {
+      "stem": "r11l",
+      "game_id": "r11l-495a7899",
+      "local_dir": "environment_files/r11l/495a7899",
+      "date_downloaded": "2026-09-04T05:28:00.982292+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "r11l/495a7899/metadata.json": "d4902b2062e3d6fbcb675c51c42fba0c531345f0625dc69a24c5a794dbac5a5d",
+        "r11l/495a7899/r11l.py": "95d58ebaa8c758e905821bb4f5881d47166c8f5aec158bfea7585902c01040d0"
+      }
+    },
+    {
+      "stem": "re86",
+      "game_id": "re86-8af5384d",
+      "local_dir": "environment_files/re86/8af5384d",
+      "date_downloaded": "2026-09-04T05:28:01.336016+00:00",
+      "baseline_actions_count": 8,
+      "files": {
+        "re86/8af5384d/metadata.json": "808d1e1fafe88ca312e1b9a71dcee11d5d82beb925672e52348f773148bd0654",
+        "re86/8af5384d/re86.py": "cf3c1520e17f0b70e7a3cea0e680601a591befce306b4dd1926c735a7d3b65e8"
+      }
+    },
+    {
+      "stem": "s5i5",
+      "game_id": "s5i5-18d95033",
+      "local_dir": "environment_files/s5i5/18d95033",
+      "date_downloaded": "2026-09-04T05:28:01.710426+00:00",
+      "baseline_actions_count": 8,
+      "files": {
+        "s5i5/18d95033/metadata.json": "83741c1fa7adf5ec424b6b28faeab68ae7b46eac37ffaf7416b8e15c459c4845",
+        "s5i5/18d95033/s5i5.py": "341f85bac1fb5ca7a3315a367405c3c993a57ce4dd0ff01cc8aaa72bf6c6ed34"
+      }
+    },
+    {
+      "stem": "sb26",
+      "game_id": "sb26-7fbdac44",
+      "local_dir": "environment_files/sb26/7fbdac44",
+      "date_downloaded": "2026-09-04T05:28:02.066182+00:00",
+      "baseline_actions_count": 8,
+      "files": {
+        "sb26/7fbdac44/metadata.json": "540d7e72995b00754cbda1802e1621933ca77ba9ce5bdf96b78d46de2ca62aa7",
+        "sb26/7fbdac44/sb26.py": "dbb4877853a8d30f84e28d26f4a3d6ad7d2d1018602e82ccb5a62284043984f3"
+      }
+    },
+    {
+      "stem": "sc25",
+      "game_id": "sc25-635fd71a",
+      "local_dir": "environment_files/sc25/635fd71a",
+      "date_downloaded": "2026-09-04T05:28:02.393625+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "sc25/635fd71a/metadata.json": "385432b2a8a7bc8983f511d73599c9d8fa45275562b1b149de21ebc74e9a3eb1",
+        "sc25/635fd71a/sc25.py": "871a507cf340d1e4a3271205a71bb5433f20c2b0e427f7ce40da47060cdd4392"
+      }
+    },
+    {
+      "stem": "sk48",
+      "game_id": "sk48-d8078629",
+      "local_dir": "environment_files/sk48/d8078629",
+      "date_downloaded": "2026-09-04T05:28:02.758779+00:00",
+      "baseline_actions_count": 8,
+      "files": {
+        "sk48/d8078629/metadata.json": "907d37115254248401a5220959da331d0b8833185a2ba8416b9e94256284250f",
+        "sk48/d8078629/sk48.py": "b6ca05eed7ba81fe5a6a26c58410fa7daddf2039d3d1c42f600aaf9f6f0111e3"
+      }
+    },
+    {
+      "stem": "sp80",
+      "game_id": "sp80-589a99af",
+      "local_dir": "environment_files/sp80/589a99af",
+      "date_downloaded": "2026-09-04T05:28:03.061790+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "sp80/589a99af/metadata.json": "12c47e95e372b0d5e0e32b65a7b466cea30c0c7d8c6c55077a23da23314c4335",
+        "sp80/589a99af/sp80.py": "2306d62311a3cc027250217d86cb4e012898edc7647a7c291ade23f36c9b9715"
+      }
+    },
+    {
+      "stem": "su15",
+      "game_id": "su15-1944f8ab",
+      "local_dir": "environment_files/su15/1944f8ab",
+      "date_downloaded": "2026-09-04T05:28:03.359711+00:00",
+      "baseline_actions_count": 9,
+      "files": {
+        "su15/1944f8ab/metadata.json": "3e7ccc8545ad9d87c5c737041dfbb9879013723188f0e6acf755a2626381bf41",
+        "su15/1944f8ab/su15.py": "a5f91f7c963d6ca6447dae0ab21342b48a3f511601c40dfa8e972bdc59b4651e"
+      }
+    },
+    {
+      "stem": "tn36",
+      "game_id": "tn36-ef4dde99",
+      "local_dir": "environment_files/tn36/ef4dde99",
+      "date_downloaded": "2026-09-04T05:28:03.667065+00:00",
+      "baseline_actions_count": 7,
+      "files": {
+        "tn36/ef4dde99/metadata.json": "fd3e67ed9f263a712717091ea8a07dc8e3ae03a9fc08b64595aa37033947784a",
+        "tn36/ef4dde99/tn36.py": "43c30052cdeb230017eb1ec23877050d96297756b86071417868ec61138c9fb7"
+      }
+    },
+    {
+      "stem": "tr87",
+      "game_id": "tr87-cd924810",
+      "local_dir": "environment_files/tr87/cd924810",
+      "date_downloaded": "2026-09-04T05:28:04.034655+00:00",
+      "baseline_actions_count": 6,
+      "files": {
+        "tr87/cd924810/metadata.json": "f4452a06dd0e17beaf9ac8163e05d389a024e0438231aae9e34728eadc1b1d83",
+        "tr87/cd924810/tr87.py": "3274657a6499af5c7a52390d58a5c5441497ed70b84388e418fdfa6c9601e305"
+      }
+    },
+    {
+      "stem": "tu93",
+      "game_id": "tu93-0768757b",
+      "local_dir": "environment_files/tu93/0768757b",
+      "date_downloaded": "2026-09-04T05:28:04.351547+00:00",
+      "baseline_actions_count": 9,
+      "files": {
+        "tu93/0768757b/metadata.json": "b4b73ea6f98f20d027022b5dab259d716fb2ae9cb1b255183ccce60331168991",
+        "tu93/0768757b/tu93.py": "80e41888f9f7b1a0c03e02c0aff3814e0fd68eb5b35ef22bb3649c87fc60a23f"
+      }
+    },
+    {
+      "stem": "vc33",
+      "game_id": "vc33-5430563c",
+      "local_dir": "environment_files/vc33/5430563c",
+      "date_downloaded": "2026-09-04T05:28:04.680905+00:00",
+      "baseline_actions_count": 7,
+      "files": {
+        "vc33/5430563c/metadata.json": "3ac2008be84c9bcb38ee7f28f12e2acdb046edb58474145641f5cb61c36656c9",
+        "vc33/5430563c/vc33.py": "8afa9f55054b2a2460b6c44ec5c66e120f6d6f4c2289e24d50832a68d1e3fcfd"
+      }
+    },
+    {
+      "stem": "wa30",
+      "game_id": "wa30-ee6fef47",
+      "local_dir": "environment_files/wa30/ee6fef47",
+      "date_downloaded": "2026-09-04T05:28:04.999501+00:00",
+      "baseline_actions_count": 9,
+      "files": {
+        "wa30/ee6fef47/metadata.json": "93c346e302162779810dea2a5d95e98ebbb82a03b0f1cc89f9b063b22d5f21fe",
+        "wa30/ee6fef47/wa30.py": "0c8b63caee2d092d6c0750fd74e417de682d09973b549046394dadf0437b1477"
+      }
+    }
+  ],
+  "totals": {
+    "games": 25,
+    "files": 50
+  }
+}

@@ -53,9 +53,20 @@ from arc_plasticity.core.provenance import (
     python_version,
 )
 from arc_plasticity.core.runner import RunOutcome, get_runner
-from arc_plasticity.environments import toy  # noqa: F401  (registers the built-in runners)
+from arc_plasticity.environments import (  # noqa: F401  (registers the built-in runners)
+    arc_random_walk,
+    toy,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def extra_artifacts(config: ExperimentConfig) -> tuple[str, ...]:
+    """The extra one-shot artifacts a config declares under ``runner_params.extra_artifacts``."""
+    raw = config.runner_params.get("extra_artifacts", [])
+    if not isinstance(raw, list) or not all(isinstance(n, str) for n in raw):
+        raise ConfigError("runner_params.extra_artifacts must be a list of file names")
+    return tuple(raw)
 
 
 def budget_wallclock_fallback(root: Path) -> int | None:
@@ -112,7 +123,7 @@ def run(
     failure: BaseException | None = None
     t0 = time.monotonic()
 
-    with RunArtifactWriter(run_dir) as writer:
+    with RunArtifactWriter(run_dir, extra_artifacts(config)) as writer:
         writer.write_resolved_config(config_to_yaml(config))
         writer.write_git_state(git.as_text())
         writer.write_environment_info(environment_info())

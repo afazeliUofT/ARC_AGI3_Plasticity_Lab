@@ -159,3 +159,44 @@ def test_csv_rows_must_match_columns(tmp_path: Path) -> None:
 def test_manifest_rejects_unknown_status() -> None:
     with pytest.raises(ArtifactError):
         _manifest(completion_status="done")
+
+
+# ------------------------------------------------------------------ extra artifacts (G1)
+
+
+def test_extra_json_is_written_once_and_sealed(tmp_path: Path) -> None:
+    run = tmp_path / "r1"
+    with RunArtifactWriter(run, ("throughput.json",)) as w:
+        w.write_resolved_config("seed: 1\n")
+        w.write_git_state("commit abc\n")
+        w.write_environment_info({})
+        w.write_results({})
+        w.write_metrics([])
+        w.write_environment_results([], ("env",))
+        w.write_manifest(_manifest())
+        w.write_extra_json("throughput.json", {"aggregate": {"steps": 1, "step_seconds": 0.5, "fps": 2.0}})
+        with pytest.raises(ArtifactError, match="already written"):
+            w.write_extra_json("throughput.json", {})
+        digests = w.finalize()
+    assert "throughput.json" in digests
+    assert json.loads((run / "throughput.json").read_text())["aggregate"]["steps"] == 1
+    assert "  throughput.json" in (run / "SHA256SUMS").read_text()
+
+
+def test_extra_json_refuses_undeclared_names(tmp_path: Path) -> None:
+    with (
+        RunArtifactWriter(tmp_path / "r1", ("throughput.json",)) as w,
+        pytest.raises(ArtifactError, match="not a declared extra artifact"),
+    ):
+        w.write_extra_json("timing.json", {})
+    with (
+        RunArtifactWriter(tmp_path / "r2") as w,
+        pytest.raises(ArtifactError, match="not a declared extra artifact"),
+    ):
+        w.write_extra_json("throughput.json", {})
+
+
+@pytest.mark.parametrize("name", ["results.json", "notes.txt", "sub/x.json", ".hidden.json"])
+def test_extra_artifact_declarations_are_validated(tmp_path: Path, name: str) -> None:
+    with pytest.raises(ArtifactError):
+        RunArtifactWriter(tmp_path / "r1", (name,))

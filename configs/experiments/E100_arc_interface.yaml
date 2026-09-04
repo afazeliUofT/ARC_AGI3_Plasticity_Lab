@@ -1,0 +1,32 @@
+# E100_arc_interface: the G1 interface experiment.
+#
+# Pre-registered in preregistration/G1.yaml, experiment. A seeded uniform-random policy walks
+# every cached public game (all 25 stems from docs/EVIDENCE_ARC.md section 1.1) for up to
+# 5000 actions each, offline, with no model. The determinism protocol runs it twice at seed
+# 12345 and once at seed 12346 (via --seed); scripts/verify_run.py --gate G1 then replays every
+# game from transitions.jsonl in its own process and grades throughput from throughput.json.
+#
+# Run:  uv run python scripts/run_experiment.py --config configs/experiments/E100_arc_interface.yaml
+
+schema_version: 1
+experiment_id: E100_arc_interface
+description: Seeded uniform-random walk over all 25 cached ARC-AGI-3 games through the offline toolkit; interface test only.
+runner: arc_random_walk
+seed: 12345
+wallclock_limit_seconds: 1800
+network_calls_allowed: 0
+model_calls_allowed: 0
+budgets:
+  action_budget: 125000   # 25 games x 5000 actions
+  simulation_budget: 0
+  token_budget: 0
+  persistent_state_size_cap_bytes: 0
+language_model:
+  identifier: null
+  prompt: null
+runner_params:
+  environments_dir: environment_files
+  action_budget_per_game: 5000
+  games: all
+  extra_artifacts:
+    - throughput.json
