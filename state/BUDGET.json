@@ -2,9 +2,9 @@
   "schema_version": 1,
   "programme_end_date": "2027-03-31",
   "max_turns_total": 4000,
-  "turns_used": 13,
+  "turns_used": 14,
   "max_turns_per_gate": 400,
-  "turns_this_gate": 13,
+  "turns_this_gate": 14,
   "max_attempts_per_task": 6,
   "default_experiment_wallclock_seconds": 7200,
   "g3_preflight": {
