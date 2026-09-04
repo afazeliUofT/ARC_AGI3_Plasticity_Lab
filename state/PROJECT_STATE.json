@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T15:59:58Z",
+  "updated_utc": "2026-09-04T16:24:47Z",
   "current_gate": "G2",
-  "gate_status": "awaiting_verdict",
+  "gate_status": "passed",
   "gate_entered_utc": "2026-09-04T08:05:09Z",
-  "last_verified_gate": "G1",
-  "last_verified_commit": "1435f81",
+  "last_verified_gate": "G2",
+  "last_verified_commit": "9e66b0d",
   "active_task": {
-    "id": "G2.10",
-    "description": "Dispatch the referee for the G2 verdict (docs/decisions/G2_VERDICT.md) and re-verify it independently",
+    "id": "G2.11",
+    "description": "Additions-only docs/EVIDENCE_ARC.md entries pre-registered by G2.yaml carry_forward_from_g1_verdict item 2 (the referee's single permitted next action), citing the E020 run A digests and the G2 verdict digest, and recording the 15-game client-side version discrepancy",
     "attempt": 1,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T15:59:58Z"
+    "started_utc": "2026-09-04T16:24:47Z"
   },
   "blocked_on": null,
-  "next_action": "G2.10 in progress: the referee subagent was dispatched at 2026-09-04T15:59:58Z to grade the commit that carries the G2.10 attempt ledger entry (HEAD at dispatch, tree clean, verifier PASS 19/19). If docs/decisions/G2_VERDICT.md exists: read it; recompute every sha256 it cites with sha256sum against the cited paths (script in /tmp, never a Bash line naming the pre-registration directory); confirm its recorded scripts/verify_run.py digest equals df560de6c90fe770c57deb0bf66491543ce7dbd7e9016a4d8b2814533623bd74; confirm it states exactly one of GO, REVISE_ONCE, KILL, SUSPEND_FOR_DEPENDENCY and cites artifact paths with digests (else it is invalid under C3 and must be re-requested, not patched); append a 'verdict' ledger entry with the verdict file's sha256sum digest; write verdicts.G2 (verdict, file, sha256, graded_commit) into PROJECT_STATE.json; on GO set gate_status passed, last_verified_gate G2, last_verified_commit to the graded commit and mark experiment_runs.E020_human_baselines.status verified_go; on REVISE_ONCE or KILL record it and open the named revision as a new task under the ladder; commit as G2.10 (recorded_commit is filled in by the next turn). If the verdict file does not exist: re-dispatch the referee (attempt 2) with exactly the inputs listed in the G2.10 attempt ledger entry, passing no result numbers. After a GO the following turns are the human-authorised housekeeping, each its own commit: (i) ruff format over the 17 drifted files (frozen scripts/verify_run.py included per the G2.5 answer; record the new verify_run.py sha256 in the ledger); (ii) additions-only docs/EVIDENCE_ARC.md entries with URLs, dates and the E020 digests (section 1.4 dataset location, recorder schema, opening-frame accounting, P1/P2 and official-agreement numbers, lp85/vc33 divergence); (iii) push main to the private remote; then open G3 planning by reading PROPOSAL_v2.md section 9 G3 and the g3_preflight block of state/BUDGET.json.",
+  "next_action": "G2.11 (one step, the referee's single permitted next action, docs/decisions/G2_VERDICT.md section 12): write the additions-only docs/EVIDENCE_ARC.md entries pre-registered by G2.yaml carry_forward_from_g1_verdict item 2 (read that clause with load_preregistration('G2') from scripts/verify_run.py; never put the pre-registration directory in a Bash line). Method that passed the control-surface hook at G1.5: see the G1.5 success ledger entry (Edit tool appending dated entries; 'git diff --numstat' must show 0 lines removed; the supervisor halts if the file shrinks). Entries, each dated 2026-09-04 with a URL: section 1.4 the resolved dataset location (https://arcprize.org/blog/arc-agi-3-human-dataset -> https://dub.link/vfwCqvb -> Google Drive folder 1FB7yae6VISRe2jDKPNZLJS0mAqIw9JZy; 342 recordings, 6.7 GiB, human_placed 2026-09-04T14:59:05Z, manifest experiments/human_replays_manifest.json sha256 08ea6ef9...), the recorder schema (record 1 is the play-start frame; closing record is the toolkit scorecard; no participant identity; 23 older-format files with string action ids) and the opening-frame accounting (basis arc_agi.scorecard.Card, arc-agi 0.9.9 scorecard.py sha256 1cc830e4...); section 2 the 170/183 exact agreement, median_abs_relative_difference 0.0, and the lp85 (7 of 8 levels) and vc33 (6 of 7 levels) derived-versus-official values, citing run A artifacts/E020_human_baselines/20260904T154531Z_seed12345_2599f0a4 (results.json 20c84379..., human_baselines.json 1e841bf5..., metrics.csv 2686a8eb..., input_manifest.json 71aa97fb..., SHA256SUMS 5a7c5693...) and the verdict digest 8f4e980c...; a section 3 entry for the client-side version discrepancy (15 games named in verdict section 9 argument B, the Hugging Face versions; lp85 not among them, correcting ledger G2.8 decision (c)); section 6 item 6 marked resolved with the date. Then fill verdicts.G2.recorded_commit in PROJECT_STATE.json with the hash of the commit that added docs/decisions/G2_VERDICT.md ('git log --format=%h -1 -- docs/decisions/G2_VERDICT.md'), append a success ledger entry with the file's new sha256 and the numstat counts, commit as G2.11. Afterwards, in order, each its own commit: G2.12 ruff format over the 17 drifted files (frozen scripts/verify_run.py included per the G2.5 answer; record the new verify_run.py sha256 in the ledger and confirm 'uv run python scripts/verify_run.py --gate G2' still passes 19/19); G2.13 push main to the private remote (authorised in the G2.5 answer; confirm the remote is private first, see the deferred-push open question); then G3.1: read PROPOSAL_v2.md section 9 row G3, the g3_preflight block of state/BUDGET.json and verdict section 12 items 1-6, and author preregistration/G3.yaml with the Write tool before any G3 artifact exists.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -46,7 +46,8 @@
     "Human authorisations from the G2.5 answer (2026-09-04T15:22Z): push to the private remote after G2; ruff format housekeeping over the 17 drifted files as its own commit (frozen scripts/verify_run.py included, since the human authorised it); referee verdicts from G2 onward record the sha256 of scripts/verify_run.py; supervisor counters now live in gitignored state/counters.json.",
     "G2.7 (2026-09-04): replay_ingestion_log.jsonl now carries completion_counts, dataset_completion_counts, dataset_actions_total, dataset_agreement and dataset_agreement_all per file, and input_manifest.json carries dataset_agreement_summary; a file with no completion in either path counts as agreeing on all levels (vacuous) and is separately counted under files_no_completion_either_path. Neither file is a determinism compared_file.",
     "G2.8 (2026-09-04): both graded E020 runs record git_dirty true because state/PROJECT_STATE.json carried the supervisor's trailing-newline rewrite at run time (git_state.txt in each run shows only that file). No G2 check reads the manifest's git_dirty; check_git_clean runs at verification time. Note for the referee. The 13 levels where the derived baseline differs from the official one all lie in lp85 (7 levels) and vc33 (6 levels); the other 23 games agree on every level (human_baselines.json in either run, sha256 1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185).",
-    "G2.9 C5 review (2026-09-04, ledger decision entry): argument A (opening-frame accounting) refuted by an independent hand recount of lp85 level 1 over all 40 files (multiset equals per_participant_best_counts_sorted, 40/40 equal to the toolkit card); argument B (version mismatch hidden by stem matching) refuted for all 25 games (replay game ids equal cached metadata game_id including version hash); argument C: real P1/P2 agreement is 300 of 318 files with a completion, the 2 disagreements are a P2 nesting-depth read of the ragged cards, diagnostic only. Open for the referee: the official baselines for lp85 (7 levels) and vc33 (6 levels) differ from the derived ones for a reason outside the dataset; default is that RHAE keeps the official metadata.json values (toolkit path) and the derived numbers are the project's own reference."
+    "G2.9 C5 review (2026-09-04, ledger decision entry): argument A (opening-frame accounting) refuted by an independent hand recount of lp85 level 1 over all 40 files (multiset equals per_participant_best_counts_sorted, 40/40 equal to the toolkit card); argument B (version mismatch hidden by stem matching) refuted for all 25 games (replay game ids equal cached metadata game_id including version hash); argument C: real P1/P2 agreement is 300 of 318 files with a completion, the 2 disagreements are a P2 nesting-depth read of the ragged cards, diagnostic only. Open for the referee: the official baselines for lp85 (7 levels) and vc33 (6 levels) differ from the derived ones for a reason outside the dataset; default is that RHAE keeps the official metadata.json values (toolkit path) and the derived numbers are the project's own reference. Referee correction (docs/decisions/G2_VERDICT.md section 10 item 1, accepted at G2.10): argument B is refuted only for the frame-side data.game_id; the client-side action_input.data.game_id names a different version for 15 games.",
+    "G2 verdict findings (2026-09-04, docs/decisions/G2_VERDICT.md sha256 8f4e980c..., GO at 9e66b0d): every recording's client-side action_input.data.game_id names, for 15 games (ar25, cn04, dc22, ka59, m0r0, r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36, tu93, vc33), exactly the Hugging Face (2026-04-02) version while the frame-side data.game_id names the cached version; whether frames were regenerated on the newer versions or only relabelled cannot be decided from the files. 13 of those 15 games reproduce the official baselines exactly; vc33 does not, and lp85 (both ids 305b61c3, NOT among the 15, correcting ledger G2.8 decision (c)) does not either. lp85 has 54 released sessions over two months against 10-15 sessions in 1-5 days for every other game. Verdict section 12 carries six items the G3 pre-registration must hash-lock. The EVIDENCE_ARC additions are G2.11; recorded_commit for verdicts.G2 is filled by that turn."
   ],
   "mechanisms": {
     "M1": {
@@ -90,6 +91,13 @@
       "sha256": "9ba6a1cf139515550dfa8b3f4564297a609e73099afee6aa0a38a8db52884c45",
       "graded_commit": "1435f81",
       "recorded_commit": "f8c16a6"
+    },
+    "G2": {
+      "verdict": "GO",
+      "file": "docs/decisions/G2_VERDICT.md",
+      "sha256": "8f4e980c65be78a41f3495b5271130fd72bc52aa9c2fb0c61c12a1d7d97c57e7",
+      "graded_commit": "9e66b0d",
+      "verify_run_py_sha256": "df560de6c90fe770c57deb0bf66491543ce7dbd7e9016a4d8b2814533623bd74"
     }
   },
   "preregistrations": {
@@ -141,7 +149,7 @@
   },
   "experiment_runs": {
     "E020_human_baselines": {
-      "status": "verified_awaiting_verdict",
+      "status": "verified_go",
       "seed": 12345,
       "runs": {
         "20260904T154531Z_seed12345_2599f0a4": {
