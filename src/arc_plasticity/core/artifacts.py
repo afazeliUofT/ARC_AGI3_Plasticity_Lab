@@ -45,9 +45,17 @@ _STREAM_FILES = (
 
 COMPLETION_STATUSES = ("completed", "timed_out", "failed")
 
+# Written into a declared extra artifact directory that received no file, so the directory
+# is hashed, listed in SHA256SUMS and preserved by git.
+EMPTY_MARKER = "EMPTY"
+
 
 class ArtifactError(RuntimeError):
     """A write would violate the artifact contract or the raw-evidence rule."""
+
+
+def _plain_name(name: str) -> bool:
+    return bool(name) and "/" not in name and "\\" not in name and not name.startswith(".")
 
 
 @dataclass(frozen=True)
@@ -123,11 +131,17 @@ class RunArtifactWriter:
         They come from the experiment config (``runner_params.extra_artifacts``), so a run
         can only add files the config declared; ``write_extra_json`` and ``write_extra_jsonl``
         refuse any other name. An extra is a plain ``.json`` (one mapping) or ``.jsonl`` (one
-        record per line) file name. ``finalize`` hashes every file in the directory, so extras
-        are sealed like the rest.
+        record per line) file name, or a directory name ending in ``/`` (G3: ``model_calls/``,
+        ``world_models/``) whose files are written once each with ``write_extra_file``.
+        ``finalize`` hashes every file in the directory tree, so extras are sealed like the
+        rest; a declared directory left empty receives an ``EMPTY`` marker so it survives a
+        clone and is listed in ``SHA256SUMS``.
         """
         self.run_dir = run_dir
-        self.extra_files: tuple[str, ...] = tuple(extra_files)
+        self.extra_files: tuple[str, ...] = tuple(n for n in extra_files if not n.endswith("/"))
+        self.extra_directories: tuple[str, ...] = tuple(
+            n[:-1] for n in extra_files if n.endswith("/")
+        )
         for name in self.extra_files:
             if name in CONTRACT_FILES:
                 raise ArtifactError(f"{name} is a contract file, not an extra artifact")
@@ -140,6 +154,11 @@ class RunArtifactWriter:
             if not well_formed:
                 raise ArtifactError(
                     f"extra artifact {name!r} must be a plain .json or .jsonl file name"
+                )
+        for name in self.extra_directories:
+            if not _plain_name(name) or name in CONTRACT_FILES:
+                raise ArtifactError(
+                    f"extra artifact directory {name + '/'!r} must be a plain directory name"
                 )
         self._streams: dict[str, IO[str]] = {}
         self._sealed = False
@@ -157,6 +176,8 @@ class RunArtifactWriter:
         self.run_dir.mkdir(parents=True, exist_ok=False)
         for name in _STREAM_FILES:
             self._streams[name] = (self.run_dir / name).open("x", encoding="utf-8")
+        for name in self.extra_directories:
+            (self.run_dir / name).mkdir(exist_ok=False)
         self._opened = True
         return self
 
@@ -270,6 +291,27 @@ class RunArtifactWriter:
                 fh.write(json.dumps(dict(record), sort_keys=True, separators=(",", ":")) + "\n")
         return path
 
+    def write_extra_file(self, directory: str, name: str, text: str) -> Path:
+        """Write ``<directory>/<name>`` once, inside a declared extra artifact directory.
+
+        ``name`` is a plain file name (no path separators, not hidden). The file is written
+        verbatim, so a proposed program or a prompt is preserved exactly as produced.
+        """
+        self._guard(f"{directory}/{name}")
+        if directory not in self.extra_directories:
+            raise ArtifactError(
+                f"{directory}/ is not a declared extra artifact directory of this run; "
+                f"declared: {[d + '/' for d in self.extra_directories]}"
+            )
+        if not _plain_name(name):
+            raise ArtifactError(f"extra file name {name!r} must be a plain file name")
+        path = self.run_dir / directory / name
+        if path.exists():
+            raise ArtifactError(f"{path} already written; raw evidence is never overwritten")
+        with path.open("x", encoding="utf-8") as fh:
+            fh.write(text)
+        return path
+
     # ----------------------------------------------------------------- seal
 
     def finalize(self) -> dict[str, str]:
@@ -279,6 +321,11 @@ class RunArtifactWriter:
         missing = [n for n in CONTRACT_FILES if n != SUMS_FILE and not (self.run_dir / n).exists()]
         if missing:
             raise ArtifactError(f"cannot seal {self.run_dir}: missing {missing}")
+        for name in self.extra_directories:
+            directory = self.run_dir / name
+            if not any(directory.iterdir()):
+                with (directory / EMPTY_MARKER).open("x", encoding="utf-8") as fh:
+                    fh.write("no file was written to this directory during the run\n")
         digests: dict[str, str] = {}
         for path in sorted(p for p in self.run_dir.rglob("*") if p.is_file()):
             rel = str(path.relative_to(self.run_dir))

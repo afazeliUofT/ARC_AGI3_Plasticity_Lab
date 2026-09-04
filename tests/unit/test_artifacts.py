@@ -202,3 +202,47 @@ def test_extra_json_refuses_undeclared_names(tmp_path: Path) -> None:
 def test_extra_artifact_declarations_are_validated(tmp_path: Path, name: str) -> None:
     with pytest.raises(ArtifactError):
         RunArtifactWriter(tmp_path / "r1", (name,))
+
+
+# ------------------------------------------------------------------ extra artifact directories (G3)
+
+
+def _write_contract(w: RunArtifactWriter) -> None:
+    w.write_resolved_config("seed: 1\n")
+    w.write_git_state("commit abc\n")
+    w.write_environment_info({})
+    w.write_results({})
+    w.write_metrics([])
+    w.write_environment_results([], ("env",))
+    w.write_manifest(_manifest())
+
+
+def test_extra_directories_are_created_written_once_and_sealed(tmp_path: Path) -> None:
+    run = tmp_path / "r1"
+    with RunArtifactWriter(run, ("model_calls/", "world_models/", "plans.jsonl")) as w:
+        assert w.extra_directories == ("model_calls", "world_models")
+        assert w.extra_files == ("plans.jsonl",)
+        assert (run / "model_calls").is_dir() and (run / "world_models").is_dir()
+        _write_contract(w)
+        w.write_extra_file("model_calls", "1.prompt.txt", "hello\n")
+        with pytest.raises(ArtifactError, match="already written"):
+            w.write_extra_file("model_calls", "1.prompt.txt", "again\n")
+        with pytest.raises(ArtifactError, match="not a declared extra artifact directory"):
+            w.write_extra_file("prompts", "1.txt", "x")
+        for bad in ("../x.txt", "a/b.txt", ".hidden", ""):
+            with pytest.raises(ArtifactError, match="plain file name"):
+                w.write_extra_file("world_models", bad, "x")
+        w.write_extra_jsonl("plans.jsonl", [])
+        digests = w.finalize()
+    assert "model_calls/1.prompt.txt" in digests
+    assert "world_models/EMPTY" in digests  # an empty declared directory gets a marker
+    sums = (run / "SHA256SUMS").read_text()
+    assert "  model_calls/1.prompt.txt\n" in sums and "  world_models/EMPTY\n" in sums
+    with pytest.raises(ArtifactError, match="sealed"):
+        w.write_extra_file("model_calls", "2.prompt.txt", "late\n")
+
+
+@pytest.mark.parametrize("name", ["results.json/", "a/b/", "./", "../", ".hidden/", "/"])
+def test_extra_directory_declarations_are_validated(tmp_path: Path, name: str) -> None:
+    with pytest.raises(ArtifactError):
+        RunArtifactWriter(tmp_path / "r1", (name,))

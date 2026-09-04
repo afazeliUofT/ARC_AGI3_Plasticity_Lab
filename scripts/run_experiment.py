@@ -3,13 +3,17 @@
 
     uv run python scripts/run_experiment.py --config configs/experiments/<experiment>.yaml
                                             [--seed N] [--artifacts-root DIR] [--run-id ID]
+                                            [--game STEM]
 
 What one invocation does, in order:
 
 1. Load and validate the config; apply ``--seed``; fill a missing wall-clock limit from
-   ``state/BUDGET.json`` ``default_experiment_wallclock_seconds``. No limit, no run. If the
-   runner declares ``preflight(config)``, it runs here; a ``RunPreflightError`` exits 2 before
-   any run directory exists.
+   ``state/BUDGET.json`` ``default_experiment_wallclock_seconds``. No limit, no run. If
+   ``--game`` is given the runner must declare ``select_game(config, stem)``, which returns
+   the config resolved for that one game (G3 ``experiment.one_game_per_run``: the config
+   lists every game, the flag selects one, and the selection and the per-game action budget
+   are recorded in ``resolved_config.yaml``). If the runner declares ``preflight(config)``,
+   it runs here; a ``RunPreflightError`` exits 2 before any run directory exists.
 2. Record provenance before anything runs: resolved config, git state, environment info.
 3. Run the registered runner inside a ``NetworkGuard`` set to the config's allowance and a
    hard wall-clock limit. A guard violation or timeout is recorded as the run's completion
@@ -31,6 +35,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from arc_plasticity.agents import ref_world_model  # noqa: F401  (registers the E300 runner)
 from arc_plasticity.core.artifacts import RunArtifactWriter, RunManifest
 from arc_plasticity.core.config import (
     ConfigError,
@@ -65,6 +70,14 @@ from arc_plasticity.evaluation import (  # noqa: F401  (registers the E020 and E
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def config_file_sha256(path: Path) -> str:
+    """SHA-256 of the config file as committed: identical across the game-runs of a set even
+    though ``config_hash`` (the resolved, per-game config) differs by the selected game."""
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def extra_artifacts(config: ExperimentConfig) -> tuple[str, ...]:
@@ -104,6 +117,7 @@ def run(
     seed: int | None = None,
     artifacts_root: Path | None = None,
     run_id: str | None = None,
+    game: str | None = None,
     root: Path = ROOT,
 ) -> tuple[Path, str]:
     """Run one experiment. Returns the run directory and its completion status."""
@@ -112,6 +126,12 @@ def run(
         seed=seed,
         wallclock_fallback_seconds=budget_wallclock_fallback(root),
     )
+    runner = get_runner(config.runner)
+    if game is not None:
+        select_game = getattr(runner, "select_game", None)
+        if not callable(select_game):
+            raise ConfigError(f"runner {config.runner!r} does not accept --game")
+        config = select_game(config, game)
     limit = config.wallclock_limit_seconds
     assert limit is not None  # resolve_config guarantees it
 
@@ -122,7 +142,7 @@ def run(
     git = git_state(root)
     lock_hash = dependency_lock_hash(root)
     cfg_hash = config_hash(config)
-    runner = get_runner(config.runner)
+    file_hash = config_file_sha256(config_path)
     preflight = getattr(runner, "preflight", None)
     if callable(preflight):
         # A RunPreflightError propagates before any directory exists (constitution: a run
@@ -170,6 +190,7 @@ def run(
             "run_id": rid,
             "seed": config.seed,
             "config_hash": cfg_hash,
+            "config_file_sha256": file_hash,
             "completion_status": status,
             "created_utc": started.isoformat(timespec="seconds").replace("+00:00", "Z"),
             "wallclock_seconds": elapsed,
@@ -224,11 +245,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", type=int, default=None, help="override the config seed")
     ap.add_argument("--artifacts-root", type=Path, default=None, help="default: artifacts/")
     ap.add_argument("--run-id", default=None, help="default: <utc>_seed<seed>_<8 hex>")
+    ap.add_argument(
+        "--game", default=None, help="the one game stem this invocation runs (E300: required)"
+    )
     args = ap.parse_args(argv)
 
     try:
         run_dir, status = run(
-            args.config, seed=args.seed, artifacts_root=args.artifacts_root, run_id=args.run_id
+            args.config,
+            seed=args.seed,
+            artifacts_root=args.artifacts_root,
+            run_id=args.run_id,
+            game=args.game,
         )
     except ConfigError as exc:
         print(f"FAIL config: {exc}", file=sys.stderr)

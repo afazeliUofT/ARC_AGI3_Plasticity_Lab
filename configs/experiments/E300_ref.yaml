@@ -1,0 +1,100 @@
+# E300_ref: the reference architecture (REF) on one cached public game per invocation.
+#
+# Pre-registered in preregistration/G3.yaml, experiment. One invocation runs exactly one game
+# (experiment.one_game_per_run): the config lists all 25 cached stems and --game <stem>
+# selects one; the entry point records the selection under runner_params.game and resolves
+# budgets.action_budget to action_budget_multiplier x sum(official baseline_actions) of that
+# game (the placeholder 0 below is never run). The graded unit is the set of 25 game-runs
+# listed in experiments/E300_ref_run_set.json (scripts/build_e300_run_set.py).
+#
+# Every numeric ceiling under runner_params is copied from the G3 pre-registration thresholds
+# (model_calls_per_game_max, tokens_per_game_max, simulation_steps_per_game_max, the three
+# sandbox limits, action_budget_multiplier, cache_manifest_sha256); the verifier compares the
+# copies with the locked values. induction_min_history, wallclock_reserve_seconds and planner
+# are internal design choices (reference_architecture.what_is_fixed_here), frozen within a
+# graded set by the config hash.
+#
+# model_client.kind headless_cli is the graded channel (model_calls.channel) and arrives with
+# G3.5; until then the runner's preflight refuses to start, so no run can begin believing it
+# has a model. Tests replace it with kind recorded (a canned-response file).
+#
+# Run:  uv run python scripts/run_experiment.py --config configs/experiments/E300_ref.yaml --game <stem>
+
+schema_version: 1
+experiment_id: E300_ref
+description: Reference architecture (induce an executable world model, certify it by full-history backtest, plan inside it, predict before every action) on one cached public game per invocation under the official 5x per-level action budget, scored by RHAE against the official baselines.
+runner: ref_world_model
+seed: 12345
+wallclock_limit_seconds: 7200
+network_calls_allowed: 0
+model_calls_allowed: 60
+budgets:
+  action_budget: 0
+  simulation_budget: 5000000
+  token_budget: 4000000
+  persistent_state_size_cap_bytes: 0
+language_model:
+  identifier: claude-fable-5-1
+  prompt: |
+    You are writing an executable world model of an unknown grid game from a recorded
+    history of actions and the observations that followed them. The history is complete
+    and exact; your program must reproduce EVERY recorded transition exactly (every grid
+    cell, the state string and levels_completed) when replayed from the start, or it will
+    be rejected with a counterexample. Prefer the simplest rule that explains all of the
+    data. Return a single Python program implementing the contract below, in one fenced
+    ```python block, with no other code blocks.
+runner_params:
+  environments_dir: environment_files
+  cache_manifest: experiments/environment_cache_manifest.json
+  cache_manifest_sha256: 023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af
+  games:
+    - ar25
+    - bp35
+    - cd82
+    - cn04
+    - dc22
+    - ft09
+    - g50t
+    - ka59
+    - lf52
+    - lp85
+    - ls20
+    - m0r0
+    - r11l
+    - re86
+    - s5i5
+    - sb26
+    - sc25
+    - sk48
+    - sp80
+    - su15
+    - tn36
+    - tr87
+    - tu93
+    - vc33
+    - wa30
+  action_budget_multiplier: 5
+  model_effort: high
+  model_calls_per_game_max: 60
+  tokens_per_game_max: 4000000
+  simulation_steps_per_game_max: 5000000
+  induction_min_history: 4
+  wallclock_reserve_seconds: 120
+  planner:
+    max_depth: 8
+    max_nodes: 20000
+    click_grid_step: 16
+  sandbox_limits:
+    backtest_seconds_max: 120
+    predict_seconds_max: 5
+    address_space_bytes_max: 2147483648
+  model_client:
+    kind: headless_cli
+  extra_artifacts:
+    - model_calls.jsonl
+    - model_calls/
+    - world_models/
+    - backtests.jsonl
+    - plans.jsonl
+    - level_accounting.json
+    - rhae.json
