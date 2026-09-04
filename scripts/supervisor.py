@@ -92,6 +92,60 @@ state/ESCALATION.md, set blocked_on, and stop cleanly."""
 
 # Effort by task class. AGENT_CONSTITUTION.md section 8: mechanical work uses no
 # model at all, so it never reaches this table.
+THROTTLE = STATE / "throttle.json"
+
+# A turn that returns in a second or two did no work: the CLI refused before the
+# agent ran. Scoring those as no-progress turns walked the run into a HALT on
+# 2026-09-04 for a reason that had nothing to do with the agent.
+NOOP_SECONDS = int(os.environ.get("ARC_LAB_NOOP_SECONDS", "25"))
+NOOP_STREAK_ESCALATE = 8
+
+# Applied ONLY to the output of a fast no-op turn, where the agent produced no
+# prose of its own, so it cannot match the evidence base the way the old
+# stdout-wide patterns did.
+USAGE_ANY_PAT = re.compile(
+    r"(hit your (session|weekly|usage|5-hour|five[- ]hour) limit"
+    r"|usage limit reached|quota exceeded|out of (usage|credits?)"
+    r"|\brate_limit_error\b|limit (will )?reset|resets? at"
+    r"|upgrade to (a )?higher|insufficient (credit|quota))", re.I)
+
+
+def window_model_seconds(seconds_back: int) -> tuple[int, int, float]:
+    """Model seconds, turn count, and oldest turn epoch inside a rolling window.
+
+    Read from our own supervisor log, so it needs no usage gauge. Turns shorter
+    than NOOP_SECONDS are excluded: they consumed nothing.
+    """
+    # count_from lets a human reset the meter when the provider window has
+    # demonstrably rolled, so we do not sit out a window that already expired.
+    _caps = read_json(THROTTLE, {}) or {}
+    cutoff = max(time.time() - seconds_back, float(_caps.get("count_from") or 0))
+    total = count = 0
+    oldest = 0.0
+    if not SUPERVISOR_LOG.exists():
+        return 0, 0, 0.0
+    for line in SUPERVISOR_LOG.read_text(encoding="utf-8", errors="ignore").splitlines():
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if d.get("event") != "turn":
+            continue
+        secs = int(d.get("elapsed_s", 0) or 0)
+        if secs < NOOP_SECONDS:
+            continue
+        try:
+            when = datetime.fromisoformat(str(d.get("ts")).replace("Z", "+00:00")).timestamp()
+        except Exception:
+            continue
+        if when < cutoff:
+            continue
+        total += secs
+        count += 1
+        oldest = when if oldest == 0.0 else min(oldest, when)
+    return total, count, oldest
+
+
 EFFORT_BY_GATE_STATUS = {
     "awaiting_verdict": "max",   # referee
     "not_started": "max",        # planning and pre-registration
@@ -338,6 +392,12 @@ class Supervisor:
     def effort_for(self, st: dict[str, Any], bud: dict[str, Any]) -> str:
         policy = bud.get("effort_policy") or {}
         base = EFFORT_BY_GATE_STATUS.get(str(st.get("gate_status")), "high")
+        # The retrospective is the highest-leverage judgement in the programme -
+        # continue this branch or kill it - so it runs at the policy's
+        # retrospective effort whatever the gate status says. It previously
+        # inherited "high" because effort_for never read that key.
+        if int(st.get("consecutive_no_progress_turns", 0) or 0) >= 3:
+            return str(policy.get("retrospective", "max"))
         if st.get("gate_status") == "awaiting_verdict":
             return str(policy.get("verdict", base))
         if st.get("gate_status") == "not_started":
@@ -493,11 +553,40 @@ class Supervisor:
                                  f"{self.usage_stop_pct:.0f}%")
                 continue
 
+            # Self-throttle. Every turn logs [gauge: none]: the usage gauge is
+            # written by the statusline hook, which does not fire in headless
+            # mode, so the documented 90% stop was never enforceable. This is
+            # the fallback and it needs no gauge - a ceiling on model seconds
+            # per rolling window, measured from our own log.
+            caps = read_json(THROTTLE, {}) or {}
+            cap5 = int(caps.get("max_model_seconds_per_5h",
+                                bud.get("max_model_seconds_per_5h", 5000)) or 0)
+            cap7 = int(caps.get("max_model_seconds_per_7d",
+                                bud.get("max_model_seconds_per_7d", 0)) or 0)
+            _u5, _n5, _o5 = window_model_seconds(FIVE_HOURS)
+            _u7, _n7, _o7 = window_model_seconds(SEVEN_DAYS)
+            _budline = (f"  [5h {_u5}/{cap5}s model]" if cap5
+                        else f"  [5h {_u5}s model, no ceiling]")
+            throttled = False
+            for cap, used, nturns, oldest, span, wname in (
+                    (cap5, _u5, _n5, _o5, FIVE_HOURS, "five_hour"),
+                    (cap7, _u7, _n7, _o7, SEVEN_DAYS, "seven_day")):
+                if cap and used >= cap:
+                    target = int(oldest + span + 60) if oldest else None
+                    self.sleep_until(
+                        target, wname,
+                        f"self-throttle: {used}s of model time in the last "
+                        f"{span // 3600}h over {nturns} turn(s), ceiling {cap}s")
+                    throttled = True
+                    break
+            if throttled:
+                continue
+
             effort = self.effort_for(st, bud)
             gate = st.get("current_gate", "?")
             print(f"[supervisor] turn {self.turns_this_run + 1}  gate={gate} "
                   f"status={st.get('gate_status')} effort={effort}"
-                  + ("  [gauge: none]" if not gauge.present else
+                  + (_budline if not gauge.present else
                      f"  [5h {gauge.five_hour_pct}% 7d {gauge.seven_day_pct}%]"))
 
             if self.dry_run:
@@ -509,8 +598,68 @@ class Supervisor:
             out = self.run_turn(effort)
             elapsed = int(time.time() - t0)
 
+            # A turn that returns almost instantly did nothing: the CLI refused
+            # before the agent started. That is a service condition to wait out,
+            # never a no-progress turn. Its full output is preserved so the
+            # cause is diagnosable rather than invisible.
+            if (out.kind == "ok" and elapsed < NOOP_SECONDS
+                    and ledger_len() == before_ledger
+                    and head_commit() == before_commit):
+                streak = int(getattr(self, "noop_streak", 0)) + 1
+                self.noop_streak = streak
+                append_jsonl(TOOL_ERRORS, {
+                    "ts": iso(), "kind": "fast_noop", "elapsed_s": elapsed,
+                    "streak": streak, "returncode": out.returncode,
+                    "stdout_tail": (out.stdout or "")[-4000:],
+                    "stderr_tail": (out.stderr or "")[-4000:]})
+                blob = (out.stdout or "") + "\n" + (out.stderr or "")
+                if USAGE_ANY_PAT.search(blob):
+                    self.log("rate_limit", window="inferred", returncode=out.returncode,
+                             detail=f"usage-limit text in a {elapsed}s no-op turn")
+                    self.sleep_until(None, "five_hour",
+                                     "usage limit inferred from an instant no-op turn")
+                    continue
+                self.log("fast_noop", elapsed_s=elapsed, streak=streak,
+                         returncode=out.returncode)
+                if streak >= NOOP_STREAK_ESCALATE:
+                    print(f"[supervisor] {streak} instant no-op turns in a row. Escalating.")
+                    if not ESCALATION.read_text(encoding="utf-8").strip():
+                        ESCALATION.write_text(
+                            "# Escalation: the CLI returns immediately without running\n\n"
+                            f"Time: {iso()}\n\n"
+                            f"{streak} consecutive turns exited in under {NOOP_SECONDS}s with "
+                            "no ledger entry and no commit. The agent never ran. This is not "
+                            "an agent fault; the CLI is refusing at startup.\n\n"
+                            "Look at the `fast_noop` entries in `state/tool_errors.jsonl` - "
+                            "they carry the captured stdout and stderr.\n\n"
+                            "Answer by appending a section that starts with `## ANSWER`.\n",
+                            encoding="utf-8")
+                    st["blocked_on"] = "CLI returns immediately without running the agent"
+                    write_json(PROJECT_STATE, st)
+                    self.log("halt", reason="fast_noop_streak")
+                    return 8
+                self.sleep_until(None, "five_hour",
+                                 f"turn returned in {elapsed}s having done nothing "
+                                 f"(streak {streak})")
+                continue
+            self.noop_streak = 0
+
             if out.kind == "rate_limit":
                 self.log("rate_limit", window=out.window, returncode=out.returncode)
+                for wname, span, key in (("five_hour", FIVE_HOURS,
+                                          "max_model_seconds_per_5h"),
+                                         ("seven_day", SEVEN_DAYS,
+                                          "max_model_seconds_per_7d")):
+                    if out.window != wname:
+                        continue
+                    observed, _n, _o = window_model_seconds(span)
+                    learned = int(observed * 0.8)
+                    caps = read_json(THROTTLE, {}) or {}
+                    if learned > 0 and (not caps.get(key) or learned < int(caps[key])):
+                        caps[key] = learned
+                        write_json(THROTTLE, caps)
+                        print(f"[supervisor] calibrated {key} to {learned}s "
+                              f"(80% of the {observed}s that exhausted the window)")
                 self.sleep_until(out.resets_at, out.window,
                                  f"{out.window or 'usage'} limit hit")
                 continue

@@ -24,3 +24,5 @@ state/counters.json
 data/human_replays/extras/
 *.recording.jsonl
 data/**/*.zip
+state/throttle.json
+state/supervisor.py.bak.*
