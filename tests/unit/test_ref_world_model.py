@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import shutil
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -15,6 +16,7 @@ from typing import Any
 import pytest
 import yaml
 
+from arc_plasticity.agents import history_encoding as he
 from arc_plasticity.agents import model_client as mc
 from arc_plasticity.agents import ref_world_model as rwm
 from arc_plasticity.core.artifacts import CONTRACT_FILES, RunArtifactWriter, RunManifest
@@ -24,7 +26,7 @@ from arc_plasticity.core.runner import RunPreflightError
 from arc_plasticity.environments import arc_interface as ai
 from arc_plasticity.evaluation import level_accounting as la
 from arc_plasticity.hypotheses import backtest as bt
-from arc_plasticity.hypotheses.interface import History, Observation
+from arc_plasticity.hypotheses.interface import History, Observation, history_to_wire
 from arc_plasticity.hypotheses.sandbox import SandboxGuards
 from arc_plasticity.planning import ref_planner as rp
 from tests.g3_synthetic import INITIAL, SYNTHETIC_PROGRAM_SOURCE, SyntheticModel
@@ -367,6 +369,51 @@ def test_step_failure_is_a_run_failure_with_artifacts_preserved(tmp_path: Path) 
     assert "step_failed" in (run_dir / "stderr.log").read_text()
 
 
+def test_calls_without_program_count_but_propose_nothing_then_unavailable(tmp_path: Path) -> None:
+    """G3.5: a made call with no program (non-zero exit / empty text) is charged, proposes no
+    hypothesis, and after CALLS_WITHOUT_PROGRAM_MAX in a row the channel is unavailable."""
+    path = tmp_path / "empty_responses.json"
+    items = [{"text": "", "usage": {"input_tokens": 10}, "exit_code": 1} for _ in range(5)]
+    path.write_text(json.dumps({"schema_version": 1, "responses": items}))
+    run_dir = tmp_path / "empty"
+    with RunArtifactWriter(run_dir, rwm.EXTRA_ARTIFACTS) as writer:
+        game = rwm.RefGameRun(
+            game_id="syn0-00000000", game_index=0, seed=12345,
+            environment=SyntheticEnvironment(), baselines=[16, 16], params=_params(),
+            client=mc.RecordedResponseClient(path), writer=writer, deadline=Deadline(600),
+            model_identifier="stub", prompt_template="T",
+            guards=SandboxGuards(ROOT, (ENV_DIR, ROOT / "data")),
+        )  # fmt: skip
+        report = game.run()
+        writer.write_resolved_config("synthetic: true\n")
+        writer.write_git_state("none\n")
+        writer.write_environment_info({})
+        writer.write_results({"results": rwm.results_mapping(report, _params(), _config_stub())})
+        writer.write_metrics(rwm.metrics_rows(report))
+        writer.write_environment_results(rwm.environment_rows(report), rwm.ENVIRONMENT_COLUMNS)
+        writer.write_manifest(_manifest_stub())
+        writer.finalize()
+    assert report.model_calls == rwm.CALLS_WITHOUT_PROGRAM_MAX == 3
+    assert report.calls_without_program == 3 and report.hypotheses_proposed == 0
+    assert report.tokens_by_kind["input"] == 30
+    assert report.model_unavailable_reason == (
+        "3 consecutive model calls returned no program (last exit_code=1)"
+    )
+    rows = [json.loads(l) for l in (run_dir / "model_calls.jsonl").read_text().splitlines()]
+    assert [r["program_returned"] for r in rows] == [False, False, False]
+    assert all(r["exit_code"] == 1 for r in rows)
+    assert not any((run_dir / "world_models").glob("*.py"))
+    assert (run_dir / "hypotheses.jsonl").read_text() == ""
+    results = json.loads((run_dir / "results.json").read_text())["results"]
+    assert results["calls_without_program"] == 3
+    assert results["calls_without_program_max_consecutive"] == 3
+    assert results["history_encoding"] == {
+        "name": "rle_rows_delta_v1",
+        "module_sha256": he.history_encoding_sha256(),
+    }
+    assert "returned no program" in (run_dir / "stdout.log").read_text()
+
+
 def test_build_prompt_carries_history_budget_and_counterexamples() -> None:
     history = History(INITIAL)
     prompt = rwm.build_prompt(
@@ -377,9 +424,15 @@ def test_build_prompt_carries_history_budget_and_counterexamples() -> None:
     assert "def predict(history: list[dict], action: dict) -> dict" in prompt
     assert "current level: 2; actions remaining on this level: 37" in prompt
     assert "### h001" in prompt and '"kind":"backtest"' in prompt
-    assert json.dumps([{"action": None, **json.loads(json.dumps(
-        {"frame": [[[0] * 4] * 4], "state": "NOT_FINISHED", "levels_completed": 0,
-         "available_actions": [1, 2, 3, 4, 6]}))}], separators=(",", ":")) in prompt  # fmt: skip
+    assert "## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)" in prompt
+    assert he.ENCODING_DESCRIPTION.rstrip() in prompt
+    encoded = he.encode_history_compact(history_to_wire(history))
+    assert encoded.rstrip() in prompt
+    assert (
+        'record 0: reset; state="NOT_FINISHED"; levels_completed=0; '
+        "available_actions=[1,2,3,4,6]\nframe: full, 1 grid(s)\ng0 r0-r3: 0*4\n"
+    ) == encoded
+    assert he.decode_history_compact(encoded) == history_to_wire(history)
     assert "environment_files" not in prompt and "human_replays" not in prompt
 
 
@@ -479,9 +532,13 @@ def test_preflight_refusals(tmp_path: Path) -> None:
     config = resolve_config(load_experiment_config(CONFIG))
     with pytest.raises(RunPreflightError, match="--game"):
         runner.preflight(config)
-    # The committed config names the headless channel, which does not exist before G3.5.
-    with pytest.raises(RunPreflightError, match="headless_cli is not implemented"):
+    # The committed config names the headless channel (G3.5): preflight passes when a
+    # `claude` executable is on PATH and refuses otherwise, without touching any model.
+    if shutil.which("claude") is not None:
         runner.preflight(runner.select_game(config, "ar25"))
+    else:
+        with pytest.raises(RunPreflightError, match="not found on PATH"):
+            runner.preflight(runner.select_game(config, "ar25"))
     # No client while a model call could be needed.
     no_client = _toolkit_config(tmp_path, "no_client", {"kind": "none"}, 60)
     with pytest.raises(RunPreflightError, match="no model client"):

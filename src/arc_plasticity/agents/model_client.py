@@ -8,9 +8,16 @@ Two clients share one interface, :class:`ModelClient`:
   makes the E300 runner a deterministic function of the experiment seed, which is what
   ``model_calls.nondeterminism_protocol`` asks ``tests/unit`` to assert. It makes no
   process, no network call and reads nothing but its file.
-* The headless CLI adapter (``kind`` ``headless_cli``: one ``claude -p`` per call, fresh
-  session, tool use disabled, cwd a fresh temporary directory outside the repository) is
-  G3.5 and is refused here until it exists, so no run can start believing it has a model.
+* :class:`HeadlessCliClient` (``kind`` ``headless_cli``, G3.5) runs one ``claude -p``
+  subprocess per call: a fresh session (no ``--continue``, ``--no-session-persistence``),
+  ``--output-format json``, ``--model`` and ``--effort`` from the request, every tool
+  disabled (``--tools ""`` plus ``--permission-prompts none`` so nothing can prompt), the
+  prompt on stdin, cwd a fresh temporary directory outside the repository (removed after),
+  and an environment with every ``ARC_*`` variable and the nested-session markers removed.
+  The JSON result is parsed into a :class:`ModelResponse`; a non-zero exit, a timeout or an
+  ``is_error`` result is still a made call (recorded, no program). Only an authentication or
+  usage-limit signature is a refusal (:class:`ModelClientError`), because such a call reached
+  no model and the runner then marks the model unavailable rather than burning its budget.
 
 Every call is described by a :class:`ModelRequest` and answered by a :class:`ModelResponse`
 whose fields are exactly what ``model_calls.jsonl`` records: model as sent and as reported,
@@ -23,11 +30,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
+import subprocess
 import tempfile
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
@@ -46,6 +55,38 @@ USAGE_KEYS: dict[str, str] = {
 
 _FENCE_RE = re.compile(r"```(?:python|py)?[ \t]*\n(.*?)```", re.DOTALL)
 
+# Headless CLI adapter constants (preregistration/G3.yaml model_calls.channel).
+DEFAULT_EXECUTABLE = "claude"
+DEFAULT_CALL_WALLCLOCK_SECONDS = 600
+STDERR_TAIL_CHARS = 4000
+STDOUT_TAIL_CHARS = 20000
+EXIT_CODE_TIMED_OUT = -1
+EXIT_CODE_NOT_STARTED = -2
+# Environment keys never passed to the child: the benchmark key (leak_controls) and the
+# markers a Claude Code session sets for its own children (a nested CLI refuses to start).
+STRIPPED_ENV_PREFIXES: tuple[str, ...] = ("ARC_",)
+STRIPPED_ENV_KEYS: tuple[str, ...] = ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")
+TOKEN_ENV_KEY = "CLAUDE_CODE_OAUTH_TOKEN"
+# Signatures classifying a failed call as a refusal (no model was reached). Substrings,
+# case-insensitive, matched against stderr and the result text. The usage-limit wording is the
+# one docs/EVIDENCE_TOOLING.md section 7 and the supervisor's captured payloads record.
+AUTH_SIGNATURES: tuple[str, ...] = (
+    "not logged in",
+    "login expired",
+    "please run /login",
+    "invalid api key",
+    "authentication_error",
+    "oauth token",
+    "not authenticated",
+)
+USAGE_LIMIT_SIGNATURES: tuple[str, ...] = (
+    "hit your session limit",
+    "hit your weekly limit",
+    "spend limit",
+    "rate_limit_error",
+    "usage limit",
+)
+
 
 class ModelClientError(RuntimeError):
     """A call could not be made at all (no client, no credential, no response left)."""
@@ -53,6 +94,15 @@ class ModelClientError(RuntimeError):
 
 class ResponsesExhausted(ModelClientError):
     """The recorded response file has no response left for this call."""
+
+
+class CallRefused(ModelClientError):
+    """The headless CLI reached no model: authentication or usage-limit failure."""
+
+    def __init__(self, reason: str, message: str, raw: Mapping[str, Any]) -> None:
+        super().__init__(f"{reason}: {message}")
+        self.reason = reason
+        self.raw = raw
 
 
 @dataclass(frozen=True)
@@ -197,11 +247,239 @@ class RecordedResponseClient:
         return None
 
 
+def _tail(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[-limit:]
+
+
+def child_environment(
+    parent: Mapping[str, str], token: str | None
+) -> tuple[dict[str, str], list[str]]:
+    """The environment a headless call receives: ``parent`` minus every stripped key, plus
+    the token under :data:`TOKEN_ENV_KEY` when one was read from a file. Returns the
+    environment and the sorted list of keys removed (recorded per call; values never are)."""
+    env: dict[str, str] = {}
+    stripped: list[str] = []
+    for key, value in parent.items():
+        if key in STRIPPED_ENV_KEYS or key.startswith(STRIPPED_ENV_PREFIXES):
+            stripped.append(key)
+        else:
+            env[key] = value
+    if token is not None:
+        env[TOKEN_ENV_KEY] = token
+    return env, sorted(stripped)
+
+
+def classify_refusal(exit_code: int, texts: Sequence[str]) -> str | None:
+    """``auth`` or ``usage_limit`` when the failure signatures match, else ``None``.
+    A call that exited 0 with a plain result is never a refusal."""
+    joined = "\n".join(t for t in texts if t).lower()
+    if not joined:
+        return None
+    if any(sig in joined for sig in AUTH_SIGNATURES):
+        return "auth"
+    if any(sig in joined for sig in USAGE_LIMIT_SIGNATURES):
+        return "usage_limit"
+    return None
+
+
+def headless_argv(executable: str, model_identifier: str, effort: str) -> list[str]:
+    """The fixed argument vector (the prompt travels on stdin). Every flag is documented in
+    docs/EVIDENCE_TOOLING.md section 2 or printed by ``claude --help`` 2.1.260."""
+    return [
+        executable,
+        "-p",
+        "--output-format",
+        "json",
+        "--model",
+        model_identifier,
+        "--effort",
+        effort,
+        "--tools",
+        "",
+        "--permission-prompts",
+        "none",
+        "--no-session-persistence",
+    ]
+
+
+class HeadlessCliClient:
+    """One ``claude -p`` subprocess per call. See the module docstring.
+
+    ``token_file`` (optional) is a file outside the repository holding the long-lived OAuth
+    token; it is read once and exported to the child only (never logged, never written).
+    ``call_wallclock_seconds`` bounds each subprocess; an overrun is killed and recorded with
+    exit code :data:`EXIT_CODE_TIMED_OUT`.
+    """
+
+    kind = "headless_cli"
+
+    def __init__(
+        self,
+        executable: str = DEFAULT_EXECUTABLE,
+        call_wallclock_seconds: float = DEFAULT_CALL_WALLCLOCK_SECONDS,
+        token_file: Path | None = None,
+        repository_root: Path | None = None,
+        environment: Mapping[str, str] | None = None,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        resolved = shutil.which(executable) if not Path(executable).is_absolute() else executable
+        if resolved is None or not Path(resolved).is_file():
+            raise ModelClientError(f"headless executable {executable!r} not found on PATH")
+        self.executable = str(resolved)
+        if not isinstance(call_wallclock_seconds, int | float) or call_wallclock_seconds <= 0:
+            raise ModelClientError("call_wallclock_seconds must be a positive number")
+        self.call_wallclock_seconds = float(call_wallclock_seconds)
+        self.repository_root = (repository_root or Path.cwd()).resolve()
+        self.token_source = "none"
+        token: str | None = None
+        if token_file is not None:
+            path = Path(token_file).expanduser().resolve()
+            if path.is_relative_to(self.repository_root):
+                raise ModelClientError(f"token_file {path} lies inside the repository")
+            if not path.is_file():
+                raise ModelClientError(f"token_file {path} does not exist")
+            token = path.read_text(encoding="utf-8").strip()
+            if not token:
+                raise ModelClientError(f"token_file {path} is empty")
+            self.token_source = "file"
+        elif (environment if environment is not None else os.environ).get(TOKEN_ENV_KEY):
+            self.token_source = "environment"
+        parent = dict(environment if environment is not None else os.environ)
+        self._env, self.stripped_env_keys = child_environment(parent, token)
+        self._clock = clock
+        self.calls_made = 0
+
+    def _make_cwd(self) -> str:
+        cwd = tempfile.mkdtemp(prefix="arc_model_call_")
+        if Path(cwd).resolve().is_relative_to(self.repository_root):
+            shutil.rmtree(cwd, ignore_errors=True)
+            raise ModelClientError(f"temporary cwd {cwd} lies inside the repository")
+        return cwd
+
+    def call(self, request: ModelRequest) -> ModelResponse:
+        if not request.model_identifier:
+            raise ModelClientError("headless_cli needs a model identifier")
+        argv = headless_argv(self.executable, request.model_identifier, request.effort)
+        cwd = self._make_cwd()
+        started = self._clock()
+        exit_code: int
+        stdout = ""
+        stderr = ""
+        timed_out = False
+        try:
+            try:
+                completed = subprocess.run(
+                    argv,
+                    input=request.prompt,
+                    capture_output=True,
+                    text=True,
+                    cwd=cwd,
+                    env=self._env,
+                    timeout=self.call_wallclock_seconds,
+                    check=False,
+                )
+                exit_code = int(completed.returncode)
+                stdout = completed.stdout or ""
+                stderr = completed.stderr or ""
+            except subprocess.TimeoutExpired as exc:
+                timed_out = True
+                exit_code = EXIT_CODE_TIMED_OUT
+                stdout = _as_text(exc.stdout)
+                stderr = _as_text(exc.stderr)
+            except OSError as exc:
+                exit_code = EXIT_CODE_NOT_STARTED
+                stderr = f"{type(exc).__name__}: {exc}"
+        finally:
+            shutil.rmtree(cwd, ignore_errors=True)
+        wallclock = self._clock() - started
+        self.calls_made += 1
+        parsed: dict[str, Any] | None = None
+        parse_error: str | None = None
+        if stdout.strip():
+            try:
+                loaded = json.loads(stdout)
+                if isinstance(loaded, dict):
+                    parsed = loaded
+                else:
+                    parse_error = f"stdout JSON is a {type(loaded).__name__}, not an object"
+            except json.JSONDecodeError as exc:
+                parse_error = f"stdout is not JSON: {exc}"
+        result = parsed.get("result") if parsed is not None else None
+        text = result if isinstance(result, str) else ""
+        usage_raw = parsed.get("usage") if parsed is not None else None
+        usage: dict[str, Any] = dict(usage_raw) if isinstance(usage_raw, dict) else {}
+        is_error = bool(parsed.get("is_error")) if parsed is not None else exit_code != 0
+        raw: dict[str, Any] = {
+            "channel": self.kind,
+            "argv": argv,
+            "cwd": cwd,
+            "prompt_bytes": len(request.prompt.encode("utf-8")),
+            "call_wallclock_seconds": self.call_wallclock_seconds,
+            "timed_out": timed_out,
+            "exit_code": exit_code,
+            "is_error": is_error,
+            "wallclock_seconds": wallclock,
+            "stripped_env_keys": self.stripped_env_keys,
+            "token_source": self.token_source,
+            "stderr_tail": _tail(stderr, STDERR_TAIL_CHARS),
+            "parse_error": parse_error,
+            "stdout_tail": None if parsed is not None else _tail(stdout, STDOUT_TAIL_CHARS),
+            "response": parsed,
+            "result": text,
+            "model": _model_reported(parsed),
+            "usage": usage,
+            "total_cost_usd": parsed.get("total_cost_usd") if parsed is not None else None,
+        }
+        if exit_code != 0 or is_error or not text:
+            refusal = classify_refusal(exit_code, [stderr, text, "" if parsed else stdout])
+            if refusal is not None:
+                message = _tail(stderr.strip() or text.strip() or stdout.strip(), 500)
+                raise CallRefused(
+                    refusal, f"call {request.call_index} exit {exit_code}: {message}", raw
+                )
+        return ModelResponse(
+            text=text,
+            model_reported=raw["model"],
+            usage=usage,
+            raw=raw,
+            exit_code=exit_code,
+            wallclock_seconds=wallclock,
+            cwd=cwd,
+            tools_disabled=True,
+            extra={"is_error": is_error, "timed_out": timed_out},
+        )
+
+    def close(self) -> None:
+        return None
+
+
+def _as_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _model_reported(parsed: Mapping[str, Any] | None) -> str | None:
+    """The model the CLI reports: the key of ``modelUsage`` when there is exactly one, else
+    the ``model`` field if present."""
+    if parsed is None:
+        return None
+    usage = parsed.get("modelUsage")
+    if isinstance(usage, Mapping) and len(usage) == 1:
+        return str(next(iter(usage)))
+    model = parsed.get("model")
+    return str(model) if isinstance(model, str) else None
+
+
 def build_client(spec: Mapping[str, Any] | None, root: Path) -> ModelClient | None:
     """A client from ``runner_params.model_client``. ``None`` means no model at all.
 
-    ``kind`` ``recorded`` needs ``responses_file`` (relative to ``root``); ``headless_cli``
-    is refused until G3.5 lands it, so a run cannot start believing it has a model.
+    ``kind`` ``recorded`` needs ``responses_file`` (relative to ``root``). ``headless_cli``
+    accepts ``executable`` (default ``claude``), ``call_wallclock_seconds`` (default 600) and
+    ``token_file`` (a path outside ``root``, ``~`` expanded); ``root`` is the repository the
+    call's cwd and the token file must lie outside of.
     """
     if spec is None:
         return None
@@ -218,8 +496,24 @@ def build_client(spec: Mapping[str, Any] | None, root: Path) -> ModelClient | No
             raise ModelClientError("model_client.responses_file is required for kind recorded")
         path = Path(raw)
         return RecordedResponseClient(path if path.is_absolute() else root / path)
-    raise ModelClientError(
-        "model_client.kind headless_cli is not implemented yet (G3.5); no model call can be made"
+    allowed = {"kind", "executable", "call_wallclock_seconds", "token_file"}
+    unknown = sorted(set(spec) - allowed)
+    if unknown:
+        raise ModelClientError(f"model_client keys {unknown} are not understood for headless_cli")
+    executable = spec.get("executable", DEFAULT_EXECUTABLE)
+    if not isinstance(executable, str) or not executable:
+        raise ModelClientError("model_client.executable must be a non-empty string")
+    seconds = spec.get("call_wallclock_seconds", DEFAULT_CALL_WALLCLOCK_SECONDS)
+    if isinstance(seconds, bool) or not isinstance(seconds, int | float) or seconds <= 0:
+        raise ModelClientError("model_client.call_wallclock_seconds must be a positive number")
+    token_raw = spec.get("token_file")
+    if token_raw is not None and (not isinstance(token_raw, str) or not token_raw):
+        raise ModelClientError("model_client.token_file must be a non-empty string or absent")
+    return HeadlessCliClient(
+        executable=executable,
+        call_wallclock_seconds=float(seconds),
+        token_file=Path(token_raw) if token_raw is not None else None,
+        repository_root=root,
     )
 
 
@@ -229,9 +523,20 @@ def model_client_sha256() -> str:
 
 
 __all__ = [
+    "AUTH_SIGNATURES",
     "CLIENT_KINDS",
+    "DEFAULT_CALL_WALLCLOCK_SECONDS",
+    "DEFAULT_EXECUTABLE",
+    "EXIT_CODE_NOT_STARTED",
+    "EXIT_CODE_TIMED_OUT",
     "PURPOSES",
+    "STRIPPED_ENV_KEYS",
+    "STRIPPED_ENV_PREFIXES",
+    "TOKEN_ENV_KEY",
     "USAGE_KEYS",
+    "USAGE_LIMIT_SIGNATURES",
+    "CallRefused",
+    "HeadlessCliClient",
     "ModelClient",
     "ModelClientError",
     "ModelRequest",
@@ -240,6 +545,9 @@ __all__ = [
     "ResponsesExhausted",
     "build_client",
     "canonical_response_text",
+    "child_environment",
+    "classify_refusal",
     "extract_program_source",
+    "headless_argv",
     "model_client_sha256",
 ]

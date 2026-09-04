@@ -55,6 +55,7 @@ from typing import Any, Protocol
 
 from arc_agi.wrapper import EnvironmentWrapper
 
+from arc_plasticity.agents import history_encoding as he
 from arc_plasticity.agents import model_client as mc
 from arc_plasticity.core.artifacts import RunArtifactWriter
 from arc_plasticity.core.config import ExperimentConfig
@@ -97,6 +98,12 @@ EXTRA_ARTIFACTS: tuple[str, ...] = (
 )
 MODEL_CALLS_DIR = "model_calls"
 WORLD_MODELS_DIR = "world_models"
+# A made call that returns no program (non-zero exit, timeout, is_error, empty text) counts
+# against the model budget but proposes no hypothesis; this many in a row and the channel is
+# treated as unavailable (model_unavailable_reason) so a broken CLI cannot burn every call in
+# seconds. An internal design choice (reference_architecture.what_is_fixed_here), recorded in
+# results.json as calls_without_program_max_consecutive.
+CALLS_WITHOUT_PROGRAM_MAX = 3
 
 SOURCE_PLAN = "plan"
 SOURCE_EXPLORATION = "exploration"
@@ -334,9 +341,13 @@ def build_prompt(
             parts.append(json.dumps(dict(ce), sort_keys=True, separators=(",", ":")))
         parts.append("")
     parts += [
-        "## Recorded history (JSON; record 0 is the reset observation)",
+        f"## Recorded history ({he.ENCODING_NAME}; record 0 is the reset observation)",
         "",
-        json.dumps(history_to_wire(history), separators=(",", ":")),
+        he.ENCODING_DESCRIPTION.rstrip(),
+        "",
+        "```",
+        he.encode_history_compact(history_to_wire(history)).rstrip(),
+        "```",
         "",
         "Reply with one Python program in a ```python fenced block.",
     ]
@@ -382,6 +393,7 @@ class GameRunReport:
     model_budget_consumed: bool
     step_failed_at: int | None
     counterexamples: list[dict[str, Any]] = field(default_factory=list)
+    calls_without_program: int = 0
 
 
 class RefGameRun:
@@ -430,6 +442,8 @@ class RefGameRun:
         self.model_calls = 0
         self.tokens_by_kind: dict[str, int] = dict.fromkeys(mc.USAGE_KEYS, 0)
         self.model_unavailable_reason: str | None = None
+        self.calls_without_program = 0
+        self.consecutive_calls_without_program = 0
         self.hypotheses_proposed = 0
         self.hypotheses_certified = 0
         self.last_hypothesis_id: str | None = None
@@ -535,8 +549,28 @@ class RefGameRun:
                 "prompt_path": f"{MODEL_CALLS_DIR}/{call_index}.prompt.txt",
                 "response_path": f"{MODEL_CALLS_DIR}/{call_index}.response.json",
                 "history_length_at_call": len(self.history),
+                "is_error": bool(response.extra.get("is_error", False)),
+                "program_returned": bool(response.text.strip()) and response.exit_code == 0,
             }
         )
+        if not self.model_call_rows[-1]["program_returned"]:
+            # A made call with no program (non-zero exit, timeout, is_error or empty text):
+            # counted against the model budget, no hypothesis; after
+            # CALLS_WITHOUT_PROGRAM_MAX in a row the channel is treated as unavailable.
+            self.calls_without_program += 1
+            self.consecutive_calls_without_program += 1
+            self.writer.log(
+                f"model call {call_index} returned no program (exit_code={response.exit_code}, "
+                f"is_error={self.model_call_rows[-1]['is_error']}); "
+                f"{self.consecutive_calls_without_program} in a row"
+            )
+            if self.consecutive_calls_without_program >= CALLS_WITHOUT_PROGRAM_MAX:
+                self.model_unavailable_reason = (
+                    f"{self.consecutive_calls_without_program} consecutive model calls "
+                    f"returned no program (last exit_code={response.exit_code})"
+                )
+            return
+        self.consecutive_calls_without_program = 0
         self.hypotheses_proposed += 1
         hypothesis_id = f"h{self.hypotheses_proposed:03d}"
         parent = self.last_hypothesis_id
@@ -852,6 +886,7 @@ class RefGameRun:
             model_budget_consumed=self.model_budget_consumed(),
             step_failed_at=self.step_failed_at,
             counterexamples=list(self.counterexamples),
+            calls_without_program=self.calls_without_program,
         )
 
     def _write_reports(self) -> None:
@@ -948,6 +983,12 @@ def results_mapping(
         "backtest_module_sha256": bt.backtest_module_sha256(),
         "interface_module_sha256": interface_sha256(),
         "model_client_sha256": mc.model_client_sha256(),
+        "history_encoding": {
+            "name": he.ENCODING_NAME,
+            "module_sha256": he.history_encoding_sha256(),
+        },
+        "calls_without_program": report.calls_without_program,
+        "calls_without_program_max_consecutive": CALLS_WITHOUT_PROGRAM_MAX,
         "prompt_hash": config.prompt_hash,
         "level_accounting_rule": la.LEVEL_ACCOUNTING_RULE,
     }

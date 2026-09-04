@@ -365,3 +365,21 @@ Each is [VERIFY-ON-MACHINE]. Bootstrap records the observed value and the date h
    `/home/afazeli2006/.local/bin/claude` linking to `~/.local/share/claude/versions/2.1.260`,
    running inside WSL2 (Ubuntu 24.04.4 LTS, kernel `6.18.33.2-microsoft-standard-WSL2` from
    `uname -a`); Python 3.12.3, uv 0.12.7. Not native Windows.
+9. The headless CLI's failure shape when a call is made from inside a turn without a
+   credential, and which flags 2.1.260 accepts for a tool-free single call.
+   **Observed 2026-09-04 (G3.5 probe; ledger entry for task G3.5 dated 2026-09-04T20:58Z in
+   `state/LEDGER.jsonl`):** `claude -p --output-format json --model claude-fable-5-1
+   --effort low --tools "" --permission-prompts none --no-session-persistence`, prompt on
+   stdin, cwd a temporary directory, environment minus `ARC_*`, `CLAUDECODE` and
+   `CLAUDE_CODE_ENTRYPOINT`, exits **1** in 0.77 s with **nothing on stderr** and a JSON
+   result object on stdout: `is_error: true`, `subtype: "success"` (not an error subtype),
+   `terminal_reason: "api_error"`, `api_error_status: null`,
+   `result: "Not logged in · Please run /login"`, `total_cost_usd: 0`, every `usage` count
+   0, `modelUsage: {}`. Consequences: the error text lives in stdout's JSON `result`;
+   `is_error` is the reliable flag and `subtype` is not; all six flags were accepted. The
+   `usage` object also carries `cache_creation.ephemeral_1h_input_tokens` and
+   `ephemeral_5m_input_tokens`, `service_tier`, `speed`, `iterations`,
+   `server_tool_use` and `output_tokens_details.thinking_tokens`, so the adapter records
+   `usage` verbatim and sums only the four documented keys (section 7). Source of the
+   flags: `claude --help` on 2.1.260 and
+   [code.claude.com/docs/en/headless](https://code.claude.com/docs/en/headless).

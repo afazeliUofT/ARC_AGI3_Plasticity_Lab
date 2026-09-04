@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -105,8 +106,12 @@ def test_build_client_kinds(tmp_path: Path) -> None:
     assert isinstance(client, mc.RecordedResponseClient)
     relative = mc.build_client({"kind": "recorded", "responses_file": "responses.json"}, tmp_path)
     assert isinstance(relative, mc.RecordedResponseClient)
-    with pytest.raises(mc.ModelClientError, match="not implemented yet"):
-        mc.build_client({"kind": "headless_cli"}, ROOT)
+    if shutil.which("claude") is not None:  # G3.5: the adapter exists; a real CLI on PATH
+        headless = mc.build_client({"kind": "headless_cli"}, ROOT)
+        assert isinstance(headless, mc.HeadlessCliClient) and headless.kind == "headless_cli"
+        assert headless.call_wallclock_seconds == mc.DEFAULT_CALL_WALLCLOCK_SECONDS
+    with pytest.raises(mc.ModelClientError, match="not found on PATH"):
+        mc.build_client({"kind": "headless_cli", "executable": "no-such-claude-xyz"}, ROOT)
     with pytest.raises(mc.ModelClientError, match="not in"):
         mc.build_client({"kind": "api"}, ROOT)
     with pytest.raises(mc.ModelClientError, match="responses_file"):

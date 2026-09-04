@@ -14,9 +14,13 @@
 # are internal design choices (reference_architecture.what_is_fixed_here), frozen within a
 # graded set by the config hash.
 #
-# model_client.kind headless_cli is the graded channel (model_calls.channel) and arrives with
-# G3.5; until then the runner's preflight refuses to start, so no run can begin believing it
-# has a model. Tests replace it with kind recorded (a canned-response file).
+# model_client.kind headless_cli is the graded channel (model_calls.channel): one `claude -p`
+# subprocess per call, fresh session, tools disabled, prompt on stdin, cwd a temporary
+# directory outside the repository, ARC_* stripped from the environment; each call is bounded
+# by call_wallclock_seconds (an internal design choice frozen by the config hash). token_file,
+# if the human supplies one, names a file OUTSIDE the repository holding the long-lived OAuth
+# token; it is read into the child's environment only and never recorded. Tests replace the
+# channel with kind recorded (a canned-response file).
 #
 # Run:  uv run python scripts/run_experiment.py --config configs/experiments/E300_ref.yaml --game <stem>
 
@@ -90,6 +94,7 @@ runner_params:
     address_space_bytes_max: 2147483648
   model_client:
     kind: headless_cli
+    call_wallclock_seconds: 900
   extra_artifacts:
     - model_calls.jsonl
     - model_calls/
