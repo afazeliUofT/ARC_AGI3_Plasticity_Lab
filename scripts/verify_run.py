@@ -52,6 +52,28 @@ G1 conventions (``preregistration/G1.yaml`` ``replay_protocol``, ``cache_warming
   bytecode (``__pycache__``, ``*.pyc``) is never listed and never counted as drift.
 * The canonical frame digest and the replay live in
   ``arc_plasticity.environments.arc_interface`` so runner and verifier share one definition.
+
+G2 conventions (``preregistration/G2.yaml`` ``experiment``, ``human_baselines``,
+``determinism_protocol``), which the E020 runner
+(``arc_plasticity.evaluation.human_baseline_run``) produces and this verifier consumes:
+
+* ``results.json["results"]`` carries every field of the pre-registration's
+  ``results_json_contract`` (``G2_RESULTS_KEYS``); ``operation`` equals the runner's
+  ``OPERATION`` constant, which the verifier also requires the contract text to name.
+* ``human_baselines.json`` is the derived table: ``games[]`` each with ``game_id``, ``stem``
+  and ``levels[]`` (``level``, ``official_baseline_actions``, ``derived_baseline_actions``,
+  ``n_participants_with_completion``, ``per_participant_best_counts_sorted``,
+  ``exact_agreement``, ``relative_difference``) plus ``totals``. Coverage is recomputed here
+  as derived levels over the pre-registered ``public_levels_total``.
+* ``input_manifest.json["raw_files"]`` maps every raw file read to its SHA-256 and must equal
+  the committed dataset manifest's ``files`` digests.
+* ``experiments/human_replays_manifest.json`` is the dataset manifest
+  (``scripts/build_human_replays_manifest.py``); drift against ``data/human_replays/raw/`` is
+  computed by ``human_replays.manifest_drift`` in both directions.
+* The RHAE vectors run through ``rhae.score_vector_case`` and the derivation vectors through
+  ``human_replays.derive_vector_case``, the same paths the unit tests use.
+* The determinism check compares every file in ``determinism_protocol.compared_files`` across
+  the fixed-seed runs and has no contrast group (``contrast_runs_required`` 0).
 """
 
 from __future__ import annotations
@@ -77,6 +99,40 @@ if str(ROOT / "src") not in sys.path:
 
 from arc_plasticity.core.guards import NetworkGuard
 from arc_plasticity.environments import arc_interface
+from arc_plasticity.evaluation import human_baseline_run, human_replays, rhae
+
+G2_RESULTS_KEYS: tuple[str, ...] = (
+    "dataset_manifest_sha256",
+    "replay_units_ingested",
+    "replay_parse_failures",
+    "participant_ids_available",
+    "session_order_source",
+    "public_games_total",
+    "public_levels_total_from_metadata",
+    "derived_levels",
+    "human_baseline_level_coverage",
+    "exact_agreement_fraction",
+    "median_abs_relative_difference",
+    "network_guard",
+    "operation",
+)
+
+G2_LEVEL_KEYS: tuple[str, ...] = (
+    "level",
+    "official_baseline_actions",
+    "derived_baseline_actions",
+    "n_participants_with_completion",
+    "per_participant_best_counts_sorted",
+    "exact_agreement",
+    "relative_difference",
+)
+
+G2_INPUT_KEYS: tuple[str, ...] = (
+    "raw_replays_dir",
+    "dataset_manifest",
+    "environments_dir",
+    "cache_manifest",
+)
 
 G1_GAME_RECORD_KEYS: tuple[str, ...] = (
     "game_id",
@@ -259,18 +315,22 @@ def _words(text: str) -> set[str]:
 
 
 def check_nondeterministic_fields(
-    prereg: dict[str, Any], root: Path = ROOT
+    prereg: dict[str, Any], root: Path = ROOT, bounds: dict[str, Any] | None = None
 ) -> tuple[CheckResult, frozenset[str]]:
     """The exclusion list must stay inside the pre-registered category bounds.
 
-    Returns the check and the resolved set of excluded names for the determinism check.
+    ``bounds`` is the ``determinism_protocol`` mapping that supplies the category bounds; it
+    defaults to the gate's own. A gate that pre-registers "the G0 exclusions" (G2) passes the
+    G0 protocol here and records its digest. Returns the check and the resolved set of
+    excluded names for the determinism check.
     """
     proto = section(prereg, "determinism_protocol")
     src = proto.get("excluded_fields_source")
     if not src:
         raise PreregistrationError("determinism_protocol.excluded_fields_source missing")
-    allowed_cats = [str(c) for c in proto.get("excluded_field_categories_allowed", [])]
-    forbidden_cats = [str(c) for c in proto.get("excluded_field_categories_forbidden", [])]
+    bounds = proto if bounds is None else bounds
+    allowed_cats = [str(c) for c in bounds.get("excluded_field_categories_allowed", [])]
+    forbidden_cats = [str(c) for c in bounds.get("excluded_field_categories_forbidden", [])]
     if not allowed_cats or not forbidden_cats:
         raise PreregistrationError("determinism_protocol category bounds missing")
 
@@ -903,12 +963,24 @@ def check_environment_cache_manifest(prereg: dict[str, Any], root: Path = ROOT) 
     )
 
 
-def check_offline_run(prereg: dict[str, Any], artifacts_root: Path) -> CheckResult:
-    """Every run declared zero network and zero model calls, attempted none, ran OFFLINE."""
+def check_offline_run(
+    prereg: dict[str, Any],
+    artifacts_root: Path,
+    *,
+    mode_key: str = "operation_mode",
+    expected_mode: str | None = None,
+) -> CheckResult:
+    """Every run declared zero network and zero model calls, attempted none, ran offline.
+
+    ``mode_key`` names the results.json field carrying the mode (G1 ``operation_mode``, G2
+    ``operation``); ``expected_mode`` defaults to ``experiment.operation_mode`` of the
+    pre-registration.
+    """
     net_allowed = int(threshold(prereg, "network_calls_allowed"))
     attempts_max = int(threshold(prereg, "network_attempts_max"))
     model_allowed = int(threshold(prereg, "model_calls_allowed"))
-    expected_mode = str(section(prereg, "experiment").get("operation_mode") or "")
+    if expected_mode is None:
+        expected_mode = str(section(prereg, "experiment").get("operation_mode") or "")
     if not expected_mode:
         raise PreregistrationError("experiment.operation_mode missing")
     expected_guard = NetworkGuard.__name__
@@ -927,7 +999,7 @@ def check_offline_run(prereg: dict[str, Any], artifacts_root: Path) -> CheckResu
             "network_attempts": manifest.get("network_attempts"),
             "model_calls_allowed": manifest.get("model_calls_allowed"),
             "model_calls": manifest.get("model_calls"),
-            "operation_mode": results.get("operation_mode"),
+            mode_key: results.get(mode_key),
             "network_guard": results.get("network_guard"),
         }
         per_run[run.name] = row
@@ -939,8 +1011,8 @@ def check_offline_run(prereg: dict[str, Any], artifacts_root: Path) -> CheckResu
             problems.append(f"{run.name}: model_calls_allowed {row['model_calls_allowed']!r}")
         if not isinstance(row["model_calls"], int) or row["model_calls"] > model_allowed:
             problems.append(f"{run.name}: model_calls {row['model_calls']!r}")
-        if row["operation_mode"] != expected_mode:
-            problems.append(f"{run.name}: operation_mode {row['operation_mode']!r}")
+        if row[mode_key] != expected_mode:
+            problems.append(f"{run.name}: {mode_key} {row[mode_key]!r}")
         if row["network_guard"] != expected_guard:
             problems.append(f"{run.name}: network_guard {row['network_guard']!r}")
     return CheckResult(
@@ -951,7 +1023,7 @@ def check_offline_run(prereg: dict[str, Any], artifacts_root: Path) -> CheckResu
             "network_calls_allowed": net_allowed,
             "network_attempts_max": attempts_max,
             "model_calls_allowed": model_allowed,
-            "operation_mode": expected_mode,
+            mode_key: expected_mode,
             "network_guard": expected_guard,
         },
         evidence=[_rel(r / f) for r in runs for f in ("manifest.json", "results.json")],
@@ -1023,32 +1095,44 @@ def excluded_key_hits(obj: Any, excluded: frozenset[str], depth: int = 1) -> lis
 
 
 def check_exclusion_nesting(
-    prereg: dict[str, Any], artifacts_root: Path, excluded: frozenset[str]
+    prereg: dict[str, Any],
+    artifacts_root: Path,
+    excluded: frozenset[str],
+    files: tuple[str, ...] = ("results.json",),
 ) -> CheckResult:
-    """G1 exclusion_nesting_rule: excluded names only at top level and only with scalar values."""
+    """G1 exclusion_nesting_rule: excluded names only at top level and only with scalar values.
+
+    ``files`` are the JSON files of each run to inspect (G1: results.json; G2 adds
+    human_baselines.json because it is compared for identity too).
+    """
     max_depth = int(threshold(prereg, "excluded_key_max_depth"))
     containers_ok = bool(threshold(prereg, "excluded_key_container_values_allowed"))
     problems: list[str] = []
     per_run: dict[str, list[dict[str, Any]]] = {}
     runs = _run_dirs(artifacts_root)
     for run in runs:
-        path = run / "results.json"
-        if not path.exists():
-            problems.append(f"{run.name}: results.json missing")
-            continue
-        try:
-            hits = excluded_key_hits(_load_json(path), excluded)
-        except ValueError as exc:
-            problems.append(f"{run.name}: results.json unreadable: {exc}")
-            continue
-        per_run[run.name] = hits
-        for hit in hits:
-            if hit["depth"] > max_depth:
-                problems.append(
-                    f"{run.name}: excluded key {hit['key']!r} at depth {hit['depth']} > {max_depth}"
-                )
-            if hit["container"] and not containers_ok:
-                problems.append(f"{run.name}: excluded key {hit['key']!r} has a container value")
+        per_run[run.name] = []
+        for name in files:
+            path = run / name
+            if not path.exists():
+                problems.append(f"{run.name}: {name} missing")
+                continue
+            try:
+                hits = [{**h, "file": name} for h in excluded_key_hits(_load_json(path), excluded)]
+            except ValueError as exc:
+                problems.append(f"{run.name}: {name} unreadable: {exc}")
+                continue
+            per_run[run.name].extend(hits)
+            for hit in hits:
+                if hit["depth"] > max_depth:
+                    problems.append(
+                        f"{run.name}: {name}: excluded key {hit['key']!r} at depth "
+                        f"{hit['depth']} > {max_depth}"
+                    )
+                if hit["container"] and not containers_ok:
+                    problems.append(
+                        f"{run.name}: {name}: excluded key {hit['key']!r} has a container value"
+                    )
     return CheckResult(
         "exclusion_nesting",
         passed=bool(runs) and not problems,
@@ -1056,8 +1140,9 @@ def check_exclusion_nesting(
         threshold={
             "excluded_key_max_depth": max_depth,
             "excluded_key_container_values_allowed": containers_ok,
+            "files": list(files),
         },
-        evidence=[_rel(r / "results.json") for r in runs],
+        evidence=[_rel(r / f) for r in runs for f in files],
     )
 
 
@@ -1255,7 +1340,555 @@ def evaluate_g1(
     return checks
 
 
-GATE_EVALUATORS = {"G0": evaluate_g0, "G1": evaluate_g1}
+# --------------------------------------------------------------------------- G2 checks
+
+
+def _g2_inputs(prereg: dict[str, Any]) -> dict[str, str]:
+    inputs = section(prereg, "experiment").get("inputs")
+    if not isinstance(inputs, dict):
+        raise PreregistrationError("experiment.inputs missing")
+    out: dict[str, str] = {}
+    for key in G2_INPUT_KEYS:
+        value = inputs.get(key)
+        if not isinstance(value, str) or not value:
+            raise PreregistrationError(f"experiment.inputs.{key} missing")
+        out[key] = value
+    return out
+
+
+def check_public_level_count(prereg: dict[str, Any], root: Path = ROOT) -> CheckResult:
+    """25 cached games whose metadata baseline_actions lengths sum to public_levels_total."""
+    games_total = int(threshold(prereg, "public_games_total"))
+    levels_total = int(threshold(prereg, "public_levels_total"))
+    must_equal = bool(threshold(prereg, "metadata_baseline_levels_must_equal_public_levels_total"))
+    inputs = _g2_inputs(prereg)
+    problems: list[str] = []
+    per_game: dict[str, int] = {}
+    try:
+        games = human_baseline_run.load_official_games(
+            root / inputs["cache_manifest"], root / inputs["environments_dir"]
+        )
+    except (human_baseline_run.OfficialBaselineError, ValueError, OSError) as exc:
+        problems.append(str(exc))
+        games = []
+    for game in games:
+        per_game[game.stem] = game.levels
+    levels_sum = sum(per_game.values())
+    if len(games) != games_total:
+        problems.append(f"{len(games)} cached games, required {games_total}")
+    if must_equal and levels_sum != levels_total:
+        problems.append(f"metadata baselines cover {levels_sum} levels, required {levels_total}")
+    return CheckResult(
+        "public_level_count",
+        passed=not problems,
+        observed={"games": len(games), "levels_sum": levels_sum, "per_game": per_game, "problems": problems},
+        threshold={
+            "public_games_total": games_total,
+            "public_levels_total": levels_total,
+            "metadata_baseline_levels_must_equal_public_levels_total": must_equal,
+        },
+        evidence=[inputs["cache_manifest"], inputs["environments_dir"]],
+    )
+
+
+def check_rhae_synthetic_vectors(prereg: dict[str, Any], root: Path = ROOT) -> CheckResult:
+    """Every embedded RHAE vector reproduces through the adapter; the adapter delegates."""
+    cases_min = int(threshold(prereg, "rhae_synthetic_cases_min"))
+    cases_max = int(threshold(prereg, "rhae_synthetic_cases_max"))
+    tol = float(threshold(prereg, "rhae_synthetic_abs_tolerance"))
+    required_tags = [str(t) for t in threshold(prereg, "rhae_synthetic_required_tags")]
+    all_must_pass = bool(threshold(prereg, "rhae_synthetic_all_cases_must_pass"))
+    must_delegate = bool(threshold(prereg, "rhae_adapter_must_delegate_to_toolkit"))
+    rhae_section = section(prereg, "rhae")
+    cases = rhae_section.get("synthetic_vectors")
+    if not isinstance(cases, list):
+        raise PreregistrationError("rhae.synthetic_vectors missing")
+    impl = rhae_section.get("implementation")
+    module_rel = str(impl.get("module") or "") if isinstance(impl, dict) else ""
+    if not module_rel:
+        raise PreregistrationError("rhae.implementation.module missing")
+
+    problems: list[str] = []
+    per_case: list[dict[str, Any]] = []
+    tags_seen: set[str] = set()
+    failing = 0
+    for i, case in enumerate(cases):
+        case_id = str(case.get("id", f"case_{i}"))
+        tags_seen.update(str(t) for t in case.get("tags", []) or [])
+        expected_envs = [float(x) for x in case.get("expected_environment_scores", [])]
+        expected_total = float(case.get("expected_total"))
+        try:
+            got_envs, got_total = rhae.score_vector_case(case)
+        except (rhae.RhaeInputError, KeyError, TypeError) as exc:
+            problems.append(f"{case_id}: adapter raised {exc!r}")
+            failing += 1
+            per_case.append({"id": case_id, "ok": False, "error": repr(exc)})
+            continue
+        ok = len(got_envs) == len(expected_envs) and all(
+            abs(g - e) <= tol for g, e in zip(got_envs, expected_envs, strict=True)
+        ) and abs(got_total - expected_total) <= tol
+        per_case.append(
+            {"id": case_id, "ok": ok, "expected": [*expected_envs, expected_total],
+             "got": [*got_envs, got_total]}
+        )
+        if not ok:
+            failing += 1
+            problems.append(f"{case_id}: got {got_envs} total {got_total}, expected {expected_envs} total {expected_total}")
+    if not (cases_min <= len(cases) <= cases_max):
+        problems.append(f"{len(cases)} synthetic cases, required {cases_min}..{cases_max}")
+    missing_tags = [t for t in required_tags if t not in tags_seen]
+    if missing_tags:
+        problems.append(f"required tags absent from every case: {missing_tags}")
+    module_path = root / module_rel
+    text = module_path.read_text(encoding="utf-8") if module_path.is_file() else ""
+    delegates = "EnvironmentScoreCalculator" in text and bool(
+        re.search(r"^\s*(from|import)\s+arc_agi", text, re.MULTILINE)
+    )
+    if must_delegate and not delegates:
+        problems.append(f"{module_rel} does not delegate to arc_agi EnvironmentScoreCalculator")
+    if all_must_pass and failing:
+        problems.append(f"{failing} case(s) failed")
+    return CheckResult(
+        "rhae_synthetic_vectors",
+        passed=not problems,
+        observed={
+            "cases": len(cases), "failing": failing, "tags_seen": sorted(tags_seen),
+            "delegates": delegates, "per_case": per_case, "problems": problems,
+        },
+        threshold={
+            "rhae_synthetic_cases_min": cases_min, "rhae_synthetic_cases_max": cases_max,
+            "rhae_synthetic_abs_tolerance": tol, "rhae_synthetic_required_tags": required_tags,
+            "rhae_synthetic_all_cases_must_pass": all_must_pass,
+            "rhae_adapter_must_delegate_to_toolkit": must_delegate,
+        },
+        evidence=[module_rel, "preregistration"],
+    )
+
+
+def check_baseline_derivation_vectors(prereg: dict[str, Any]) -> CheckResult:
+    """Every embedded derivation vector reproduces exactly through the derivation module."""
+    cases_min = int(threshold(prereg, "derivation_vectors_min"))
+    all_must_pass = bool(threshold(prereg, "derivation_vectors_all_must_pass"))
+    cases = section(prereg, "baseline_derivation_vectors").get("cases")
+    if not isinstance(cases, list):
+        raise PreregistrationError("baseline_derivation_vectors.cases missing")
+    problems: list[str] = []
+    per_case: list[dict[str, Any]] = []
+    failing = 0
+    for i, case in enumerate(cases):
+        case_id = str(case.get("id", f"case_{i}"))
+        if "expected_attributed_actions_per_level" in case:
+            expected: Any = [int(x) for x in case["expected_attributed_actions_per_level"]]
+        elif "expected_baseline" in case:
+            expected = case["expected_baseline"]
+        else:
+            problems.append(f"{case_id}: no expected value")
+            failing += 1
+            continue
+        try:
+            got = human_replays.derive_vector_case(case)
+        except (human_replays.HumanReplayError, KeyError, TypeError, ValueError) as exc:
+            problems.append(f"{case_id}: derivation raised {exc!r}")
+            failing += 1
+            per_case.append({"id": case_id, "ok": False, "error": repr(exc)})
+            continue
+        ok = got == expected and type(got) is type(expected)
+        per_case.append({"id": case_id, "ok": ok, "expected": expected, "got": got})
+        if not ok:
+            failing += 1
+            problems.append(f"{case_id}: got {got!r}, expected {expected!r}")
+    if len(cases) < cases_min:
+        problems.append(f"{len(cases)} derivation cases, required at least {cases_min}")
+    if all_must_pass and failing:
+        problems.append(f"{failing} case(s) failed")
+    return CheckResult(
+        "baseline_derivation_vectors",
+        passed=not problems,
+        observed={"cases": len(cases), "failing": failing, "per_case": per_case, "problems": problems},
+        threshold={"derivation_vectors_min": cases_min, "derivation_vectors_all_must_pass": all_must_pass},
+        evidence=["src/arc_plasticity/evaluation/human_replays.py", "preregistration"],
+    )
+
+
+def _dataset_manifest(prereg: dict[str, Any], root: Path) -> tuple[Path, dict[str, Any] | None, str]:
+    """The committed dataset manifest: path, parsed mapping (or None) and the load problem."""
+    path = root / _g2_inputs(prereg)["dataset_manifest"]
+    if not path.is_file():
+        return path, None, f"{_rel(path)} missing"
+    try:
+        data = _load_json(path)
+    except ValueError as exc:
+        return path, None, f"{_rel(path)} unreadable: {exc}"
+    if not isinstance(data, dict):
+        return path, None, f"{_rel(path)} is not a mapping"
+    return path, data, ""
+
+
+def _manifest_digests(manifest: dict[str, Any]) -> dict[str, str]:
+    files = manifest.get("files")
+    if not isinstance(files, dict):
+        return {}
+    return {
+        str(rel): str(entry.get("sha256")).lower()
+        for rel, entry in files.items()
+        if isinstance(entry, dict)
+    }
+
+
+def check_dataset_manifest(prereg: dict[str, Any], root: Path = ROOT) -> CheckResult:
+    """The committed provenance manifest exists, is complete and matches the raw directory."""
+    required = [str(f) for f in threshold(prereg, "dataset_manifest_required_fields")]
+    min_files = int(threshold(prereg, "dataset_manifest_min_files"))
+    drift_max = int(threshold(prereg, "dataset_manifest_drift_files_max"))
+    inputs = _g2_inputs(prereg)
+    raw_dir = root / inputs["raw_replays_dir"]
+    _, manifest, problem = _dataset_manifest(prereg, root)
+    problems: list[str] = [problem] if problem else []
+    observed: dict[str, Any] = {
+        "manifest": inputs["dataset_manifest"], "raw_dir": inputs["raw_replays_dir"],
+        "committed": False, "files": 0, "drift": [], "provenance": {},
+    }
+    if manifest is not None:
+        proc = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", inputs["dataset_manifest"]],
+            cwd=root, capture_output=True, text=True, check=False,
+        )
+        observed["committed"] = proc.returncode == 0
+        if proc.returncode != 0:
+            problems.append(f"{inputs['dataset_manifest']} is not tracked by git")
+        for key in required:
+            if manifest.get(key) in (None, "", {}, []):
+                problems.append(f"manifest lacks {key}")
+        observed["provenance"] = {
+            k: manifest.get(k) for k in ("source_url", "retrieval_utc", "retrieval_method", "revision")
+        }
+        files = manifest.get("files")
+        n_files = len(files) if isinstance(files, dict) else 0
+        observed["files"] = n_files
+        if n_files < min_files:
+            problems.append(f"manifest lists {n_files} files, required at least {min_files}")
+        drift = human_replays.manifest_drift(files, raw_dir)
+        observed["drift"] = drift
+        if len(drift) > drift_max:
+            problems.append(f"{len(drift)} file(s) drift (max {drift_max})")
+    observed["problems"] = problems
+    return CheckResult(
+        "dataset_manifest",
+        passed=not problems,
+        observed=observed,
+        threshold={
+            "dataset_manifest_required_fields": required,
+            "dataset_manifest_min_files": min_files,
+            "dataset_manifest_drift_files_max": drift_max,
+        },
+        evidence=[inputs["dataset_manifest"], inputs["raw_replays_dir"]],
+    )
+
+
+def check_replay_ingestion(
+    prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT
+) -> CheckResult:
+    """Enough replay units, no parse failure, and the run read exactly the manifest's bytes."""
+    units_min = int(threshold(prereg, "replay_units_min"))
+    failures_max = int(threshold(prereg, "replay_parse_failures_max"))
+    must_equal = bool(threshold(prereg, "input_manifest_must_equal_dataset_manifest"))
+    manifest_path, manifest, problem = _dataset_manifest(prereg, root)
+    problems: list[str] = [problem] if problem else []
+    manifest_sha = sha256_file(manifest_path) if manifest is not None else None
+    manifest_digests = _manifest_digests(manifest) if manifest is not None else {}
+    per_run: dict[str, dict[str, Any]] = {}
+    runs = _run_dirs(artifacts_root)
+    for run in runs:
+        try:
+            results = _runner_results(_load_json(run / "results.json"))
+        except (OSError, ValueError) as exc:
+            problems.append(f"{run.name}: results.json unreadable: {exc}")
+            continue
+        missing = [k for k in G2_RESULTS_KEYS if k not in results]
+        if missing:
+            problems.append(f"{run.name}: results lack {missing}")
+        units = results.get("replay_units_ingested")
+        failures = results.get("replay_parse_failures")
+        row: dict[str, Any] = {
+            "replay_units_ingested": units, "replay_parse_failures": failures,
+            "participant_ids_available": results.get("participant_ids_available"),
+            "session_order_source": results.get("session_order_source"),
+            "dataset_manifest_sha256": results.get("dataset_manifest_sha256"),
+            "input_manifest_equals_dataset_manifest": None,
+        }
+        per_run[run.name] = row
+        if not isinstance(units, int) or isinstance(units, bool) or units < units_min:
+            problems.append(f"{run.name}: replay_units_ingested {units!r} < {units_min}")
+        if not isinstance(failures, int) or isinstance(failures, bool) or failures > failures_max:
+            problems.append(f"{run.name}: replay_parse_failures {failures!r} > {failures_max}")
+        if not isinstance(row["participant_ids_available"], bool):
+            problems.append(f"{run.name}: participant_ids_available is not a bool")
+        if not isinstance(row["session_order_source"], str) or not row["session_order_source"]:
+            problems.append(f"{run.name}: session_order_source missing")
+        if manifest_sha is not None and results.get("dataset_manifest_sha256") != manifest_sha:
+            problems.append(f"{run.name}: dataset_manifest_sha256 != committed manifest {manifest_sha}")
+        input_path = run / "input_manifest.json"
+        if not input_path.exists():
+            problems.append(f"{run.name}: input_manifest.json missing")
+            continue
+        try:
+            input_manifest = _load_json(input_path)
+        except ValueError as exc:
+            problems.append(f"{run.name}: input_manifest.json unreadable: {exc}")
+            continue
+        raw_files = input_manifest.get("raw_files") if isinstance(input_manifest, dict) else None
+        if not isinstance(raw_files, dict):
+            problems.append(f"{run.name}: input_manifest.json has no raw_files mapping")
+            continue
+        read = {str(k): str(v).lower() for k, v in raw_files.items()}
+        equal = read == manifest_digests and bool(manifest_digests)
+        row["input_manifest_equals_dataset_manifest"] = equal
+        row["raw_files_read"] = len(read)
+        if must_equal and not equal:
+            only_read = sorted(set(read) - set(manifest_digests))
+            only_listed = sorted(set(manifest_digests) - set(read))
+            changed = sorted(k for k in set(read) & set(manifest_digests) if read[k] != manifest_digests[k])
+            problems.append(
+                f"{run.name}: input manifest differs from dataset manifest "
+                f"(read-only {only_read[:5]}, listed-only {only_listed[:5]}, changed {changed[:5]})"
+            )
+    return CheckResult(
+        "replay_ingestion",
+        passed=bool(runs) and not problems,
+        observed={"runs": per_run, "dataset_manifest_sha256": manifest_sha, "problems": problems},
+        threshold={
+            "replay_units_min": units_min,
+            "replay_parse_failures_max": failures_max,
+            "input_manifest_must_equal_dataset_manifest": must_equal,
+        },
+        evidence=[_rel(r / f) for r in runs for f in ("results.json", "input_manifest.json")]
+        + [_rel(manifest_path)],
+    )
+
+
+def check_human_baseline_coverage(prereg: dict[str, Any], artifacts_root: Path) -> CheckResult:
+    """Derived levels over public_levels_total >= the floor; every derived value a positive int."""
+    coverage_min = float(threshold(prereg, "human_baseline_level_coverage_min"))
+    levels_total = int(threshold(prereg, "public_levels_total"))
+    games_total = int(threshold(prereg, "public_games_total"))
+    positive_ints = bool(threshold(prereg, "derived_baselines_positive_integers"))
+    problems: list[str] = []
+    per_run: dict[str, dict[str, Any]] = {}
+    runs = _run_dirs(artifacts_root)
+    for run in runs:
+        try:
+            results = _runner_results(_load_json(run / "results.json"))
+            table = _load_json(run / "human_baselines.json")
+        except (OSError, ValueError) as exc:
+            problems.append(f"{run.name}: result files unreadable: {exc}")
+            continue
+        games = table.get("games") if isinstance(table, dict) else None
+        if not isinstance(games, list):
+            problems.append(f"{run.name}: human_baselines.json has no games list")
+            continue
+        rows: list[dict[str, Any]] = []
+        for game in games:
+            levels = game.get("levels") if isinstance(game, dict) else None
+            if not isinstance(levels, list):
+                problems.append(f"{run.name}: game {game!r} has no levels list")
+                continue
+            for level in levels:
+                if not isinstance(level, dict) or any(k not in level for k in G2_LEVEL_KEYS):
+                    problems.append(f"{run.name}: level record lacks a required key: {level!r}")
+                    continue
+                rows.append(level)
+        derived_rows = [r for r in rows if r["derived_baseline_actions"] is not None]
+        for r in derived_rows:
+            value = r["derived_baseline_actions"]
+            official = r["official_baseline_actions"]
+            if positive_ints and (isinstance(value, bool) or not isinstance(value, int) or value < 1):
+                problems.append(f"{run.name}: derived value {value!r} is not a positive int")
+            if isinstance(official, bool) or not isinstance(official, int) or official < 1:
+                problems.append(f"{run.name}: official value {official!r} is not a positive int")
+            if r["exact_agreement"] != (value == official):
+                problems.append(f"{run.name}: exact_agreement inconsistent for {r!r}")
+        derived = len(derived_rows)
+        coverage = derived / levels_total if levels_total else 0.0
+        agreement = (
+            sum(1 for r in derived_rows if r["derived_baseline_actions"] == r["official_baseline_actions"]) / derived
+            if derived else None
+        )
+        row = {
+            "games": len(games), "levels": len(rows), "derived_levels": derived,
+            "coverage": coverage, "reported_coverage": results.get("human_baseline_level_coverage"),
+            "reported_derived_levels": results.get("derived_levels"),
+            "exact_agreement_fraction": agreement,
+            "reported_exact_agreement_fraction": results.get("exact_agreement_fraction"),
+            "median_abs_relative_difference": results.get("median_abs_relative_difference"),
+        }
+        per_run[run.name] = row
+        if len(games) != games_total:
+            problems.append(f"{run.name}: table has {len(games)} games, required {games_total}")
+        if len(rows) != levels_total:
+            problems.append(f"{run.name}: table has {len(rows)} levels, required {levels_total}")
+        if results.get("derived_levels") != derived:
+            problems.append(f"{run.name}: results derived_levels {results.get('derived_levels')!r} != table {derived}")
+        reported = results.get("human_baseline_level_coverage")
+        if not isinstance(reported, (int, float)) or abs(float(reported) - coverage) > 1e-12:
+            problems.append(f"{run.name}: reported coverage {reported!r} != recomputed {coverage}")
+        if coverage < coverage_min:
+            problems.append(f"{run.name}: coverage {coverage:.4f} below {coverage_min}")
+        reported_agree = results.get("exact_agreement_fraction")
+        if agreement is None:
+            if reported_agree is not None:
+                problems.append(f"{run.name}: exact_agreement_fraction {reported_agree!r} with no derived level")
+        elif not isinstance(reported_agree, (int, float)) or abs(float(reported_agree) - agreement) > 1e-12:
+            problems.append(f"{run.name}: reported exact_agreement_fraction {reported_agree!r} != {agreement}")
+        if "median_abs_relative_difference" not in results:
+            problems.append(f"{run.name}: median_abs_relative_difference not recorded")
+    return CheckResult(
+        "human_baseline_coverage",
+        passed=bool(runs) and not problems,
+        observed={"runs": per_run, "problems": problems},
+        threshold={
+            "human_baseline_level_coverage_min": coverage_min,
+            "public_levels_total": levels_total,
+            "public_games_total": games_total,
+            "derived_baselines_positive_integers": positive_ints,
+        },
+        evidence=[_rel(r / f) for r in runs for f in ("results.json", "human_baselines.json")],
+    )
+
+
+def check_determinism_fixed_seed(
+    prereg: dict[str, Any], artifacts_root: Path, excluded: frozenset[str]
+) -> CheckResult:
+    """Identity across the fixed-seed runs on every pre-registered compared file; no contrast.
+
+    For a derivation with no source of variation (G2 ``determinism_protocol.reasoning``).
+    The protocol must pre-register ``contrast_invocations`` equal to the
+    ``contrast_runs_required`` threshold and ``require_contrast_differs`` false; anything
+    else is a pre-registration this check cannot evaluate and it raises.
+    """
+    proto = section(prereg, "determinism_protocol")
+    identity_min = float(threshold(prereg, "determinism_identity_min"))
+    contrast_required = int(threshold(prereg, "contrast_runs_required"))
+    for key in ("fixed_seed", "identical_invocations", "contrast_invocations",
+                "require_contrast_differs", "compared_files"):
+        if key not in proto:
+            raise PreregistrationError(f"determinism_protocol.{key} missing")
+    if int(proto["contrast_invocations"]) != contrast_required:
+        raise PreregistrationError(
+            f"determinism_protocol.contrast_invocations {proto['contrast_invocations']} != "
+            f"thresholds.contrast_runs_required {contrast_required}"
+        )
+    if bool(proto["require_contrast_differs"]):
+        raise PreregistrationError("require_contrast_differs is true but no contrast seed is pre-registered")
+    fixed_seed = int(proto["fixed_seed"])
+    n_identical = int(proto["identical_invocations"])
+    compared = [str(f) for f in proto["compared_files"]]
+    if "results.json" not in compared or "metrics.csv" not in compared:
+        raise PreregistrationError("compared_files must include results.json and metrics.csv")
+    extra_json = [f for f in compared if f not in ("results.json", "metrics.csv")]
+    if any(not f.endswith(".json") for f in extra_json):
+        raise PreregistrationError(f"compared_files beyond the G0 pair must be JSON: {extra_json}")
+
+    problems: list[str] = []
+    fixed_runs: list[Path] = []
+    other_seeds: list[str] = []
+    for run in _run_dirs(artifacts_root):
+        manifest = _load_manifest(run)
+        if manifest is None or "seed" not in manifest:
+            problems.append(f"{run.name}: no manifest seed; excluded from grouping")
+            continue
+        if manifest.get("completion_status") != COMPLETED_STATUS:
+            problems.append(f"{run.name}: completion_status != {COMPLETED_STATUS!r}; excluded")
+            continue
+        if int(manifest["seed"]) == fixed_seed:
+            fixed_runs.append(run)
+        else:
+            other_seeds.append(run.name)
+
+    def signature(run: Path) -> tuple[Any, ...]:
+        parts: list[Any] = [
+            canonical_json_bytes(run / "results.json", excluded),
+            canonical_csv_rows(run / "metrics.csv", excluded),
+        ]
+        parts.extend(canonical_json_bytes(run / name, excluded) for name in extra_json)
+        return tuple(parts)
+
+    identity = 0.0
+    if len(fixed_runs) < n_identical:
+        problems.append(f"need {n_identical} completed runs at seed {fixed_seed}, found {len(fixed_runs)}")
+    else:
+        try:
+            ref = signature(fixed_runs[0])
+            mismatches = [r.name for r in fixed_runs[1:] if signature(r) != ref]
+            identity = 0.0 if mismatches else 1.0
+            if mismatches:
+                problems.append(f"same-seed runs differ from {fixed_runs[0].name}: {mismatches}")
+        except (OSError, ValueError) as exc:
+            problems.append(f"could not read compared files: {exc}")
+    if other_seeds and contrast_required == 0:
+        problems.append(f"runs at a seed other than {fixed_seed} are not pre-registered: {other_seeds}")
+    return CheckResult(
+        "determinism_identity",
+        passed=identity >= identity_min and not problems,
+        observed={
+            "identity": identity, "fixed_seed_runs": [r.name for r in fixed_runs],
+            "other_seed_runs": other_seeds, "compared_files": compared,
+            "excluded_fields": sorted(excluded), "problems": problems,
+        },
+        threshold={
+            "identity_min": identity_min, "fixed_seed": fixed_seed,
+            "identical_invocations": n_identical, "contrast_runs_required": contrast_required,
+        },
+        evidence=[_rel(r / f) for r in fixed_runs for f in compared],
+    )
+
+
+def evaluate_g2(
+    prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT, skip_tooling: bool = False
+) -> list[CheckResult]:
+    """G2 checks in the order ``verification.checks_in_order`` lists them."""
+    extra = tuple(str(f) for f in section(prereg, "verification").get("additional_run_artifacts", []))
+    contract = str(section(prereg, "experiment").get("results_json_contract") or "")
+    operation = human_baseline_run.OPERATION
+    if f'"{operation}"' not in contract:
+        raise PreregistrationError(
+            f"experiment.results_json_contract does not name operation {operation!r}"
+        )
+    compared = section(prereg, "determinism_protocol").get("compared_files") or []
+    nesting_files = tuple(str(f) for f in compared if str(f).endswith(".json"))
+    checks: list[CheckResult] = []
+    checks.append(check_public_level_count(prereg, root))
+    # The adapter is project code (the same module score_vector_case imports), so its text is
+    # read from the project, not from the data root.
+    checks.append(check_rhae_synthetic_vectors(prereg, ROOT))
+    checks.append(check_baseline_derivation_vectors(prereg))
+    checks.append(check_dataset_manifest(prereg, root))
+    checks.append(check_run_completeness(artifacts_root, extra))
+    checks.append(check_sha256sums(prereg, artifacts_root))
+    checks.append(
+        check_offline_run(prereg, artifacts_root, mode_key="operation", expected_mode=operation)
+    )
+    checks.append(check_replay_ingestion(prereg, artifacts_root, root))
+    checks.append(check_human_baseline_coverage(prereg, artifacts_root))
+    # "after the G0 exclusions" (determinism_protocol.reasoning): the category bounds are the
+    # hash-locked G0 pre-registration's, read from the project, and its digest is recorded.
+    g0, g0_path, g0_sha256 = load_preregistration("G0", ROOT)
+    nd_check, excluded = check_nondeterministic_fields(
+        prereg, root, bounds=section(g0, "determinism_protocol")
+    )
+    nd_check.threshold = {
+        **nd_check.threshold,
+        "bounds_source": {"preregistration": _rel(g0_path), "sha256": g0_sha256},
+    }
+    checks.append(check_exclusion_nesting(prereg, artifacts_root, excluded, nesting_files))
+    checks.append(nd_check)
+    checks.append(check_determinism_fixed_seed(prereg, artifacts_root, excluded))
+    checks.append(check_git_clean(prereg, root))
+    checks.append(check_licence(prereg, root))
+    checks.extend(_tooling_checks(prereg, root, skip_tooling))
+    return checks
+
+
+GATE_EVALUATORS = {"G0": evaluate_g0, "G1": evaluate_g1, "G2": evaluate_g2}
 
 
 def evaluate(

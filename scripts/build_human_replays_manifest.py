@@ -90,21 +90,12 @@ def build_manifest(
 
 
 def drift(manifest: dict[str, Any], raw_dir: Path) -> list[str]:
-    """Human-readable differences between the raw directory and ``manifest['files']``."""
-    listed = manifest.get("files")
-    if not isinstance(listed, dict):
-        return ["manifest has no 'files' mapping"]
-    present = {p.relative_to(raw_dir).as_posix(): p for p in human_replays.raw_files(raw_dir)}
-    problems: list[str] = []
-    for rel in sorted(set(listed) - set(present)):
-        problems.append(f"listed but missing: {rel}")
-    for rel in sorted(set(present) - set(listed)):
-        problems.append(f"present but unlisted: {rel}")
-    for rel in sorted(set(listed) & set(present)):
-        digest = human_replays.sha256_of(present[rel])
-        if digest != listed[rel].get("sha256"):
-            problems.append(f"sha256 differs: {rel}")
-    return problems
+    """Human-readable differences between the raw directory and ``manifest['files']``.
+
+    Delegates to ``human_replays.manifest_drift`` so the builder, the E020 runner's preflight
+    and the G2 verifier share one definition.
+    """
+    return human_replays.manifest_drift(manifest.get("files"), raw_dir)
 
 
 def write_manifest(manifest: dict[str, Any], output: Path) -> None:

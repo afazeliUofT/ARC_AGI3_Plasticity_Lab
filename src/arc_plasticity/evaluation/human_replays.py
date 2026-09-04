@@ -430,6 +430,31 @@ def raw_files(raw_dir: Path) -> list[Path]:
     )
 
 
+def manifest_drift(listed: Any, raw_dir: Path) -> list[str]:
+    """Differences between ``raw_dir`` and a manifest's ``files`` mapping, in either direction.
+
+    ``listed`` is ``manifest['files']``: ``relative path -> {sha256, ...}``. Shared by the
+    manifest builder's ``--check``, the E020 runner's preflight and the G2 verifier so all
+    three apply one definition of drift.
+    """
+    if not isinstance(listed, Mapping):
+        return ["manifest has no 'files' mapping"]
+    if not raw_dir.is_dir():
+        return [f"{raw_dir} is not a directory"]
+    present = {p.relative_to(raw_dir).as_posix(): p for p in raw_files(raw_dir)}
+    problems: list[str] = []
+    for rel in sorted(set(listed) - set(present)):
+        problems.append(f"listed but missing: {rel}")
+    for rel in sorted(set(present) - set(listed)):
+        problems.append(f"present but unlisted: {rel}")
+    for rel in sorted(set(listed) & set(present)):
+        entry = listed[rel]
+        expected = entry.get("sha256") if isinstance(entry, Mapping) else None
+        if sha256_of(present[rel]) != expected:
+            problems.append(f"sha256 differs: {rel}")
+    return problems
+
+
 def ingest_directory(raw_dir: Path) -> IngestionResult:
     """Ingest every file under ``raw_dir``; never raises on a bad file, records it instead.
 

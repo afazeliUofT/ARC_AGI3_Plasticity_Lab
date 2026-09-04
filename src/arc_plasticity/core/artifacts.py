@@ -35,7 +35,13 @@ CONTRACT_FILES: tuple[str, ...] = (
 )
 
 SUMS_FILE = "SHA256SUMS"
-_STREAM_FILES = ("transitions.jsonl", "hypotheses.jsonl", "memory_operations.jsonl", "stdout.log", "stderr.log")
+_STREAM_FILES = (
+    "transitions.jsonl",
+    "hypotheses.jsonl",
+    "memory_operations.jsonl",
+    "stdout.log",
+    "stderr.log",
+)
 
 COMPLETION_STATUSES = ("completed", "timed_out", "failed")
 
@@ -112,19 +118,29 @@ class RunArtifactWriter:
     """
 
     def __init__(self, run_dir: Path, extra_files: Sequence[str] = ()) -> None:
-        """``extra_files`` are the additional one-shot JSON artifacts this run may write.
+        """``extra_files`` are the additional one-shot artifacts this run may write.
 
         They come from the experiment config (``runner_params.extra_artifacts``), so a run
-        can only add files the config declared; ``write_extra_json`` refuses any other name.
-        ``finalize`` hashes every file in the directory, so extras are sealed like the rest.
+        can only add files the config declared; ``write_extra_json`` and ``write_extra_jsonl``
+        refuse any other name. An extra is a plain ``.json`` (one mapping) or ``.jsonl`` (one
+        record per line) file name. ``finalize`` hashes every file in the directory, so extras
+        are sealed like the rest.
         """
         self.run_dir = run_dir
         self.extra_files: tuple[str, ...] = tuple(extra_files)
         for name in self.extra_files:
             if name in CONTRACT_FILES:
                 raise ArtifactError(f"{name} is a contract file, not an extra artifact")
-            if not name.endswith(".json") or "/" in name or "\\" in name or name.startswith("."):
-                raise ArtifactError(f"extra artifact {name!r} must be a plain .json file name")
+            well_formed = (
+                name.endswith((".json", ".jsonl"))
+                and "/" not in name
+                and "\\" not in name
+                and not name.startswith(".")
+            )
+            if not well_formed:
+                raise ArtifactError(
+                    f"extra artifact {name!r} must be a plain .json or .jsonl file name"
+                )
         self._streams: dict[str, IO[str]] = {}
         self._sealed = False
         self._opened = False
@@ -225,19 +241,33 @@ class RunArtifactWriter:
     def write_manifest(self, manifest: RunManifest) -> Path:
         return self._write_once("manifest.json", _canonical_json(manifest.to_dict()))
 
-    def write_extra_json(self, name: str, obj: Mapping[str, Any]) -> Path:
-        """Write one declared extra artifact, once. ``name`` must be in ``extra_files``."""
+    def _extra_path(self, name: str, suffix: str) -> Path:
         self._guard(name)
         if name not in self.extra_files:
             raise ArtifactError(
                 f"{name} is not a declared extra artifact of this run; declared: "
                 f"{list(self.extra_files)}"
             )
+        if not name.endswith(suffix):
+            raise ArtifactError(f"{name} is not a {suffix} extra artifact")
         path = self.run_dir / name
         if path.exists():
             raise ArtifactError(f"{path} already written; raw evidence is never overwritten")
+        return path
+
+    def write_extra_json(self, name: str, obj: Mapping[str, Any]) -> Path:
+        """Write one declared ``.json`` extra artifact, once. ``name`` must be in ``extra_files``."""
+        path = self._extra_path(name, ".json")
         with path.open("x", encoding="utf-8") as fh:
             fh.write(_canonical_json(dict(obj)))
+        return path
+
+    def write_extra_jsonl(self, name: str, records: Sequence[Mapping[str, Any]]) -> Path:
+        """Write one declared ``.jsonl`` extra artifact, once: one canonical record per line."""
+        path = self._extra_path(name, ".jsonl")
+        with path.open("x", encoding="utf-8") as fh:
+            for record in records:
+                fh.write(json.dumps(dict(record), sort_keys=True, separators=(",", ":")) + "\n")
         return path
 
     # ----------------------------------------------------------------- seal

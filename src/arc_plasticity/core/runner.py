@@ -41,6 +41,15 @@ class ExperimentRunner(Protocol):
     ) -> RunOutcome: ...
 
 
+class RunPreflightError(RuntimeError):
+    """A runner's ``preflight`` found its inputs unusable; no run directory is created.
+
+    Raised before ``scripts/run_experiment.py`` opens the artifact writer, so a refused run
+    leaves nothing under ``artifacts/``. Runners that need this declare an optional
+    ``preflight(config)`` method; runners without one are never asked.
+    """
+
+
 class UnknownRunnerError(KeyError):
     """The config names a runner that is not registered."""
 

@@ -7,7 +7,9 @@
 What one invocation does, in order:
 
 1. Load and validate the config; apply ``--seed``; fill a missing wall-clock limit from
-   ``state/BUDGET.json`` ``default_experiment_wallclock_seconds``. No limit, no run.
+   ``state/BUDGET.json`` ``default_experiment_wallclock_seconds``. No limit, no run. If the
+   runner declares ``preflight(config)``, it runs here; a ``RunPreflightError`` exits 2 before
+   any run directory exists.
 2. Record provenance before anything runs: resolved config, git state, environment info.
 3. Run the registered runner inside a ``NetworkGuard`` set to the config's allowance and a
    hard wall-clock limit. A guard violation or timeout is recorded as the run's completion
@@ -52,10 +54,13 @@ from arc_plasticity.core.provenance import (
     hardware_description,
     python_version,
 )
-from arc_plasticity.core.runner import RunOutcome, get_runner
+from arc_plasticity.core.runner import RunOutcome, RunPreflightError, get_runner
 from arc_plasticity.environments import (  # noqa: F401  (registers the built-in runners)
     arc_random_walk,
     toy,
+)
+from arc_plasticity.evaluation import (  # noqa: F401  (registers the E020 runner)
+    human_baseline_run,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -117,6 +122,11 @@ def run(
     lock_hash = dependency_lock_hash(root)
     cfg_hash = config_hash(config)
     runner = get_runner(config.runner)
+    preflight = getattr(runner, "preflight", None)
+    if callable(preflight):
+        # A RunPreflightError propagates before any directory exists (constitution: a run
+        # over unusable inputs must not leave an artifact directory behind).
+        preflight(config)
 
     status = "completed"
     outcome = _empty_outcome()
@@ -221,6 +231,9 @@ def main(argv: list[str] | None = None) -> int:
         )
     except ConfigError as exc:
         print(f"FAIL config: {exc}", file=sys.stderr)
+        return 2
+    except RunPreflightError as exc:
+        print(f"FAIL preflight: {exc}", file=sys.stderr)
         return 2
     rel = run_dir.relative_to(ROOT) if run_dir.is_relative_to(ROOT) else run_dir
     print(json.dumps({"run_dir": str(rel), "completion_status": status}))

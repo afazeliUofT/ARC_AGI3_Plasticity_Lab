@@ -1,0 +1,50 @@
+# E020_human_baselines: the G2 human-baseline experiment.
+#
+# Pre-registered in preregistration/G2.yaml, experiment. The runner ingests the released human
+# replays from data/human_replays/raw/ (gitignored; integrity record
+# experiments/human_replays_manifest.json), derives the per-level human baseline under the
+# hash-locked rules (upper median of each participant's best first-session completion count)
+# and reconciles it with the official baseline_actions of every cached metadata.json. Offline,
+# no model, no environment instantiated, no randomness; the seed is recorded only. The
+# determinism protocol runs it twice at seed 12345 and nothing else.
+#
+# The run refuses to start, leaving no artifact directory, when the dataset manifest is absent
+# or the raw directory drifts from it (scripts/run_experiment.py exits 2 with FAIL preflight).
+#
+# Run:  uv run python scripts/run_experiment.py --config configs/experiments/E020_human_baselines.yaml
+
+schema_version: 1
+experiment_id: E020_human_baselines
+description: Per-level human action baselines derived from the released ARC-AGI-3 human replays and reconciled with the official metadata baselines; local files only.
+runner: human_baseline_derivation
+seed: 12345
+wallclock_limit_seconds: 600
+network_calls_allowed: 0
+model_calls_allowed: 0
+budgets:
+  action_budget: 0
+  simulation_budget: 0
+  token_budget: 0
+  persistent_state_size_cap_bytes: 0
+language_model:
+  identifier: null
+  prompt: null
+runner_params:
+  raw_replays_dir: data/human_replays/raw
+  dataset_manifest: experiments/human_replays_manifest.json
+  environments_dir: environment_files
+  cache_manifest: experiments/environment_cache_manifest.json
+  g1_runs_dir: artifacts/E100_arc_interface
+  # The three graded G1 runs (state/PROJECT_STATE.json verifier_reports.G1.runs).
+  g1_run_ids:
+    - 20260904T074939Z_seed12345_8383cad8
+    - 20260904T074956Z_seed12345_9e2317b0
+    - 20260904T075000Z_seed12346_b801dd9b
+  # thresholds.action_budget_multiplier_for_later_gates in the G2 pre-registration; used only
+  # for the non-thresholded g1_termination_vs_budget diagnostic.
+  action_budget_multiplier: 5
+  extra_artifacts:
+    - human_baselines.json
+    - replay_ingestion_log.jsonl
+    - input_manifest.json
+    - g1_termination_vs_budget.json
