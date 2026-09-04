@@ -99,6 +99,59 @@ THROTTLE = STATE / "throttle.json"
 # 2026-09-04 for a reason that had nothing to do with the agent.
 NOOP_SECONDS = int(os.environ.get("ARC_LAB_NOOP_SECONDS", "25"))
 NOOP_STREAK_ESCALATE = 8
+SPEND_STREAK_ESCALATE = 3
+
+# A monthly ORG SPEND limit is not a session limit. It does not reset in hours,
+# so sleeping against it is futile; raising it is an action only the human can
+# take. This is the message that matched nothing and produced the 2026-09-04
+# HALT: "You've hit your org's monthly spend limit - ask your admin to raise it".
+SPEND_LIMIT_PAT = re.compile(
+    r"(monthly spend limit|spend limit|spending limit"
+    r"|ask your admin to raise|credit balance is too low"
+    r"|billing|purchase more credits)", re.I)
+
+
+def parse_reset_local(text: str) -> int | None:
+    """Turn "resets 3:30pm (America/Toronto)" into a unix timestamp.
+
+    The CLI states the reset in local wall-clock time. The supervisor used to
+    look only for a unix timestamp, threw this away, and backed off blindly -
+    fifteen minutes against a wait of about two hours.
+    """
+    m = re.search(r"resets?\s+(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)"
+                  r"\s*\(([A-Za-z_]+/[A-Za-z_]+)\)", text, re.I)
+    if not m:
+        return None
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(m.group(4))
+    except Exception:
+        return None
+    hour = int(m.group(1)) % 12
+    if m.group(3).lower().startswith("p"):
+        hour += 12
+    minute = int(m.group(2) or 0)
+    local = datetime.now(tz)
+    target = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if target <= local:
+        target += timedelta(days=1)
+    # A session limit never resets more than five hours out. If the quoted time
+    # has already passed today, rolling it to tomorrow would sleep 24 hours and
+    # look like a hang - fall back to normal backoff instead.
+    ahead = (target - local).total_seconds()
+    if ahead > FIVE_HOURS + 1800:
+        return None
+    return int(target.timestamp())
+
+# Broader than AUTH_PAT and applied only to a fast no-op's captured output.
+# "OAuth token has expired" contains none of AUTH_PAT's phrases, and a run that
+# sleeps against an expired credential never recovers.
+AUTH_ANY_PAT = re.compile(
+    r"(oauth|setup-token|refresh token"
+    r"|token (has )?expired|credential(s)? (are |is )?(invalid|expired)"
+    r"|please (run )?/?login|not logged in|log ?in again"
+    r"|\bauthentication_error\b|invalid[ _]api[ _]key"
+    r"|\b401\b|\b403\b[^0-9]{0,40}(forbid|unauthor))", re.I)
 
 # Applied ONLY to the output of a fast no-op turn, where the agent produced no
 # prose of its own, so it cannot match the evidence base the way the old
@@ -458,11 +511,21 @@ class Supervisor:
         if isinstance(payload, dict) and is_err:
             text += "\n" + str(payload.get("result") or payload.get("error") or "")
 
+        if SPEND_LIMIT_PAT.search(text):
+            return Outcome("spend_limit", r.returncode, out, err,
+                           resets_at=parse_reset_local(text), window="spend",
+                           detail=text.strip()[-400:])
+        if isinstance(payload, dict) and payload.get("api_error_status") == 429:
+            # The structured field is decisive even when the wording is new.
+            return Outcome("rate_limit", r.returncode, out, err,
+                           resets_at=parse_reset_local(text),
+                           window="seven_day" if re.search(r"week", text, re.I) else "five_hour")
         if RATE_LIMIT_PAT.search(text):
             window = "seven_day" if re.search(r"week", text, re.I) else "five_hour"
             m = re.search(r"resets?[_ ]?at\D{0,10}(\d{10})", text)
+            when = int(m.group(1)) if m else parse_reset_local(text)
             return Outcome("rate_limit", r.returncode, out, err,
-                           resets_at=int(m.group(1)) if m else None, window=window)
+                           resets_at=when, window=window)
         if AUTH_PAT.search(text):
             return Outcome("auth", r.returncode, out, err)
         if TRANSIENT_PAT.search(text):
@@ -602,7 +665,8 @@ class Supervisor:
             # before the agent started. That is a service condition to wait out,
             # never a no-progress turn. Its full output is preserved so the
             # cause is diagnosable rather than invisible.
-            if (out.kind == "ok" and elapsed < NOOP_SECONDS
+            if (out.kind not in ("rate_limit", "auth", "spend_limit")
+                    and elapsed < NOOP_SECONDS
                     and ledger_len() == before_ledger
                     and head_commit() == before_commit):
                 streak = int(getattr(self, "noop_streak", 0)) + 1
@@ -613,6 +677,14 @@ class Supervisor:
                     "stdout_tail": (out.stdout or "")[-4000:],
                     "stderr_tail": (out.stderr or "")[-4000:]})
                 blob = (out.stdout or "") + "\n" + (out.stderr or "")
+                if AUTH_ANY_PAT.search(blob):
+                    print("[supervisor] HALT: the CLI is refusing on what looks like an\n"
+                          "             authentication problem, not a usage limit.\n"
+                          "             Run:  claude setup-token\n"
+                          "             then re-export CLAUDE_CODE_OAUTH_TOKEN.")
+                    self.log("halt", reason="auth_inferred_from_fast_noop",
+                             returncode=out.returncode, detail=blob[-500:])
+                    return 6
                 if USAGE_ANY_PAT.search(blob):
                     self.log("rate_limit", window="inferred", returncode=out.returncode,
                              detail=f"usage-limit text in a {elapsed}s no-op turn")
@@ -644,6 +716,34 @@ class Supervisor:
                 continue
             self.noop_streak = 0
 
+            if out.kind == "spend_limit":
+                streak = int(getattr(self, "spend_streak", 0)) + 1
+                self.spend_streak = streak
+                self.log("spend_limit", streak=streak, returncode=out.returncode,
+                         resets_at=out.resets_at, detail=out.detail)
+                print(f"[supervisor] org spend limit reported (occurrence {streak}). "
+                      f"This does NOT reset in hours.")
+                if streak >= SPEND_STREAK_ESCALATE:
+                    if not ESCALATION.read_text(encoding="utf-8").strip():
+                        ESCALATION.write_text(
+                            "# Escalation: the account has hit an org spend limit\n\n"
+                            f"Time: {iso()}\n\n"
+                            "The CLI reported, three times running:\n\n"
+                            f"```\n{out.detail}\n```\n\n"
+                            "This is not a session or weekly limit and will not clear by "
+                            "waiting. Raise the limit at claude.ai/settings/usage, or confirm "
+                            "the run should bill against the Max subscription rather than API "
+                            "credits (check whether ANTHROPIC_API_KEY is set in the "
+                            "environment).\n\n"
+                            "Answer by appending a section that starts with `## ANSWER`.\n",
+                            encoding="utf-8")
+                    st["blocked_on"] = "org spend limit - needs a human to raise it"
+                    write_json(PROJECT_STATE, st)
+                    self.log("halt", reason="spend_limit")
+                    return 9
+                self.sleep_until(out.resets_at, "five_hour",
+                                 "org spend limit reported; waiting for the quoted reset")
+                continue
             if out.kind == "rate_limit":
                 self.log("rate_limit", window=out.window, returncode=out.returncode)
                 for wname, span, key in (("five_hour", FIVE_HOURS,
@@ -675,6 +775,7 @@ class Supervisor:
                 continue
 
             self.backoff = 900
+            self.spend_streak = 0
             self.turns_this_run += 1
 
             # Did anything actually happen? A turn that produced only prose made no progress.
