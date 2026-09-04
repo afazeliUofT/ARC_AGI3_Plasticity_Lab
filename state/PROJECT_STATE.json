@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T08:05:09Z",
+  "updated_utc": "2026-09-04T08:05:20Z",
   "current_gate": "G2",
   "gate_status": "not_started",
   "gate_entered_utc": "2026-09-04T08:05:09Z",
@@ -14,7 +14,7 @@
     "started_utc": "2026-09-04T08:05:09Z"
   },
   "blocked_on": null,
-  "next_action": "G2.1 pre-registration. First fill verdicts.G1.recorded_commit in state/PROJECT_STATE.json with the hash of the commit that recorded the verdict (git log --format=%h -1 -- docs/decisions/G1_VERDICT.md). Then read PROPOSAL_v2.md section 9 row G2 and the sections it references for the G2 hypothesis, primary metric, thresholds, kill rule, baselines and revision limit; read docs/EVIDENCE_ARC.md 1.4 (human replays) and section 6 item 6 since G2 depends on the 342 human replays, whose download location is UNCONFIRMED (constitution section 6 item 11: if the dataset cannot be obtained, escalate directly, do not climb the ladder). Read preregistration/G1.yaml with the Read tool as the structural template (never name that directory in a shell command). Author preregistration/G2.yaml with the Write tool: every numeric threshold with the reasoning that fixed it, and hash-lock the three carry-forward items from docs/decisions/G1_VERDICT.md section 11: (1) Arcade.make(seed) is inert on the public games, so the determinism contrast must name the policy seed or the game set as the source of variation; (2) every project-produced number cited in an evidence document must cite a preserved artifact under artifacts/ with a SHA256SUMS entry, never a /tmp script; (3) any throughput threshold states step-only or all-in (they differ by about 2x on this machine). Read 'date -u' immediately before writing authored_utc. Commit the pre-registration alone (git add -A && git reset -q -- state/ then commit), record its SHA-256 in the ledger (event decision, kind preregistration) and in state preregistrations.G2 with committed_at, set gate_status in_progress, commit state. If G2 cannot be pre-registered without the human replays' location, write state/ESCALATION.md per section 6 item 11 and set blocked_on.",
+  "next_action": "G2.1 pre-registration. Read PROPOSAL_v2.md section 9 row G2 and the sections it references for the G2 hypothesis, primary metric, thresholds, kill rule, baselines and revision limit; read docs/EVIDENCE_ARC.md 1.4 (human replays) and section 6 item 6 since G2 depends on the 342 human replays, whose download location is UNCONFIRMED (constitution section 6 item 11: if the dataset cannot be obtained, escalate directly, do not climb the ladder). Read preregistration/G1.yaml with the Read tool as the structural template (never name that directory in a shell command). Author preregistration/G2.yaml with the Write tool: every numeric threshold with the reasoning that fixed it, and hash-lock the three carry-forward items from docs/decisions/G1_VERDICT.md section 11: (1) Arcade.make(seed) is inert on the public games, so the determinism contrast must name the policy seed or the game set as the source of variation; (2) every project-produced number cited in an evidence document must cite a preserved artifact under artifacts/ with a SHA256SUMS entry, never a /tmp script; (3) any throughput threshold states step-only or all-in (they differ by about 2x on this machine). Read 'date -u' immediately before writing authored_utc. Commit the pre-registration alone (git add -A && git reset -q -- state/ then commit), record its SHA-256 in the ledger (event decision, kind preregistration) and in state preregistrations.G2 with committed_at, set gate_status in_progress, commit state. If G2 cannot be pre-registered without the human replays' location, write state/ESCALATION.md per section 6 item 11 and set blocked_on.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -75,7 +75,7 @@
       "file": "docs/decisions/G1_VERDICT.md",
       "sha256": "9ba6a1cf139515550dfa8b3f4564297a609e73099afee6aa0a38a8db52884c45",
       "graded_commit": "1435f81",
-      "recorded_commit": null
+      "recorded_commit": "f8c16a6"
     }
   },
   "preregistrations": {
