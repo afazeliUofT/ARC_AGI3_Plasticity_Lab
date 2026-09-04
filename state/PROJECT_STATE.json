@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T07:22:09Z",
+  "updated_utc": "2026-09-04T07:23:35Z",
   "current_gate": "G0",
   "gate_status": "passed",
   "gate_entered_utc": "2026-09-04T05:39:13Z",
@@ -26,7 +26,8 @@
     "The control-surface hook is over-inclusive: any Bash command containing a frozen path plus '2>&1' or another '>' is denied even when read-only (two read-only commands denied on 2026-09-04). Workaround: never redirect stderr in a command that names a frozen path; use the Read tool for those files. Not a defect to fix (hook is frozen), just a working rule. Extended 2026-09-04: a heredoc whose BODY names a frozen path is also denied, and the agent memory directory under ~/.claude/projects/ is frozen too (contains '.claude/'); write ledger-append scripts to /tmp with the Write tool and run them with python3",
     "Process defect recorded by the G0 referee (docs/decisions/G0_VERDICT.md section 9 item 1): ledger 'ts', state 'updated_utc' and the G0 pre-registration 'authored_utc' were typed as estimates and post-date their own git commit times. Rule from 2026-09-04T07:22:08Z onward: read 'date -u' immediately before every timestamped write. Git commit times and state/supervisor.jsonl are the reliable clock for anything earlier",
     "G0 verdict section 9 items 4 and 5: evidence for EVIDENCE_TOOLING section 11 items 2-4 lives in gitignored files (state/supervisor.jsonl, state/supervisor.out, state/tool_errors.jsonl) so a fresh clone cannot re-derive it; the verdict records their digests at verdict time. scripts/verify_run.py is not among the five pinned files and state/PINNED_HASHES.json is gitignored, a weaker layer-2 guarantee than the constitution describes; raise with the human at the next escalation, not now",
-    "Known hole in scripts/verify_run.py strip_keys (C5 argument A, pinned by tests/regression/test_c5_g0_exclusion_nesting.py): an excluded key is removed with its whole value at any depth. Unexploited in G0. The G1 pre-registration must hash-lock a rule that a container-valued or nested excluded key fails the gate; the G1 evaluator reads that rule from the pre-registration"
+    "Known hole in scripts/verify_run.py strip_keys (C5 argument A, pinned by tests/regression/test_c5_g0_exclusion_nesting.py): an excluded key is removed with its whole value at any depth. Unexploited in G0. The G1 pre-registration must hash-lock a rule that a container-valued or nested excluded key fails the gate; the G1 evaluator reads that rule from the pre-registration",
+    "Push after G0 deferred (ledger decision 2026-09-04T07:23:35Z): the remote's visibility could not be confirmed private from inside a turn (no gh, API probe denied). main is 16+ commits ahead of origin/main. Push once visibility is confirmed; do not treat as blocking"
   ],
   "mechanisms": {
     "M1": {
