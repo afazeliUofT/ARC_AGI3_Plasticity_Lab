@@ -1,0 +1,28 @@
+# E000_bootstrap: the G0 smoke experiment.
+#
+# Pre-registered in preregistration/G0.yaml, smoke_experiment. It exercises the canonical
+# entry point, the artifact contract, the guards and the provenance layer, and nothing else:
+# no network, no model. The determinism protocol runs it twice at seed 12345 and once at
+# seed 12346 (via --seed), then scripts/verify_run.py --gate G0 compares results.json and
+# metrics.csv after excluding configs/nondeterministic_fields.yaml.
+#
+# Run:  uv run python scripts/run_experiment.py --config configs/experiments/E000_bootstrap.yaml
+
+schema_version: 1
+experiment_id: E000_bootstrap
+description: Seeded toy grid walk through the canonical entry point; laboratory smoke test only.
+runner: smoke_toy_grid
+seed: 12345
+wallclock_limit_seconds: 600
+network_calls_allowed: 0
+model_calls_allowed: 0
+budgets:
+  action_budget: 64
+  simulation_budget: 0
+  token_budget: 0
+  persistent_state_size_cap_bytes: 0
+language_model:
+  identifier: null
+  prompt: null
+runner_params:
+  grid_size: 8

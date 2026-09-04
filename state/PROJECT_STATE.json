@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T06:46:07Z",
+  "updated_utc": "2026-09-04T06:58:24Z",
   "current_gate": "G0",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T05:39:13Z",
@@ -14,12 +14,14 @@
     "started_utc": "2026-09-04T05:39:13Z"
   },
   "blocked_on": null,
-  "next_action": "Lint, tests and mypy are all green (ledger 2026-09-04T06:46:07Z). Next: write scripts/run_experiment.py (the canonical entry point, constitution section 11) and configs/experiments/E000_bootstrap.yaml. First read scripts/verify_run.py for REQUIRED_RUN_FILES and REQUIRED_MANIFEST_KEYS and preregistration/G0.yaml for the determinism rules; the run must produce every file in the artifact contract under artifacts/E000_bootstrap/<run_id>/ (manifest.json, resolved_config.yaml, results.json, metrics.csv, environment_results.csv, transitions.jsonl, hypotheses.jsonl, memory_operations.jsonl, stdout.log, stderr.log, git_state.txt, environment_info.json, SHA256SUMS) with wallclock_limit_seconds 600 in the config, zero network, zero model calls, and content identical across same-seed runs except the fields in configs/nondeterministic_fields.yaml. Add unit tests for the artifact writer, run pytest/ruff/mypy, ledger, state, commit. Do NOT run the experiment in that turn; the turn after runs it at seed 12345 twice and 12346 once, then 'uv run python scripts/verify_run.py --gate G0'. After that: resolve the 8 VERIFY-ON-MACHINE items in docs/EVIDENCE_TOOLING.md section 11 by appending 'Resolved YYYY-MM-DD: ...' or 'Not observable YYYY-MM-DD: ...' lines (append-only, with a URL or artifact path); then dispatch referee.",
+  "next_action": "Entry point, artifact writer, guards and E000 config exist and are tested (ledger 2026-09-04T06:58:24Z). Next: produce the G0 determinism artifacts. (a) Edit .gitignore: append a line '!artifacts/**/*.log' after the '*.log' rule so run logs are committable (see ledger decision 2026-09-04T06:58:24Z). (b) Run, from the repo root, exactly three times: 'uv run python scripts/run_experiment.py --config configs/experiments/E000_bootstrap.yaml' twice with no --seed (seed 12345) and once with '--seed 12346'. Each prints a JSON line with run_dir and completion_status; all three must be 'completed'. (c) Run 'uv run python scripts/verify_run.py --gate G0 --report state/verify_G0.json' and read the report: run_artifact_completeness, sha256sums_verify and determinism_identity must PASS; git_status_clean will FAIL until the commit and verify_on_machine_resolved will FAIL 0/8 (expected, next step). If determinism_identity fails, do NOT touch configs/nondeterministic_fields.yaml; read the differing field in the report and fix the producer. (d) git add artifacts/E000_bootstrap, .gitignore, and status.sh (the human's untracked helper; commit it unchanged as the safe default), ledger, state; commit. Then the following turn resolves the 8 VERIFY-ON-MACHINE items in docs/EVIDENCE_TOOLING.md section 11 by appending 'Resolved YYYY-MM-DD: ...' or 'Not observable YYYY-MM-DD: ...' lines (append-only, each with a URL or artifact path), and then dispatches the referee.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 01:27; hashes not yet recorded)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11",
     "Supervisor pins only five CONTROL_SURFACE files; preregistration/** has no layer-2 hash protection beyond the write-once hook (raised in turn-1 escalation item 2, not yet addressed)",
-    "preregistration/G0.yaml authored_utc reads 06:05:00Z but was written at 05:54:21Z; file is write-once, ledger timestamp is authoritative"
+    "preregistration/G0.yaml authored_utc reads 06:05:00Z but was written at 05:54:21Z; file is write-once, ledger timestamp is authoritative",
+    ".gitignore's blanket '*.log' rule would drop artifacts/**/stdout.log and stderr.log from any commit; the run turn must add a negation before committing run artifacts (ledger decision 2026-09-04T06:58:24Z)",
+    "Untracked status.sh (human's supervisor status helper) breaks git_status_porcelain_lines_max=0 until committed or ignored; default is to commit it unchanged in the run turn"
   ],
   "mechanisms": {
     "M1": {
