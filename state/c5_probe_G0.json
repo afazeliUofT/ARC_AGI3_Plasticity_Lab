@@ -1,0 +1,143 @@
+{
+  "A1_synthetic_exclusion_hole": {
+    "hole_exists": true,
+    "nested_result_under_excluded_key_compares_identical": true,
+    "top_level_result_difference_detected": true
+  },
+  "A2_graded_artifacts_scan": {
+    "hole_exploited_in_graded_artifacts": false,
+    "runs": {
+      "20260904T065956Z_seed12345_60af959c": {
+        "metrics_csv_excluded_columns": [],
+        "metrics_csv_header": [
+          "metric",
+          "value"
+        ],
+        "results_json_excluded_keys": [
+          {
+            "depth": 1,
+            "path": "/created_utc",
+            "value_is_container": false,
+            "value_type": "str"
+          },
+          {
+            "depth": 1,
+            "path": "/run_id",
+            "value_is_container": false,
+            "value_type": "str"
+          },
+          {
+            "depth": 1,
+            "path": "/wallclock_seconds",
+            "value_is_container": false,
+            "value_type": "float"
+          }
+        ],
+        "suspicious": []
+      },
+      "20260904T065957Z_seed12345_47bf07b9": {
+        "metrics_csv_excluded_columns": [],
+        "metrics_csv_header": [
+          "metric",
+          "value"
+        ],
+        "results_json_excluded_keys": [
+          {
+            "depth": 1,
+            "path": "/created_utc",
+            "value_is_container": false,
+            "value_type": "str"
+          },
+          {
+            "depth": 1,
+            "path": "/run_id",
+            "value_is_container": false,
+            "value_type": "str"
+          },
+          {
+            "depth": 1,
+            "path": "/wallclock_seconds",
+            "value_is_container": false,
+            "value_type": "float"
+          }
+        ],
+        "suspicious": []
+      },
+      "20260904T065957Z_seed12346_ba50299f": {
+        "metrics_csv_excluded_columns": [],
+        "metrics_csv_header": [
+          "metric",
+          "value"
+        ],
+        "results_json_excluded_keys": [
+          {
+            "depth": 1,
+            "path": "/created_utc",
+            "value_is_container": false,
+            "value_type": "str"
+          },
+          {
+            "depth": 1,
+            "path": "/run_id",
+            "value_is_container": false,
+            "value_type": "str"
+          },
+          {
+            "depth": 1,
+            "path": "/wallclock_seconds",
+            "value_is_container": false,
+            "value_type": "float"
+          }
+        ],
+        "suspicious": []
+      }
+    }
+  },
+  "B_cross_commit_rerun": {
+    "committed_fixed_seed_runs": {
+      "20260904T065956Z_seed12345_60af959c": {
+        "identical_to_fresh": true,
+        "manifest_git_commit": "ab89404fd32e79cd96b6831a3be8bff4bb46b117",
+        "manifest_git_dirty": true
+      },
+      "20260904T065957Z_seed12345_47bf07b9": {
+        "identical_to_fresh": true,
+        "manifest_git_commit": "ab89404fd32e79cd96b6831a3be8bff4bb46b117",
+        "manifest_git_dirty": true
+      }
+    },
+    "cross_commit_identity": true,
+    "rerun_completion_status": "completed",
+    "rerun_exit_code": 0,
+    "rerun_git_commit": "d6673d4f6afb37df83e547b4c1931b37497ed820",
+    "rerun_git_dirty_paths": [
+      " M state/BUDGET.json",
+      "?? scripts/c5_probe_G0.py",
+      "?? state/c5_probe_G0.json",
+      "?? tests/regression/test_c5_g0_exclusion_nesting.py"
+    ],
+    "rerun_manifest_git_commit": "d6673d4f6afb37df83e547b4c1931b37497ed820",
+    "rerun_manifest_git_dirty": true
+  },
+  "excluded_names": [
+    "created_utc",
+    "duration_seconds",
+    "elapsed_seconds",
+    "finished_utc",
+    "guid",
+    "hardware",
+    "hostname",
+    "pid",
+    "python_executable_path",
+    "run_id",
+    "session_id",
+    "started_utc",
+    "timestamp_utc",
+    "updated_utc",
+    "wallclock_seconds"
+  ],
+  "gate": "G0",
+  "probe": "C5 adversarial self-review",
+  "verdict_proposal": "graded artifacts do not exploit the exclusion hole; cross-commit identity holds",
+  "verifier_sha256": "07fe047d046748634450e9140e6f834675b4b8f0993cd8204ce520fb51865466"
+}
