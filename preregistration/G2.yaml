@@ -1,0 +1,721 @@
+# Pre-registration: Gate G2 (Human baseline)
+#
+# Authored by the autonomous agent under AGENT_CONSTITUTION.md section 7, control C1,
+# before any G2 result artifact exists (artifacts/E020_human_baselines/ does not exist and no
+# human replay file is present on this machine at authoring; both checked with 'test ! -e').
+# This file is write-once: the PreToolUse hook denies every later modification. If a threshold
+# below turns out to be wrong, the objection goes in state/LEDGER.jsonl and the gate proceeds
+# or is killed; this file is never edited.
+#
+# Source of the predicate: PROPOSAL_v2.md section 9, row G2, with the metric definition of
+# PROPOSAL_v2.md section 8 (RHAE) and docs/EVIDENCE_ARC.md section 2. This file restates every
+# item as a machine-checkable threshold and records the reasoning that fixed each value, as
+# C2 requires. scripts/verify_run.py (G2 evaluator, not yet written at authoring) reads every
+# threshold, every synthetic vector and every derivation vector from here, never from the
+# prose. It also carries forward the three items that the G1 verdict
+# (docs/decisions/G1_VERDICT.md section 11, SHA-256
+# 9ba6a1cf139515550dfa8b3f4564297a609e73099afee6aa0a38a8db52884c45) requires to be hash-locked
+# rather than remembered: section carry_forward_from_g1_verdict below.
+#
+# Two facts established at authoring that shape this file (ledger, event literature,
+# 2026-09-04): (1) every one of the 25 cached metadata.json files already carries the official
+# per-level human baseline (key baseline_actions), 183 levels in total, so the G2 derivation
+# from the replays is a REPRODUCTION CHECK of published numbers, not the project's only source
+# of a baseline; (2) the proposal's named fallback, huggingface.co/datasets/zarczynski/
+# arc-agi-3-public, holds only environment files at a revision dated before the human dataset
+# was released, so it is not a source of replays, and the only published pointer is a URL
+# shortener this machine could not resolve. Acquisition is therefore the human task the
+# proposal already assigns; section dataset_acquisition pre-registers the procedure.
+
+schema_version: 1
+gate: G2
+title: Human baseline - RHAE verified against hand-computed vectors, 342 human replays ingested with provenance, per-level human baselines derived and reconciled with the official values
+authored_utc: "2026-09-04T08:18:34Z"
+authored_at_commit: 7f3dae9
+author: agent (Claude Fable 5.1, supervisor turn 14 per state/BUDGET.json turns_used)
+governing_predicate: PROPOSAL_v2.md section 9, row G2; metric definition PROPOSAL_v2.md section 8 and docs/EVIDENCE_ARC.md section 2
+predecessor_verdict: docs/decisions/G1_VERDICT.md (GO, SHA-256 9ba6a1cf139515550dfa8b3f4564297a609e73099afee6aa0a38a8db52884c45, graded commit 1435f81, recorded at commit f8c16a6)
+mechanism: none
+mandated_baselines: []
+revision_limit: 0          # G2 is infrastructure; there is no mechanism to revise.
+
+hypothesis: >
+  G2 carries one infrastructure claim and one falsifiable scientific sub-claim. The
+  infrastructure claim: the project computes RHAE exactly as the current ARC-AGI-3
+  documentation defines it (per-level score min(1.15, (h/a)^2), level weight w_l = l with l
+  counted from 1, environment score capped by the completed-weight fraction, plain mean over
+  environments; docs/EVIDENCE_ARC.md section 2) by delegating to the toolkit's reference
+  implementation, and this is demonstrated on hand-computed vectors that would fail under the
+  superseded arXiv-v1 form min(1.0, h/a)^2, under uniform or zero-based level weights, and
+  without the completion cap; the 342 released human replays are obtained with recorded
+  provenance and ingested without parse failure; and a per-level human action baseline is
+  derived from them for at least 80 percent of the 183 public levels. The scientific
+  sub-claim: the official per-level baseline_actions shipped in every cached metadata.json are
+  reproducible from the released replays under the documented rule "upper-median of each
+  participant's best first-run completion action count". Prediction, recorded before the data
+  is seen: if the 342 replays are the complete set of sessions the platform aggregated, exact
+  agreement should be close to 100 percent of derived levels; a systematic shortfall would mean
+  the platform aggregated sessions that were not released or used a rule that differs from the
+  documented one. Either outcome is a finding recorded in docs/EVIDENCE_ARC.md; neither changes
+  the gate, because the predicate thresholds coverage, not agreement (see threshold_reasoning).
+
+primary_metric:
+  name: human_baseline_level_coverage
+  definition: >
+    derived_levels / public_levels_total, where derived_levels is the number of (game, level)
+    pairs among the 183 public levels for which at least one ingested first-run replay contains
+    a completion of that level, so that a derived baseline exists (human_baselines section),
+    and public_levels_total is the threshold value 183, which the verifier also checks against
+    the sum over the 25 cached metadata.json files of len(baseline_actions).
+  pass_value: 0.80
+  co_primary_machine_checks: >
+    rhae_synthetic_vectors (every embedded case reproduces its hand-computed value within
+    rhae_synthetic_abs_tolerance) and baseline_derivation_vectors (every embedded case
+    reproduces its hand-computed value exactly). These are pass/fail, not fractions; a single
+    failing case fails the gate.
+  reasoning: >
+    The predicate's own three items are the RHAE test, the coverage floor and the dataset's
+    acquisition. Coverage is the primary metric because it is the one quantity that depends on
+    the data rather than on code the agent controls, and 0.80 is the predicate's number: the
+    human study reports every environment beaten by at least two participants and 1,614 level
+    completions, so a released set that covers fewer than 147 of 183 levels would indicate the
+    released replays are not the study's data, which the project must know before anything is
+    scored against them.
+
+rhae:
+  # Metric definition, hash-locked. Nothing else in the project may define RHAE.
+  definition: >
+    For level l (1-indexed) of environment e with human baseline h and agent actions a:
+    S(l,e) = min(1.15, (h/a)^2) if the level was completed with a > 0, else 0. With weights
+    w_l = l and n levels of which the completed set is K: E(e) = min( sum_{l in K} w_l /
+    sum_{l=1..n} w_l , sum_{l=1..n} w_l S(l,e) / sum_{l=1..n} w_l ). T = plain mean of E(e)
+    over the environments scored. Reported in percent: E and T are multiplied by 100, so a
+    single environment scores in [0, 100] (the completion cap makes 100 the maximum even
+    though a single level may score 115) and T is in [0, 100].
+  units: percent
+  implementation:
+    module: src/arc_plasticity/evaluation/rhae.py
+    delegation_rule: >
+      Per-environment scoring MUST delegate to arc_agi.scorecard.EnvironmentScoreCalculator
+      (add_level with level_index = position + 1, then to_score().score), which is the
+      reference implementation named in CLAUDE.md and which at arc-agi 0.9.9 computes
+      min(((baseline/actions)**2)*100, 115.0) per completed level, weights by level_index,
+      and caps at (weight of levels with positive score)/(total weight)*100. The total is the
+      plain mean over environments, which is also what the toolkit's
+      EnvironmentScorecard.from_scorecard computes. The project does not reimplement the
+      formula; the adapter only adapts. Consequence, stated so it cannot be argued later: the
+      synthetic vectors below audit the toolkit's implementation against the documented formula
+      as much as they audit the adapter. If the toolkit disagrees with a hand-computed case,
+      that is a substrate finding recorded in docs/EVIDENCE_ARC.md with the toolkit version;
+      the case is not edited and the adapter does not paper over the difference.
+    verifier_check_of_delegation: >
+      The verifier reads src/arc_plasticity/evaluation/rhae.py and requires the literal text
+      "EnvironmentScoreCalculator" to appear in it and the module to import from arc_agi
+      (rhae_adapter_must_delegate_to_toolkit).
+  synthetic_vector_format: >
+    Each case lists one or more environments; each environment lists its levels in order,
+    each level as {human: h, agent: a, completed: bool}. Levels are 1-indexed by position.
+    For a level not completed, agent is the number of actions spent before the run stopped
+    (0 if never attempted); it does not influence the score. expected_environment_scores are
+    the percent scores of the environments in order; expected_total is the plain mean. The
+    adapter is exercised through exactly this structure by tests/unit/test_rhae_synthetic_vectors.py
+    and independently by the verifier. alternative_form_values record what the superseded or
+    otherwise wrong implementations would produce, so a wrong implementation cannot pass by
+    coincidence; they are documentation, not assertions.
+  synthetic_vectors:
+    # Eight hand-computed cases (predicate: 6-8). Arithmetic written out and checked with exact
+    # rational arithmetic (fractions.Fraction) before this file was written; no toolkit call
+    # was involved in producing any expected value.
+    - id: C1_parity
+      tags: [parity]
+      environments:
+        - levels:
+            - {human: 10, agent: 10, completed: true}
+      expected_environment_scores: [100.0]
+      expected_total: 100.0
+      arithmetic: "S1 = min(1.15, (10/10)^2) = 1; weighted = 1*1/1 = 1; completion cap = 1/1 = 1; E = min(1, 1) = 1 -> 100.00"
+    - id: C2_cap_then_completion_cap
+      tags: [cap_1_15, completion_cap]
+      environments:
+        - levels:
+            - {human: 20, agent: 10, completed: true}
+      expected_environment_scores: [100.0]
+      expected_total: 100.0
+      arithmetic: "S1 = min(1.15, (20/10)^2 = 4) = 1.15; weighted = 1.15; completion cap = 1/1 = 1; E = min(1, 1.15) = 1 -> 100.00 (a single environment can never exceed 100)"
+    - id: C3_cap_discriminator
+      tags: [cap_1_15, level_weighting, superseded_form_discriminator]
+      environments:
+        - levels:
+            - {human: 20, agent: 10, completed: true}
+            - {human: 10, agent: 20, completed: true}
+      expected_environment_scores: [55.0]
+      expected_total: 55.0
+      arithmetic: "S1 = min(1.15, 4) = 1.15; S2 = (10/20)^2 = 0.25; weighted = (1*1.15 + 2*0.25)/(1+2) = 1.65/3 = 0.55; completion cap = 3/3 = 1; E = 0.55 -> 55.00"
+      alternative_form_values: {superseded_min_1_0_then_square: 50.0, min_1_15_then_square: 60.75, uniform_weights: 70.0, zero_based_weights: 25.0}
+    - id: C4_square_inside_discriminator
+      tags: [level_weighting, superseded_form_discriminator]
+      environments:
+        - levels:
+            - {human: 21, agent: 20, completed: true}
+            - {human: 10, agent: 20, completed: true}
+      expected_environment_scores: [53.416666666666664]
+      expected_total: 53.416666666666664
+      arithmetic: "S1 = min(1.15, (21/20)^2 = 1.1025) = 1.1025; S2 = 0.25; weighted = (1.1025 + 0.5)/3 = 1.6025/3 = 641/1200; E = 641/12 percent = 53.4166...; superseded form gives S1 = min(1, 1.05)^2 = 1 -> 50.00"
+      alternative_form_values: {superseded_min_1_0_then_square: 50.0, min_1_15_then_square: 53.416666666666664, uniform_weights: 67.625, zero_based_weights: 25.0}
+    - id: C5_three_way_discriminator
+      tags: [cap_1_15, level_weighting, superseded_form_discriminator]
+      environments:
+        - levels:
+            - {human: 11, agent: 10, completed: true}
+            - {human: 10, agent: 20, completed: true}
+      expected_environment_scores: [55.0]
+      expected_total: 55.0
+      arithmetic: "S1 = min(1.15, (11/10)^2 = 1.21) = 1.15; S2 = 0.25; weighted = (1.15 + 0.5)/3 = 0.55 -> 55.00; min-then-square would give (1.21 + 0.5)/3 = 0.57 -> 57.00; superseded gives 50.00"
+      alternative_form_values: {superseded_min_1_0_then_square: 50.0, min_1_15_then_square: 57.0, uniform_weights: 70.0, zero_based_weights: 25.0}
+    - id: C6_level_weighting
+      tags: [level_weighting]
+      environments:
+        - levels:
+            - {human: 10, agent: 10, completed: true}
+            - {human: 10, agent: 10, completed: true}
+            - {human: 10, agent: 20, completed: true}
+      expected_environment_scores: [62.5]
+      expected_total: 62.5
+      arithmetic: "S = [1, 1, 0.25]; weighted = (1*1 + 2*1 + 3*0.25)/(1+2+3) = 3.75/6 = 0.625; completion cap = 6/6 = 1; E = 0.625 -> 62.50; uniform weights would give 75.00, zero-based weights 50.00"
+      alternative_form_values: {uniform_weights: 75.0, zero_based_weights: 50.0}
+    - id: C7_completion_cap_binding
+      tags: [cap_1_15, completion_cap, level_weighting]
+      environments:
+        - levels:
+            - {human: 10, agent: 5, completed: true}
+            - {human: 10, agent: 5, completed: true}
+            - {human: 10, agent: 30, completed: false}
+      expected_environment_scores: [50.0]
+      expected_total: 50.0
+      arithmetic: "S = [min(1.15, 4) = 1.15, 1.15, 0]; weighted = (1.15 + 2.3 + 0)/6 = 3.45/6 = 0.575; completion cap = (1+2)/6 = 0.5; E = min(0.5, 0.575) = 0.5 -> 50.00; without the completion cap 57.50"
+      alternative_form_values: {no_completion_cap: 57.5, uniform_weights: 66.66666666666667}
+    - id: C8_plain_mean_over_environments
+      tags: [plain_mean_over_environments, zero_completion]
+      environments:
+        - levels:
+            - {human: 10, agent: 10, completed: true}
+        - levels:
+            - {human: 10, agent: 50, completed: false}
+            - {human: 20, agent: 0, completed: false}
+      expected_environment_scores: [100.0, 0.0]
+      expected_total: 50.0
+      arithmetic: "E(A) = 100 (as C1); E(B): S = [0, 0], weighted 0, completion cap 0 -> 0; T = (100 + 0)/2 = 50.00; a sum would give 100, a level-count-weighted mean (1*100 + 2*0)/3 = 33.33"
+      alternative_form_values: {sum_over_environments: 100.0, level_weighted_mean: 33.333333333333336}
+
+human_baselines:
+  # What is derived from the replays, how, and how it is reconciled with the official values.
+  official_baselines_at_authoring: >
+    Every cached environment_files/<stem>/<version>/metadata.json carries baseline_actions, a
+    list with one positive integer per level. Observed at authoring (ledger 2026-09-04,
+    experiments/environment_cache_manifest.json baseline_actions_count): 25 games, level
+    counts 6 to 10, total 183, equal to docs/EVIDENCE_ARC.md section 1.1. arc_agi 0.9.9 reads
+    this list into EnvironmentInfo.baseline_actions and its scorecard scores against it. These
+    are the numbers published RHAE results are scored against; the project uses them as the
+    canonical scoring baseline (canonical_scoring_baseline below) and uses the replays to
+    check them and to obtain the per-level distributions the metadata does not carry.
+  replay_unit: >
+    One contiguous recorded human session on one game: an ordered sequence of actions with
+    the resulting levels_completed after each action, or an equivalent record giving the
+    action count at which each level was completed. replay_units_ingested counts these after
+    ingestion. A unit with zero actions still counts as a unit and contributes nothing.
+  first_run_rule: >
+    Only each participant's FIRST session on a given game contributes ("best first-run
+    playthroughs", docs/EVIDENCE_ARC.md section 2). Sessions are ordered by the dataset's
+    timestamp when one exists, else by the dataset's own ordering (file order); the ingestion
+    log records which. If the dataset carries no participant identity, every replay unit is
+    treated as a distinct participant's first session and the run manifest records
+    participant_ids_available false. This default is stated here so it is not chosen after
+    the data is seen.
+  level_attribution_rule: >
+    Within one session, level l is completed at the first action index c_l at which
+    levels_completed reaches at least l (a later full reset that drops levels_completed and a
+    later re-completion are ignored). Actions attributed to level l = c_l - c_(l-1), with
+    c_0 = 0, so every action issued after the previous completion, including RESET actions and
+    failed attempts, is charged to the level being solved. This is the same accounting the
+    toolkit's scorecard applies (actions at completion minus actions at the previous
+    completion). A level never reached in a session contributes no value for that session.
+  per_participant_best_rule: >
+    For each (participant, game, level), the best count is the minimum attributed action count
+    over that participant's first-session completions of that level (more than one completion
+    can only arise through a full reset within the session).
+  aggregation_rule: >
+    For each (game, level), let v_1 <= v_2 <= ... <= v_N be the per-participant best counts.
+    The derived human baseline is the UPPER MEDIAN v_(floor(N/2) + 1): the ordinary median for
+    odd N and the larger of the two middle values for even N. N = 0 means the level has no
+    derived baseline and does not count toward coverage. The full sorted list is preserved per
+    level so any other statistic can be recomputed from the artifact.
+  ingestion_paths: >
+    P1: the dataset provides step-by-step action logs; the ingestion adapter maps them into
+    the replay_unit form and the rules above are applied. P2: the dataset provides per-level
+    completion action counts directly; they are used as the attributed counts. If both are
+    available, P1 is computed and compared with P2 and the per-level agreement is recorded in
+    the ingestion log. The adapter records the mapping from the dataset's field names to the
+    canonical fields in input_manifest.json; unknown fields are preserved, never dropped.
+  canonical_scoring_baseline: >
+    From G2 onward every RHAE computation in this project uses the official metadata
+    baseline_actions as h. The derived baseline is the reproduction check and the source of
+    per-level distributions; it never replaces the official value without a later
+    pre-registration that says why and cites the G2 artifact digest.
+  official_agreement_report: >
+    For every derived level the run records exact_agreement (derived == official) and the
+    relative difference (derived - official)/official; results.json carries
+    exact_agreement_fraction over derived levels and the median absolute relative difference.
+    Both are OBSERVED, reported, cited in docs/EVIDENCE_ARC.md, and not thresholded
+    (threshold_reasoning explains why).
+  derived_table_artifact:
+    file: human_baselines.json
+    schema: >
+      schema_version; dataset_manifest_sha256; public_levels_total; per game (full game_id and
+      stem from metadata.json): per level 1..n: level, official_baseline_actions,
+      derived_baseline_actions (int or null), n_participants_with_completion,
+      per_participant_best_counts_sorted, exact_agreement (bool or null), relative_difference
+      (float or null); totals: derived_levels, human_baseline_level_coverage,
+      exact_agreement_fraction, median_abs_relative_difference, replay_units_ingested,
+      replay_parse_failures.
+    later_use: >
+      Later gates that need a human statistic cite this artifact's path and SHA-256 from the
+      graded G2 run; no copy of it is made under configs/.
+  downstream_budget_rule:
+    statement: >
+      The action budget for level l in every later gate is action_budget_multiplier_for_later_gates
+      (5) times the official metadata baseline_actions[l], applied per level, matching the
+      documented termination rule "for a level with a human median of n actions to completion,
+      the agent is terminated after 5n actions" (docs/EVIDENCE_ARC.md section 2). The official
+      baseline is the only per-level human statistic the toolkit ships and therefore the only
+      one a published run can have been budgeted against; the derived distributions are
+      recorded next to it so a later pre-registration could switch with a stated reason.
+    g3_inherits: true
+  diagnostics_not_thresholded:
+    - name: g1_termination_vs_budget
+      artifact: g1_termination_vs_budget.json
+      definition: >
+        For each of the 25 games, the steps_taken and final_state recorded in the three graded
+        G1 runs (artifacts/E100_arc_interface/<run_id>/results.json, digests in
+        state/PROJECT_STATE.json verifier_reports.G1.runs) next to 5 x baseline_actions[1] and
+        5 x sum(baseline_actions), to test the G1 observation that games end at counts
+        consistent with per-game action caps. Observed only; informs the G3 budget design.
+
+baseline_derivation_vectors:
+  # Eight hand cases for the rules above, in the canonical replay_unit form; each participant
+  # entry lists the attributed action counts of that participant's completions of the level
+  # under test within the given session. Checked by tests/unit/test_human_baseline_derivation.py
+  # and independently by the verifier, exactly (integers).
+  cases:
+    - id: D1_single_value
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [5]}
+      expected_baseline: 5
+    - id: D2_odd_count_median
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [3]}
+        - {participant: P2, session_index: 1, level_completion_action_counts: [7]}
+        - {participant: P3, session_index: 1, level_completion_action_counts: [9]}
+      expected_baseline: 7
+    - id: D3_even_count_upper_median
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [4]}
+        - {participant: P2, session_index: 1, level_completion_action_counts: [8]}
+      expected_baseline: 8
+      arithmetic: "sorted [4, 8], N = 2, index floor(2/2) + 1 = 2 -> 8 (a lower median would give 4, a mean 6)"
+    - id: D4_even_count_unsorted_input
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [10]}
+        - {participant: P2, session_index: 1, level_completion_action_counts: [2]}
+        - {participant: P3, session_index: 1, level_completion_action_counts: [6]}
+        - {participant: P4, session_index: 1, level_completion_action_counts: [4]}
+      expected_baseline: 6
+      arithmetic: "sorted [2, 4, 6, 10], N = 4, index 3 -> 6"
+    - id: D5_best_within_first_session
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [9, 5]}
+        - {participant: P2, session_index: 1, level_completion_action_counts: [7]}
+      expected_baseline: 7
+      arithmetic: "P1 best = min(9, 5) = 5; values [5, 7]; upper median -> 7"
+    - id: D6_second_session_excluded
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [6]}
+        - {participant: P1, session_index: 2, level_completion_action_counts: [2]}
+        - {participant: P2, session_index: 1, level_completion_action_counts: [8]}
+        - {participant: P3, session_index: 1, level_completion_action_counts: [12]}
+      expected_baseline: 8
+      arithmetic: "P1's second session (2) is excluded; values [6, 8, 12]; median -> 8 (including it would give [2, 6, 8, 12] -> 8 as well, so D6 is paired with D6b)"
+    - id: D6b_second_session_excluded_changes_answer
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: [6]}
+        - {participant: P1, session_index: 2, level_completion_action_counts: [2]}
+        - {participant: P2, session_index: 1, level_completion_action_counts: [8]}
+      expected_baseline: 8
+      arithmetic: "first sessions only: [6, 8] -> upper median 8; including the second session: [2, 6, 8] -> 6, which is wrong"
+    - id: D7_no_completion_not_derived
+      replays:
+        - {participant: P1, session_index: 1, level_completion_action_counts: []}
+      expected_baseline: null
+    - id: D8_step_log_attribution
+      levels_completed_after_each_action: [0, 0, 1, 1, 1, 2, 0, 1, 2, 3]
+      expected_attributed_actions_per_level: [3, 3, 4]
+      arithmetic: "first index reaching 1 is 3, reaching 2 is 6, reaching 3 is 10 (the full reset at action 7 and the re-completions at 8 and 9 are ignored); attributed = [3-0, 6-3, 10-6]"
+
+dataset_acquisition:
+  # Predicate item: "the replay dataset is obtained". Machine-checkable form: a committed
+  # provenance manifest whose every file verifies, plus the ingestion counts below.
+  state_at_authoring: >
+    No human replay file exists on this machine (searched /home/afazeli2006 to depth 5 for
+    replay, arc-agi-3-public, zarczynski, human_baseline; the Hugging Face cache is empty).
+    The evidence base (docs/EVIDENCE_ARC.md section 1.4 and section 6 item 6) records the
+    download location as UNCONFIRMED. Checked on 2026-09-04 with the WebFetch tool:
+    (a) huggingface.co/datasets/zarczynski/arc-agi-3-public, the proposal's named fallback,
+    revision f5757d68c2589be59b3119b6ed9fc6b652aff937, last modified 2026-04-02T08:33:44Z,
+    licence mit, contains only environment_files/ for the 25 public games plus README.md and
+    .gitattributes, no replay data, and predates the 14 April 2026 release of the human
+    dataset; (b) arcprize.org/blog/arc-agi-3-human-dataset links the dataset only through
+    the shortener https://dub.link/vfwCqvb, which answered HTTP 429 and then 403 to this
+    machine's fetcher; (c) docs.arcprize.org/llms.txt lists no human-dataset page;
+    (d) the github.com/arcprize organisation has no repository for it. The agent's shell was
+    denied a network command (curl) on 2026-09-04, so the agent cannot download in any case.
+  acquisition_order:
+    - step: 1
+      who: human
+      action: >
+        Resolve https://dub.link/vfwCqvb in a browser, download the dataset and place it,
+        unmodified and with its original file names, under data/human_replays/raw/ (a
+        directory this gate adds to .gitignore); or reply with the resolved URL and an
+        explicit authorisation for the agent to download it with a named script.
+    - step: 2
+      who: agent
+      action: >
+        Only on explicit authorisation in the escalation answer: scripts/fetch_human_replays.py
+        downloads from the named URL, records source_url, retrieval_utc, retrieval_method,
+        HTTP headers that identify the revision (ETag, Last-Modified) and the SHA-256 and
+        byte count of every file, and writes experiments/human_replays_manifest.json.
+    - step: 3
+      who: agent
+      action: >
+        Whichever step supplied the files, scripts/build_human_replays_manifest.py walks
+        data/human_replays/raw/ and writes or verifies experiments/human_replays_manifest.json
+        (source_url, retrieval_utc, retrieval_method human_placed or agent_download, revision
+        fields if known, files: relative path -> sha256 and bytes, totals). The manifest is
+        committed; the raw directory is gitignored like environment_files/ and its integrity
+        record is the manifest.
+  named_fallback_status: >
+    huggingface.co/datasets/zarczynski/arc-agi-3-public is NOT a source of replays (see
+    state_at_authoring). The proposal's instruction for that situation is explicit: escalate
+    immediately under constitution section 6 item 11 rather than climbing the ladder.
+  escalation_timing: >
+    The escalation is raised as task G2.4, after the RHAE adapter, the synthetic-vector test,
+    the ingestion adapter with its derivation vectors and the G2 evaluator exist, because
+    none of those depend on the data and a blocked programme does no work while it waits
+    (constitution section 3 and the rule to do first what does not depend on the answer). The
+    escalation names this section, the shortener URL, the target directory, and what happens
+    with each answer: files placed -> ingestion preflight and the graded run; authorisation
+    plus URL -> step 2 then step 3; dataset unavailable -> section 6 item 11 stands, G2
+    cannot pass as pre-registered, and the human decides between waiting and a route change
+    that would itself be a proposal-level decision (section 6 item 12).
+  ingestion_preflight: >
+    Before any graded E020 run, the ingestion adapter is run in a temporary directory outside
+    artifacts/ to count replay units and parse failures. If replay_units_ingested is below
+    replay_units_min or any file fails to parse, no graded run is started; the counts are
+    recorded in the ledger, the discrepancy is written to docs/EVIDENCE_ARC.md section 1.4 as
+    a dated addition, and it is escalated with the numbers under section 6 item 11. The
+    threshold is never edited to fit the obtained files.
+
+experiment:
+  experiment_id: E020_human_baselines
+  config: configs/experiments/E020_human_baselines.yaml
+  entry_point: "uv run python scripts/run_experiment.py --config configs/experiments/E020_human_baselines.yaml"
+  runner: human_baseline_derivation
+  inputs:
+    raw_replays_dir: data/human_replays/raw
+    dataset_manifest: experiments/human_replays_manifest.json
+    environments_dir: environment_files
+    cache_manifest: experiments/environment_cache_manifest.json
+    g1_runs: artifacts/E100_arc_interface (the three graded runs named in state/PROJECT_STATE.json verifier_reports.G1.runs)
+  seed: 12345
+  seed_role: recorded in the manifest as the contract requires; the derivation consumes no randomness
+  network_calls_allowed: 0
+  model_calls_allowed: 0
+  wallclock_limit_seconds: 600
+  extra_artifacts: [human_baselines.json, replay_ingestion_log.jsonl, input_manifest.json, g1_termination_vs_budget.json]
+  results_json_contract: >
+    results.json['results'] carries dataset_manifest_sha256, replay_units_ingested,
+    replay_parse_failures, participant_ids_available, session_order_source, public_games_total,
+    public_levels_total_from_metadata, derived_levels, human_baseline_level_coverage,
+    exact_agreement_fraction, median_abs_relative_difference, network_guard and operation
+    "offline_local_files". metrics.csv carries one row per (game, level) with official and
+    derived values. No timing value appears in either file (timing lives in stdout.log).
+  reasoning: >
+    E020 sits in the baseline band of the experiment numbering (E000 bootstrap, E010 the
+    agent-baseline ladder skeleton); human baselines are the reference that ladder is scored
+    against. Ten minutes is generous for parsing a few hundred files; the constitution forbids
+    a run without a declared limit. Zero network and zero model calls mean a G2 failure can
+    only be a data, parsing or laboratory failure.
+
+determinism_protocol:
+  fixed_seed: 12345
+  identical_invocations: 2
+  contrast_invocations: 0
+  require_contrast_differs: false
+  excluded_fields_source: configs/nondeterministic_fields.yaml
+  compared_files: [results.json, metrics.csv, human_baselines.json]
+  reasoning: >
+    The derivation is a pure function of the raw replay bytes and the metadata; it consumes
+    no seed and instantiates no environment, so there is no source of variation to contrast
+    (carry_forward_from_g1_verdict item 1 requires naming the source: there is none). A
+    contrast run would be theatre. That the code actually reads its input is established by
+    the baseline_derivation_vectors and by the input_manifest check (the run records the
+    SHA-256 of every file it read and the verifier requires that set to equal the committed
+    dataset manifest), and an implementation that ignored its input would show
+    exact_agreement_fraction near zero. Two identical invocations must agree byte-for-byte on
+    the three compared files after the G0 exclusions, under the G1 exclusion_nesting_rule
+    (excluded names only at depth 1 and only with scalar values).
+
+carry_forward_from_g1_verdict:
+  # docs/decisions/G1_VERDICT.md section 11, SHA-256 9ba6a1cf139515550dfa8b3f4564297a609e73099afee6aa0a38a8db52884c45
+  - item: 1
+    text: >
+      Arcade.make(seed) is inert on the public games: no G2 or later check may treat the
+      environment seed as a source of variation; environment variation comes from the policy
+      seed or the game set, and the determinism contrast must name which.
+    g2_application: >
+      G2 instantiates no environment. Its determinism check has no contrast because the
+      derivation has no source of variation (determinism_protocol.reasoning). Every later
+      gate that runs environments must name the policy seed or the game set as the contrast
+      variable in its own pre-registration and must not cite make(seed).
+  - item: 2
+    text: >
+      Any project-produced number cited in an evidence document must be backed by a preserved
+      artifact under artifacts/ with a SHA256SUMS entry, not by a /tmp script's recollection.
+    g2_application: >
+      The docs/EVIDENCE_ARC.md additions this gate will make (section 1.4 dataset location and
+      counts, section 2 agreement between derived and official baselines, section 6 item 6
+      resolution) cite artifacts/E020_human_baselines/<run_id>/ files with their SHA256SUMS
+      digests. The ingestion preflight's counts are ledger-only until the graded run exists
+      and are cited as preliminary if at all.
+  - item: 3
+    text: >
+      If any later threshold depends on throughput, state whether it is step-only or all-in;
+      the two differ by a factor of about two on this machine.
+    g2_application: >
+      G2 has no throughput threshold. Any later gate that adds one must state step-only or
+      all-in in its thresholds section; G1 measured 1577-1640 step-only and 777-823 all-in
+      frames per second (docs/EVIDENCE_ARC.md section 3.1).
+
+thresholds:
+  public_games_total: 25
+  public_levels_total: 183
+  metadata_baseline_levels_must_equal_public_levels_total: true
+  rhae_level_cap: 1.15
+  rhae_level_weight_rule: "w_l = l for l = 1..n, levels counted from 1"
+  rhae_synthetic_cases_min: 6
+  rhae_synthetic_cases_max: 8
+  rhae_synthetic_abs_tolerance: 1.0e-9
+  rhae_synthetic_required_tags: [cap_1_15, level_weighting, completion_cap, superseded_form_discriminator, plain_mean_over_environments]
+  rhae_synthetic_all_cases_must_pass: true
+  rhae_adapter_must_delegate_to_toolkit: true
+  derivation_vectors_min: 6
+  derivation_vectors_all_must_pass: true
+  replay_units_min: 342
+  replay_parse_failures_max: 0
+  human_baseline_level_coverage_min: 0.80
+  derived_baselines_positive_integers: true
+  dataset_manifest_required_fields: [source_url, retrieval_utc, retrieval_method, files]
+  dataset_manifest_min_files: 1
+  dataset_manifest_drift_files_max: 0
+  input_manifest_must_equal_dataset_manifest: true
+  network_calls_allowed: 0
+  network_attempts_max: 0
+  model_calls_allowed: 0
+  determinism_identity_min: 1.0
+  contrast_runs_required: 0
+  excluded_key_max_depth: 1
+  excluded_key_container_values_allowed: false
+  sha256sums_verified_fraction_min: 1.0
+  sha256sums_must_list_every_artifact_file: true
+  action_budget_multiplier_for_later_gates: 5
+  uv_sync_exit_code: 0
+  pytest_exit_code: 0
+  pytest_min_tests_collected: 1
+  ruff_exit_code: 0
+  mypy_exit_code: 0
+  git_status_porcelain_lines_max: 0
+  licence_required_text: "MIT No Attribution"
+
+threshold_reasoning:
+  public_games_total: "The 25 public games (docs/EVIDENCE_ARC.md section 1.1); the cache manifest already pins them."
+  public_levels_total: >
+    183 is the evidence base's figure (docs/EVIDENCE_ARC.md section 1.1) and the coverage
+    denominator. It is thresholded exactly rather than read from the metadata so that the
+    denominator cannot drift with a re-download; the metadata sum is checked against it.
+  metadata_baseline_levels_must_equal_public_levels_total: >
+    The sum over the 25 cached metadata.json files of len(baseline_actions) was 183 at
+    authoring. If it ever differs, either the cache changed (G1's manifest check would already
+    fail) or the evidence base is wrong; both are findings, not tolerances.
+  rhae_level_cap: >
+    1.15, square inside the min, per the April 2026 report and the current methodology docs;
+    the arXiv v1 form min(1.0, h/a)^2 is superseded (docs/EVIDENCE_ARC.md section 2). The
+    toolkit at 0.9.9 caps at 115.0 in percent units, which is the same number.
+  rhae_level_weight_rule: >
+    w_l = l with levels counted from 1, so the first level has weight 1, not 0. The toolkit
+    passes level_index = position + 1 (arc_agi/scorecard.py, _calculate_score), and C6
+    distinguishes 1-based from 0-based and from uniform weights.
+  rhae_synthetic_cases_min: "The predicate says 6-8 hand-computed cases; fewer is not the predicate."
+  rhae_synthetic_cases_max: >
+    Eight, the predicate's upper bound, so the count is a fixed property of this file and no
+    case can be added later to dilute a failing one.
+  rhae_synthetic_abs_tolerance: >
+    1e-9 in percent units. Every expected value is an exact rational (the least round is
+    641/12); double arithmetic on these inputs is accurate to about 1e-13, so 1e-9 tolerates
+    floating-point noise and nothing else. A larger tolerance could hide a wrong weight on a
+    high level.
+  rhae_synthetic_required_tags: >
+    The four properties the predicate names (1.15 cap, w_l = l, completion cap, and a case
+    distinguishing the current form from the superseded one) plus the plain mean over
+    environments, which docs/EVIDENCE_ARC.md section 2 names as part of the metric and which
+    a sum or a level-weighted mean would silently violate. Each tag must appear on at least
+    one case.
+  rhae_synthetic_all_cases_must_pass: "One wrong case means the metric is wrong somewhere; there is no partial credit for a ruler."
+  rhae_adapter_must_delegate_to_toolkit: >
+    CLAUDE.md forbids reimplementing RHAE; delegating to arc_agi.scorecard.EnvironmentScoreCalculator
+    keeps the project's numbers commensurable with the platform's. The verifier checks the
+    delegation textually because a behavioural check cannot tell a delegating adapter from a
+    faithful reimplementation; the referee reads the module.
+  derivation_vectors_min: >
+    Six, matching the RHAE vector floor; eight are embedded. They pin the upper median (odd,
+    even, unsorted), the per-participant best, the first-session restriction (D6b is the case
+    where the restriction changes the answer), the non-derived level and the step-log
+    attribution rule, so the derivation code cannot be tuned to the data.
+  derivation_vectors_all_must_pass: "As for the RHAE vectors: a wrong rule is wrong."
+  replay_units_min: >
+    342 is the released dataset's own description (docs/EVIDENCE_ARC.md section 1.4, blog
+    2026-04-14: "342 human step-by-step replays for our 25 public environments"). A lower
+    count means the obtained files are not the published dataset or not all of it, which is
+    exactly the question only the human can settle (dataset_acquisition.ingestion_preflight;
+    constitution section 6 item 11). A higher count (a later release) still satisfies
+    "obtained". The threshold is a floor, not an equality, for that reason.
+  replay_parse_failures_max: >
+    Zero. A file that does not parse is either corrupt or in a format the adapter does not
+    understand; silently skipping it would bias every derived baseline toward the sessions
+    that happened to parse.
+  human_baseline_level_coverage_min: >
+    The predicate's number, 0.80 of 183 = 146.4, so at least 147 levels. Not raised: the
+    released replays may legitimately omit levels nobody completed (the study reports levels
+    with zero human completions are possible), and 0.80 is what the proposal fixed. Not
+    lowered: below it the human data would not support per-level scoring of most of the
+    benchmark.
+  derived_baselines_positive_integers: "An action count is a positive integer; anything else is a parsing or attribution defect."
+  dataset_manifest_required_fields: >
+    The provenance record must say where the data came from, when, how, and what every byte
+    hashes to; without these "obtained" is a claim without evidence (C4).
+  dataset_manifest_min_files: "A manifest listing no files describes no dataset."
+  dataset_manifest_drift_files_max: >
+    Zero files may differ from the committed manifest in either direction, as for the
+    environment cache: the replays are raw evidence and a silently altered file would make
+    the derived baselines unreproducible.
+  input_manifest_must_equal_dataset_manifest: >
+    The run records the SHA-256 of every file it actually read; requiring that set to equal
+    the committed manifest ties the derived numbers to exactly the provenance-recorded bytes
+    and rules out a run over a partial or edited copy.
+  network_calls_allowed: "The derivation reads local files only; the socket guard from G1 is installed for the run."
+  network_attempts_max: "Zero, asserted by the same NetworkGuard and recorded in the manifest, as in G1."
+  model_calls_allowed: "No model is involved; a G2 failure can never be a model failure."
+  determinism_identity_min: "As G0 and G1: anything below 1.0 means the derivation is not reproducible."
+  contrast_runs_required: "Zero, see determinism_protocol.reasoning and carry_forward_from_g1_verdict item 1."
+  excluded_key_max_depth: "As G1 exclusion_nesting_rule: an excluded name deeper than the top level fails the gate."
+  excluded_key_container_values_allowed: "As G1: false."
+  sha256sums_verified_fraction_min: "As G0 and G1: every hash verifies."
+  sha256sums_must_list_every_artifact_file: "As G0 and G1: the four extra artifacts of this run are artifacts and must be listed."
+  action_budget_multiplier_for_later_gates: >
+    5, the documented termination rule (docs/EVIDENCE_ARC.md section 2, PROPOSAL_v2.md
+    section 8). Fixed here because G2 is where the per-level base numbers become project
+    artifacts; not a G2 pass criterion but a value G3 must read from this file rather than
+    choose.
+  uv_sync_exit_code: "As G0."
+  pytest_exit_code: "As G0."
+  pytest_min_tests_collected: "As G0: the predicate floor; test count is not a quality measure."
+  ruff_exit_code: "As G0."
+  mypy_exit_code: "As G0."
+  git_status_porcelain_lines_max: "As G0: the commit submitted for verdict describes the tree exactly."
+  licence_required_text: "As G0: MIT-0 (PROPOSAL_v2 section 0.2, EVIDENCE_ARC section 4)."
+
+verification:
+  verifier: scripts/verify_run.py
+  verifier_reads_thresholds_from: preregistration/G2.yaml
+  artifacts_root: artifacts/E020_human_baselines/
+  additional_run_artifacts: [human_baselines.json, replay_ingestion_log.jsonl, input_manifest.json, g1_termination_vs_budget.json]
+  checks_in_order:
+    - public_level_count (25 games, sum of metadata baseline_actions lengths == public_levels_total, via experiments/environment_cache_manifest.json and environment_files/)
+    - rhae_synthetic_vectors (verifier runs every embedded case through src/arc_plasticity/evaluation/rhae.py; count within 6-8, required tags present, every case within tolerance; delegation text present)
+    - baseline_derivation_vectors (verifier runs every embedded case through the derivation module; exact match)
+    - dataset_manifest (experiments/human_replays_manifest.json exists with the required fields, every listed file present under data/human_replays/raw/ with a matching SHA-256, no unlisted file, at least one file)
+    - run_artifact_completeness (the G0 contract plus the four extra artifacts)
+    - sha256sums_verify
+    - offline_run (manifest network_calls_allowed and network_attempts, results.json network_guard)
+    - replay_ingestion (results.json replay_units_ingested >= replay_units_min, replay_parse_failures == 0, input_manifest.json digest set equals the dataset manifest)
+    - human_baseline_coverage (derived_levels / public_levels_total >= coverage_min; every derived value a positive integer; official agreement fields present and recorded)
+    - exclusion_nesting (before the identity check)
+    - determinism_identity (results.json, metrics.csv, human_baselines.json across the two invocations; G0 exclusions)
+    - git_status_clean, licence_text, uv_sync, pytest, ruff, mypy (as G0)
+  referee_inspects:
+    - experiments/human_replays_manifest.json against sha256sum of every file under data/human_replays/raw/
+    - artifacts/E020_human_baselines/<run_id>/SHA256SUMS against recomputed sha256sum of every file
+    - src/arc_plasticity/evaluation/rhae.py, to confirm it delegates to arc_agi.scorecard.EnvironmentScoreCalculator and adds nothing to the formula
+    - the arithmetic strings of the eight synthetic vectors against the formula in rhae.definition, independently of the code
+    - three levels traced by hand from raw replay files to the derived value: the first level of the alphabetically first game (ar25 level 1), the last level of the alphabetically last game (wa30 level 9), and the derived level with the largest absolute relative difference from its official baseline
+    - the ingestion log for how participant identity and session order were obtained, against human_baselines.first_run_rule
+    - exact_agreement_fraction and median_abs_relative_difference against the prediction recorded in hypothesis, as findings to be recorded, not graded
+  cited_evidence_required: every number in the verdict cites an artifact path and its SHA-256
+
+kill_rule: >
+  Not applicable as a mechanism kill. G2 has no mechanism. A failed item caused by project
+  code (adapter, parser, derivation, verifier) is fixed and the gate re-run under the
+  escalation ladder (constitution section 5). A failed item caused by the toolkit (its
+  calculator disagreeing with a hand-computed case) or by the dataset (fewer than 342 replay
+  units, a file that does not parse, coverage below 0.80, or the data not being obtainable at
+  all) is a substrate finding: recorded in the ledger with the raw artifact, added to
+  docs/EVIDENCE_ARC.md as a dated entry, and raised to the human under section 6 item 11 (data
+  cannot be obtained) or item 12 or 13 (a control surface or the proposal would have to
+  change). The threshold is never lowered to fit the observation, and the official metadata
+  baselines are never silently substituted for the derived ones to manufacture coverage.
+
+known_conflicts_at_authoring:
+  - >
+    The proposal's named fallback for the replays contains no replays (dataset_acquisition
+    .state_at_authoring). The proposal's own instruction for that case, immediate escalation
+    under section 6 item 11, is followed, timed as escalation_timing states.
+  - >
+    The agent's shell has no network permission (a curl probe was denied on 2026-09-04), so
+    acquisition_order step 2 can only run if the human's answer authorises it explicitly; the
+    default expectation is step 1, human placement.
+  - >
+    The experiments/ skeleton numbers mechanism experiments E100 and E200 while the G1
+    artifacts already use E100_arc_interface; E020 avoids both bands. Numbering is a label,
+    never a gate id (constitution section 11).
+  - >
+    The toolkit's scorecard attributes actions per level positionally from actions_by_level,
+    which after a full reset no longer lines up with level numbers; the project's
+    level_attribution_rule (first action index at which levels_completed reaches l) is
+    explicit about resets. The two agree whenever no full reset occurs after a completion.
+    The toolkit's calculator is used only for scoring given per-level counts, never for
+    attribution.
+  - >
+    The public environment files have versions: the Hugging Face copy dated 2026-04-02 lists
+    a different version hash from the local cache (downloaded 2026-09-04) for 15 of the 25
+    games (ar25, cn04, dc22, ka59, m0r0, r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36,
+    tu93, vc33). The official baselines used here are those of the locally cached versions,
+    which experiments/environment_cache_manifest.json pins; whether the replays were recorded
+    on those versions is unknown at authoring and is recorded, not assumed, when the data
+    arrives (the dataset's own version fields, if any, go into input_manifest.json).
+  - >
+    Every in-turn run records git_dirty true because the supervisor edits state counters
+    inside the turn (G0 verdict section 9 item 3, G1.yaml known_conflicts_at_authoring). E020
+    artifacts will carry the same flag; the referee should judge reproducibility from the
+    cross-invocation identity, not from that flag.
+  - >
+    The three open tooling observations carried in preregistration/G1.yaml
+    open_tooling_observations (usage-limit signature, headless context exhaustion, per-model
+    allowance) remain open at authoring; state/usage.json is still absent. They are not G2
+    thresholds and are carried by reference so they are not forgotten.
