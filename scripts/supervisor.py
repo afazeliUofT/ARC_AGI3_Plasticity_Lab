@@ -56,6 +56,7 @@ STATE = ROOT / "state"
 PROJECT_STATE = STATE / "PROJECT_STATE.json"
 LEDGER = STATE / "LEDGER.jsonl"
 BUDGET = STATE / "BUDGET.json"
+COUNTERS = STATE / "counters.json"
 PINNED = STATE / "PINNED_HASHES.json"
 USAGE = STATE / "usage.json"
 ESCALATION = STATE / "ESCALATION.md"
@@ -320,8 +321,9 @@ class Supervisor:
             return False, "escalation answered; resuming"
         return True, str(st["blocked_on"])
 
-    def budget_breach(self, bud: dict[str, Any]) -> str | None:
-        if bud.get("turns_used", 0) >= bud.get("max_turns_total", 10**9):
+    def budget_breach(self, bud: dict[str, Any], ctr: dict[str, Any] | None = None) -> str | None:
+        ctr = ctr or {}
+        if ctr.get("turns_used", 0) >= bud.get("max_turns_total", 10**9):
             return "max_turns_total reached (constitution section 6 item 10)"
         end = bud.get("programme_end_date")
         if end:
@@ -462,6 +464,7 @@ class Supervisor:
 
             st = read_json(PROJECT_STATE, None)
             bud = read_json(BUDGET, {}) or {}
+            ctr = read_json(COUNTERS, {}) or {}
             if st is None:
                 print("[supervisor] HALT: state/PROJECT_STATE.json missing or invalid.")
                 return 4
@@ -476,7 +479,7 @@ class Supervisor:
                 self.sleep_until(int(time.time()) + 600, None, "waiting for a human answer")
                 continue
 
-            breach = self.budget_breach(bud)
+            breach = self.budget_breach(bud, ctr)
             if breach:
                 print(f"[supervisor] HALT: {breach}")
                 self.log("halt", reason=breach)
@@ -543,10 +546,12 @@ class Supervisor:
             else:
                 st["consecutive_no_progress_turns"] = int(
                     st.get("consecutive_no_progress_turns", 0)) + 1
-            bud["turns_used"] = int(bud.get("turns_used", 0)) + 1
-            bud["turns_this_gate"] = int(bud.get("turns_this_gate", 0)) + 1
+            # Counters live in a gitignored file. Writing them into the tracked
+            # BUDGET.json made every run manifest report git_dirty: true.
+            ctr["turns_used"] = int(ctr.get("turns_used", 0)) + 1
+            ctr["turns_this_gate"] = int(ctr.get("turns_this_gate", 0)) + 1
             write_json(PROJECT_STATE, st)
-            write_json(BUDGET, bud)
+            write_json(COUNTERS, ctr)
 
             npt = st["consecutive_no_progress_turns"]
             self.log("turn", kind=out.kind, returncode=out.returncode, elapsed_s=elapsed,

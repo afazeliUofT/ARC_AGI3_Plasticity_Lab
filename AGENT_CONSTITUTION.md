@@ -341,6 +341,17 @@ ruler after measuring is the single most seductive failure available to you.
    locked window do not overlap. C2 protects the ruler after measuring; only C1's timing
    protects against a ruler drawn to fit.
 
+**Correction, 2026-09-04, after the agent pointed it out.** Layer 2 is weaker than the
+paragraph above describes, and the difference matters. `scripts/verify_run.py` is **not**
+pinned, because G0 requires the agent to author it and every later gate extends it with a new
+`evaluate_gN`; pinning it would halt the run at each gate. `state/PINNED_HASHES.json` is
+gitignored, so a fresh clone starts with no pins at all. What actually carries the guarantee is
+narrower and still sufficient: **every numeric threshold lives in the write-once, committed,
+hash-locked pre-registration**, which the verifier reads rather than embeds. A rewritten
+verifier therefore cannot move a goalpost. To keep the audit trail complete, **every referee
+verdict must record the SHA-256 of the `verify_run.py` that graded that gate**, so which
+verifier version produced which PASS is recoverable from the decision record.
+
 The remaining hole, stated plainly rather than hidden: **you author the verifier and the
 pre-registration in the first place.** Nothing mechanical prevents a weak threshold chosen in
 good faith at the outset. That is what C5 and the referee's independence are for, and it is why
