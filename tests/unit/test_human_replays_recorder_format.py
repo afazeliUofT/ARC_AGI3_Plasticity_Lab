@@ -237,3 +237,63 @@ def test_session_validates_dataset_fields() -> None:
         hr.ReplaySession("g", None, 1, {}, dataset_completion_counts={1: (0,)})
     with pytest.raises(hr.HumanReplayError, match="dataset_actions_total"):
         hr.ReplaySession("g", None, 1, {}, dataset_actions_total=-1)
+
+
+def test_ingestion_log_and_agreement_summary_cover_every_file_class(tmp_path: Path) -> None:
+    """G2.7: the E020 ingestion log carries P2 and the per-level agreement; the summary counts."""
+    from arc_plasticity.evaluation import human_baseline_run as hbr
+
+    raw = tmp_path / "raw"
+    _write(
+        raw / "g" / "agree.recording.jsonl",
+        _new_format_events() + [_scorecard([[[1, 5], [2, 8]]], [8])],
+    )
+    _write(
+        raw / "g" / "disagree.recording.jsonl",
+        _new_format_events() + [_scorecard([[[1, 6], [2, 8]]], [9])],
+    )
+    _write(
+        raw / "g" / "nop2.recording.jsonl", [_frame(0, 0), _frame(0, 4)] + [_scorecard(None, [1])]
+    )
+    _write(
+        raw / "g" / "empty.recording.jsonl", [_frame(0, 0), _frame(0, 4)] + [_scorecard([[]], [1])]
+    )
+    (raw / "g" / "broken.recording.jsonl").write_text("{not json\n", encoding="utf-8")
+    result = hr.ingest_directory(raw)
+    assert result.replay_units_ingested == 4 and len(result.parse_failures) == 1
+
+    records = {r["path"]: r for r in hbr.ingestion_log_records(result)}
+    assert len(records) == 5
+    agree = records["g/agree.recording.jsonl"]
+    assert agree["completion_counts"] == {"1": [5], "2": [3]}
+    assert agree["dataset_completion_counts"] == {"1": [5], "2": [3]}
+    assert agree["dataset_agreement"] == {"1": True, "2": True}
+    assert agree["dataset_agreement_all"] is True
+    assert agree["dataset_actions_total"] == 8 and agree["actions_total"] == 8
+    disagree = records["g/disagree.recording.jsonl"]
+    assert disagree["dataset_completion_counts"] == {"1": [6], "2": [2]}
+    assert disagree["dataset_agreement"] == {"1": False, "2": False}
+    assert disagree["dataset_agreement_all"] is False
+    assert disagree["dataset_actions_total"] == 9 and disagree["actions_total"] == 8
+    nop2 = records["g/nop2.recording.jsonl"]
+    assert nop2["dataset_completion_counts"] is None
+    assert nop2["dataset_agreement"] is None and nop2["dataset_agreement_all"] is None
+    assert nop2["dataset_actions_total"] == 1
+    empty = records["g/empty.recording.jsonl"]
+    assert empty["dataset_completion_counts"] == {} and empty["dataset_agreement"] == {}
+    assert empty["dataset_agreement_all"] is True
+    broken = records["g/broken.recording.jsonl"]
+    assert broken["failure"] is not None and broken["dataset_agreement"] is None
+    assert broken["completion_counts"] is None and broken["dataset_actions_total"] is None
+    for rec in records.values():
+        json.dumps(rec)  # every record must serialise as a jsonl line
+
+    summary = hbr.dataset_agreement_summary(result)
+    assert summary["files_total"] == 5
+    assert summary["files_all_levels_agree"] == 2
+    assert summary["files_no_completion_either_path"] == 1
+    assert summary["files_with_disagreement"] == 1
+    assert summary["files_p2_unavailable"] == 1
+    assert summary["files_failed"] == 1
+    assert summary["levels_agree"] == 2 and summary["levels_disagree"] == 2
+    assert summary["disagreeing_files"] == ["g/disagree.recording.jsonl"]

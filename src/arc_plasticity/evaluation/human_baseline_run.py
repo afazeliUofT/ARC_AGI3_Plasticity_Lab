@@ -33,9 +33,10 @@ What it writes, in the layout ``scripts/verify_run.py`` consumes:
   count, exact agreement and relative difference.
 * ``human_baselines.json``: the derived table (``human_baselines.derived_table_artifact``).
 * ``replay_ingestion_log.jsonl``: one line per raw file (path, sha256, bytes, units, field
-  mapping, session order source, failure).
+  mapping, session order source, the P1 counts, the P2 counts and action total from the
+  toolkit scorecard, the per-level P1/P2 agreement, failure).
 * ``input_manifest.json``: the SHA-256 of every file read, the dataset manifest's own
-  provenance fields, and the replay game ids seen per stem.
+  provenance fields, the replay game ids seen per stem, and the P1/P2 agreement totals.
 * ``g1_termination_vs_budget.json``: the non-thresholded diagnostic of
   ``human_baselines.diagnostics_not_thresholded``.
 """
@@ -441,12 +442,29 @@ def human_baselines_document(
     }
 
 
+def _counts_json(counts: Mapping[int, tuple[int, ...]] | None) -> dict[str, list[int]] | None:
+    """A level-keyed count mapping as JSON (string keys, level order); ``None`` stays ``None``."""
+    if counts is None:
+        return None
+    return {str(level): list(counts[level]) for level in sorted(counts)}
+
+
 def ingestion_log_records(ingested: hr.IngestionResult) -> list[dict[str, Any]]:
+    """One ``replay_ingestion_log.jsonl`` line per raw file.
+
+    Path P1 (the step log) is what the derivation consumes; path P2 (the toolkit scorecard's
+    ``actions_by_level``) is carried next to it with the per-level agreement, as the G2
+    pre-registration's ``ingestion_paths`` requires. ``dataset_agreement`` is ``None`` when
+    the file supplied no P2, ``{}`` when neither path recorded a completion, otherwise one
+    boolean per level seen in either path; ``dataset_agreement_all`` is ``all()`` of those
+    values (``True`` for ``{}``) or ``None``. Nothing here feeds a derived number.
+    """
     records: list[dict[str, Any]] = []
     for parsed in ingested.files:
         mapping = dict(parsed.field_mapping)
         order = mapping.pop("session_order_source", None)
         session = parsed.sessions[0] if parsed.sessions else None
+        agreement = None if session is None else session.dataset_agreement
         records.append(
             {
                 "path": parsed.source_file,
@@ -460,10 +478,72 @@ def ingestion_log_records(ingested: hr.IngestionResult) -> list[dict[str, Any]]:
                 "session_index": None if session is None else session.session_index,
                 "actions_total": None if session is None else session.actions_total,
                 "levels_completed": None if session is None else len(session.completion_counts),
+                "completion_counts": None
+                if session is None
+                else _counts_json(session.completion_counts),
+                "dataset_completion_counts": (
+                    None if session is None else _counts_json(session.dataset_completion_counts)
+                ),
+                "dataset_actions_total": None if session is None else session.dataset_actions_total,
+                "dataset_agreement": (
+                    None
+                    if agreement is None
+                    else {str(level): agree for level, agree in agreement.items()}
+                ),
+                "dataset_agreement_all": None if agreement is None else all(agreement.values()),
                 "failure": None if parsed.failure is None else parsed.failure.reason,
             }
         )
     return records
+
+
+def dataset_agreement_summary(ingested: hr.IngestionResult) -> dict[str, Any]:
+    """The P1/P2 agreement totals over every parsed file, for ``input_manifest.json``.
+
+    Counted so the referee can see the agreement without re-reading the raw directory:
+    ``files_all_levels_agree`` (P2 present, every level agrees, including files where neither
+    path recorded a completion, counted again under ``files_no_completion_either_path``),
+    ``files_with_disagreement`` (at least one level differs), ``files_p2_unavailable`` (no
+    scorecard pairs), ``files_failed`` (parse failures, no session) and the level totals
+    ``levels_agree`` / ``levels_disagree`` over the files with P2. Observed only; the G2
+    pre-registration thresholds none of these (``official_agreement_report``).
+    """
+    files_agree = files_disagree = files_unavailable = files_failed = files_empty = 0
+    levels_agree = levels_disagree = 0
+    disagreeing_files: list[str] = []
+    for parsed in ingested.files:
+        if not parsed.sessions:
+            files_failed += 1
+            continue
+        agreement = parsed.sessions[0].dataset_agreement
+        if agreement is None:
+            files_unavailable += 1
+            continue
+        agree_here = sum(1 for v in agreement.values() if v)
+        levels_agree += agree_here
+        levels_disagree += len(agreement) - agree_here
+        if all(agreement.values()):
+            files_agree += 1
+            if not agreement:
+                files_empty += 1
+        else:
+            files_disagree += 1
+            disagreeing_files.append(parsed.source_file)
+    return {
+        "definition": (
+            "per file, path P1 (step log) versus path P2 (scorecard actions_by_level) per level; "
+            "observed only, not thresholded"
+        ),
+        "files_total": len(ingested.files),
+        "files_all_levels_agree": files_agree,
+        "files_no_completion_either_path": files_empty,
+        "files_with_disagreement": files_disagree,
+        "files_p2_unavailable": files_unavailable,
+        "files_failed": files_failed,
+        "levels_agree": levels_agree,
+        "levels_disagree": levels_disagree,
+        "disagreeing_files": sorted(disagreeing_files),
+    }
 
 
 def session_order_summary(ingested: hr.IngestionResult) -> str:
@@ -634,6 +714,15 @@ class HumanBaselineRunner:
             ),
         )
         writer.write_extra_jsonl(INGESTION_LOG_FILE, ingestion_log_records(ingested))
+        agreement_summary = dataset_agreement_summary(ingested)
+        writer.log(
+            "P1/P2 agreement: files_all_levels_agree="
+            f"{agreement_summary['files_all_levels_agree']} files_with_disagreement="
+            f"{agreement_summary['files_with_disagreement']} files_p2_unavailable="
+            f"{agreement_summary['files_p2_unavailable']} levels_agree="
+            f"{agreement_summary['levels_agree']} levels_disagree="
+            f"{agreement_summary['levels_disagree']}"
+        )
         diagnostic, g1_digests = g1_diagnostic(params, games)
         writer.write_extra_json(G1_DIAGNOSTIC_FILE, diagnostic)
         writer.write_extra_json(
@@ -669,6 +758,7 @@ class HumanBaselineRunner:
                 "game_id_match_rule": GAME_ID_MATCH_RULE,
                 "replay_game_ids_by_stem": ids_by_stem,
                 "unmatched_replay_game_ids": unmatched,
+                "dataset_agreement_summary": agreement_summary,
             },
         )
 

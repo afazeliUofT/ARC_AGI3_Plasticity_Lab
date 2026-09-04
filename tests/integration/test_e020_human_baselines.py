@@ -251,6 +251,44 @@ def test_second_session_was_excluded(two_runs: Path, world: SyntheticWorld) -> N
     assert second[0]["field_mapping"]["levels_completed"] == "data.levels_completed"
 
 
+def test_ingestion_log_records_p2_and_per_level_agreement(
+    two_runs: Path, world: SyntheticWorld
+) -> None:
+    """The synthetic scorecards are built to agree with the step log on every level (G2.7)."""
+    log = [
+        json.loads(ln)
+        for ln in (two_runs / "fixed_0" / "replay_ingestion_log.jsonl").read_text().splitlines()
+    ]
+    assert len(log) == world.replay_files
+    with_levels = 0
+    for rec in log:
+        assert rec["failure"] is None
+        assert rec["dataset_completion_counts"] is not None
+        assert rec["dataset_agreement"] is not None
+        assert rec["dataset_agreement_all"] is True
+        assert set(rec["dataset_agreement"]) == set(rec["completion_counts"])
+        assert all(rec["dataset_agreement"].values())
+        assert rec["dataset_completion_counts"] == rec["completion_counts"]
+        assert len(rec["completion_counts"]) == rec["levels_completed"]
+        assert rec["dataset_actions_total"] == rec["actions_total"]
+        assert rec["field_mapping"]["dataset_completion_counts"] is not None
+        with_levels += bool(rec["completion_counts"])
+    assert with_levels > 0
+    inp = json.loads((two_runs / "fixed_0" / "input_manifest.json").read_text())
+    summary = inp["dataset_agreement_summary"]
+    assert summary["files_total"] == world.replay_files
+    assert summary["files_all_levels_agree"] == world.replay_files
+    assert summary["files_with_disagreement"] == 0
+    assert summary["files_p2_unavailable"] == 0
+    assert summary["files_failed"] == 0
+    assert summary["levels_agree"] == sum(len(r["completion_counts"]) for r in log)
+    assert summary["levels_disagree"] == 0
+    assert summary["disagreeing_files"] == []
+    assert summary["files_no_completion_either_path"] == sum(
+        1 for r in log if not r["completion_counts"]
+    )
+
+
 def test_input_manifest_and_diagnostic(two_runs: Path, world: SyntheticWorld) -> None:
     inp = json.loads((two_runs / "fixed_0" / "input_manifest.json").read_text())
     dataset = json.loads(world.dataset_manifest.read_text())
