@@ -1,0 +1,391 @@
+# Pre-registration: Gate G1 (ARC interface)
+#
+# Authored by the autonomous agent under AGENT_CONSTITUTION.md section 7, control C1,
+# before any G1 result artifact exists (artifacts/E100_arc_interface/ does not exist at
+# authoring). This file is write-once: the PreToolUse hook denies every later modification.
+# If a threshold below turns out to be wrong, the objection goes in state/LEDGER.jsonl and the
+# gate proceeds or is killed; this file is never edited.
+#
+# Source of the predicate: PROPOSAL_v2.md section 9, row G1. This file restates every item as
+# a machine-checkable threshold and records the reasoning that fixed each value, as C2
+# requires. scripts/verify_run.py (G1 evaluator, not yet written at authoring) reads every
+# threshold from here, never from the prose. It also carries forward the three items that the
+# G0 verdict (docs/decisions/G0_VERDICT.md section 11, SHA-256
+# 37ffb13b00f691febebd1ba0aba035de4f62810333ed6dbedc1c81f6e97d3ede) requires to be hash-locked
+# rather than remembered: sections exclusion_nesting_rule, model_call_nondeterminism and
+# open_tooling_observations below.
+
+schema_version: 1
+gate: G1
+title: ARC interface - arc-agi pinned, environment cache hashed, offline run, replay, throughput
+authored_utc: "2026-09-04T07:26:29Z"
+authored_at_commit: 92852b5
+author: agent (Claude Fable 5.1, turn 10)
+governing_predicate: PROPOSAL_v2.md section 9, row G1
+predecessor_verdict: docs/decisions/G0_VERDICT.md (GO, recorded at commit abad388)
+mechanism: none
+mandated_baselines: []
+revision_limit: 0          # G1 is infrastructure; there is no mechanism to revise.
+
+hypothesis: >
+  G1 carries no scientific hypothesis. The claim under test is that the official ARC-AGI-3
+  toolkit (arc-agi 0.9.9, arcengine 0.9.3, docs/EVIDENCE_ARC.md section 3) is installed at a
+  pinned version, that the 25 public game environments are cached locally with recorded
+  hashes, that a seeded run through the project's single canonical entry point completes
+  entirely offline with zero network calls under the socket guard, that at least one public
+  game reaches a terminal state, that a recorded action trajectory replays in a fresh process
+  to an identical final frame, and that the local engine sustains at least 500 frames per
+  second on this machine. Together these establish that every later gate can run the
+  benchmark offline, deterministically and cheaply.
+
+primary_metric:
+  name: replay_final_frame_identity
+  definition: >
+    For each game attempted in a run, the verifier (in its own process, from a fresh
+    Arcade(OperationMode.OFFLINE) and a fresh env from make() with the recorded seed) re-applies
+    the exact action sequence recorded in transitions.jsonl and computes the canonical frame
+    digest of the final response. The metric is the fraction of attempted games whose
+    recomputed digest equals the final_frame_sha256 recorded for that game in results.json.
+  canonical_frame_digest: >
+    sha256 of the UTF-8 JSON encoding, separators (",", ":"), no whitespace, of the object
+    {"state": <GameState value string>, "levels_completed": <int>, "win_levels": <int>,
+    "frames": [<each grid as a nested list of ints, in response order>]}. Every grid returned
+    in the response is included (multi-grid responses are animations, EVIDENCE_ARC section
+    1.3); nothing else is included, so the digest is independent of guid and timing.
+  pass_value: 1.0
+  reasoning: >
+    Replay identity is the property every later gate depends on: G3's verified world model
+    backtests hypotheses against recorded trajectories, and the mechanism comparisons freeze
+    environment instances and seeds. A game that does not replay identically from its own
+    action log cannot be used as a frozen environment. The replay is performed by the
+    verifier, not by the run that produced the recording, so the claim is cross-process by
+    construction and not a same-instance tautology. 1.0 over all attempted games rather than
+    "at least one game" because a single divergent game is a substrate finding the project
+    must know about before G3, not a detail to average away; a divergent game fails this gate
+    and is recorded under kill_rule.
+
+experiment:
+  experiment_id: E100_arc_interface
+  config: configs/experiments/E100_arc_interface.yaml
+  entry_point: "uv run python scripts/run_experiment.py --config configs/experiments/E100_arc_interface.yaml"
+  runner: arc_random_walk
+  operation_mode: OFFLINE
+  environments_dir: environment_files
+  games: all 25 public stems listed in docs/EVIDENCE_ARC.md section 1.1 (ar25 ... wa30)
+  policy: >
+    Seeded uniform-random policy. At each step choose uniformly among the actions listed in
+    the previous response's available_actions, excluding RESET whenever any other action is
+    available; for ACTION6 draw x and y independently and uniformly from 0..63. All randomness
+    comes from one numpy Generator seeded from the experiment seed and the game's index in the
+    game list, so the action sequence is a pure function of (seed, game). No model is
+    consulted. The policy is deliberately trivial: G1 tests the interface, not intelligence.
+  per_game_stop_rule: >
+    Stop a game at the first response whose state is WIN or GAME_OVER (terminal), or when the
+    per-game action budget is exhausted, or when step() returns None (recorded as a game-level
+    failure, never silently skipped). RESET is issued once at the start of each game via
+    env.reset() and is not counted as an action.
+  action_budget_per_game: 5000
+  network_calls_allowed: 0
+  model_calls_allowed: 0
+  wallclock_limit_seconds: 1800
+  reasoning: >
+    Every game is attempted, not just one, because the interface must be shown to load all 25
+    cached environments; the terminal-state and replay predicates are then evaluated over
+    what actually happened. 5000 actions per game bounds the run at 125,000 steps, which at
+    the 500 FPS floor is 250 s of stepping and at the documented ~2,000 FPS about a minute, so
+    the 1800 s limit leaves room for loading and hashing. Zero network and zero model calls
+    mean a G1 failure can only be a toolkit, cache or laboratory failure, never a model
+    failure; the constitution forbids running any experiment with no declared limit.
+
+cache_warming:
+  # Step 1 of the predicate: "a cache-warming run downloads environment files for the 25
+  # public games and records their hashes".
+  state_at_authoring: >
+    environment_files/ already holds 25 game directories (one <stem>/<version>/ each, with
+    metadata.json and <stem>.py; 50 files; metadata date_downloaded 2026-09-04T05:28:00Z),
+    populated before this programme's first pre-registration (G0.yaml committed 06:04:30Z) by
+    scripts/warm_environment_cache.py using an ARC_API_KEY supplied by the human. The
+    directory is gitignored (.gitignore line 8), so the committed record of its contents is
+    the manifest below.
+  rule: >
+    The download step is satisfied by the existing cache. Re-downloading requires a secret
+    (constitution section 6 item 1) and would be escalated, not performed; it is permitted but
+    not required, and if it happens the manifest must be regenerated and the ledger must
+    record the change. Recording the hashes is REQUIRED and is done by a script, not the model.
+  manifest_path: experiments/environment_cache_manifest.json
+  manifest_contents: >
+    schema_version; generated_utc; environments_dir; per game: stem, full game_id from
+    metadata.json (stem-version), local_dir relative to the repository, date_downloaded,
+    baseline_actions_count, and the SHA-256 of every file under the game directory keyed by
+    relative path; totals: games, files.
+  verifier_checks: >
+    (1) the manifest exists and is committed; (2) it lists exactly cached_games_required
+    stems, matching the 25 public stems and no others; (3) every game directory holds a
+    metadata.json and exactly one .py file; (4) every file currently under environment_files/
+    matches the hash recorded for it and no file is present that the manifest omits (drift in
+    either direction fails); (5) baseline_actions_count is recorded for every game (its value
+    is observed, not thresholded here; G2 owns the human baselines).
+
+socket_guard:
+  # Step 2 of the predicate: "a subsequent OperationMode.OFFLINE run completes with zero
+  # network calls, asserted by a socket guard".
+  implementation: src/arc_plasticity/core/guards.py NetworkGuard (patches socket.socket.connect,
+    socket.socket.connect_ex, socket.create_connection and socket.getaddrinfo process-wide)
+  rule: >
+    The run executes with NetworkGuard(allowed_calls=0) installed before the toolkit is
+    imported; any attempt raises NetworkForbiddenError and aborts the run. The manifest
+    records network_calls_allowed 0 and network_attempts 0; results.json records
+    network_guard "NetworkGuard" and operation_mode "OFFLINE". The guard's own unit test
+    (tests/unit/test_guards.py) must show a connect attempt under the guard raises, so
+    "zero attempts" is evidence of a live guard and not of an absent one.
+
+replay_protocol:
+  recording: >
+    transitions.jsonl holds one record per action per game: game_index, game_id (full),
+    step_index, action id (0-7), data (x, y for ACTION6, else empty), and the canonical frame
+    digest of the response. results.json holds, per game: game_id, seed, steps_taken,
+    final_state, levels_completed, win_levels, terminal (bool), final_frame_sha256, and
+    step_failed (bool).
+  replay: >
+    Performed by scripts/verify_run.py --gate G1 in its own process for every attempted game,
+    under its own NetworkGuard(allowed_calls=0): fresh Arcade(OperationMode.OFFLINE,
+    environments_dir=environment_files), env = make(game_id, seed=<recorded seed>), assert env
+    is not None, env.reset(), then apply the recorded actions in order and compute the
+    canonical frame digest of the last response. A game whose recomputed digest differs from
+    final_frame_sha256, or whose replay returns None at any step, counts as divergent.
+  seed_handling: >
+    The seed passed to make() is the experiment seed. If the toolkit ignores the seed for a
+    game, replay still succeeds only if the game is deterministic; that is precisely what is
+    being measured.
+
+determinism_protocol:
+  # Carried over from G0 unchanged so the two gates use one standard; the verifier's G1
+  # evaluator applies the same identity check to E100.
+  fixed_seed: 12345
+  identical_invocations: 2
+  contrast_seed: 12346
+  contrast_invocations: 1
+  require_contrast_differs: true
+  excluded_fields_source: configs/nondeterministic_fields.yaml
+  compared_files: [results.json, metrics.csv]
+  timing_artifact: throughput.json
+  timing_rule: >
+    Every timing measurement (per-step seconds, per-game FPS, aggregate FPS) lives in
+    throughput.json, which is not a compared file. results.json and metrics.csv contain no
+    timing values, so no new exclusion is needed and the G0 exclusion list is used as-is. A
+    timing field appearing in a compared file is a defect, not grounds to widen the list.
+  excluded_field_categories_allowed:
+    - run identifiers (run_id, guid)
+    - timestamps (created_utc, started_utc, finished_utc, updated_utc)
+    - durations (wallclock_seconds, elapsed_seconds)
+    - host and hardware descriptors (hostname, hardware, python_executable_path)
+  excluded_field_categories_forbidden:
+    - any metric or result value
+    - seed
+    - config hash, prompt hash, dependency-lock hash, git commit
+    - action, transition, hypothesis or memory-operation records
+  reasoning: >
+    The random policy is a pure function of the seed, and the environments are claimed
+    deterministic, so two same-seed invocations must produce identical results.json and
+    metrics.csv; the contrast seed must differ, otherwise identity could come from a policy
+    that ignores its seed. Timing is separated into its own artifact rather than excluded by
+    name so the exclusion list stays exactly as G0 bounded it.
+
+exclusion_nesting_rule:
+  # G0 verdict section 11, item 1. Closes the C5 argument-A hole (verify_run.py strip_keys
+  # removes an excluded key with its whole value at any depth) for G1's artifacts.
+  rule: >
+    In every compared results.json, a key whose name appears in the excluded_fields of
+    configs/nondeterministic_fields.yaml may be stripped before comparison ONLY IF it occurs at
+    the top level of the document AND its value is a scalar (string, number, boolean or null).
+    An excluded key name found at any nesting depth greater than one, or found with a
+    container value (object or array) at any depth, FAILS the gate. In metrics.csv an excluded
+    name may only match a column header, whose cells are scalars by construction.
+  verifier_check: exclusion_nesting
+  thresholds_used: [excluded_key_max_depth, excluded_key_container_values_allowed]
+  reasoning: >
+    The hole exists because the exclusion mechanism was written to match names at any depth.
+    Rather than change the frozen G0 verifier, G1 hash-locks the narrower rule and its evaluator
+    enforces it before the identity check runs, so nothing nondeterministic can be hidden
+    beneath an excluded name in a G1 artifact. tests/regression/test_c5_g0_exclusion_nesting.py
+    pins the original hole.
+
+model_call_nondeterminism:
+  # G0 verdict section 11, item 2.
+  statement: >
+    Model-call nondeterminism is OUT OF SCOPE for G1. E100 makes zero model calls
+    (model_calls_allowed 0, model_identifier null), so G1's determinism identity says nothing
+    about the reproducibility of runs that consult a language model. That protocol is OWED by
+    the first gate whose experiment makes a model call, which under PROPOSAL_v2.md section 9 is
+    G3 (the reference architecture), and it must be pre-registered in that gate's file before
+    its first treatment run: how model outputs are logged raw, what identity is claimed across
+    same-seed invocations, and which fields are declared nondeterministic and why.
+
+open_tooling_observations:
+  # G0 verdict section 11, item 3: the three "Not observable 2026-09-04" items of
+  # docs/EVIDENCE_TOOLING.md section 11, listed as open with the log each resolves from.
+  # They are not G1 thresholds; they are carried so they cannot be forgotten.
+  - item: EVIDENCE_TOOLING section 11 item 3 - exact usage-limit failure signature (exit code,
+      stderr text, whether a reset timestamp is carried)
+    status: open
+    resolves_from: [state/tool_errors.jsonl, state/supervisor.jsonl]
+    resolution: append an entry to docs/EVIDENCE_TOOLING.md section 11 quoting the first
+      genuine limit event verbatim with its date
+  - item: EVIDENCE_TOOLING section 11 item 6 - headless behaviour at context exhaustion
+    status: open
+    resolves_from: [state/supervisor.jsonl, state/supervisor.out]
+    resolution: append an entry when any headless turn ends by context exhaustion, or note
+      at each digest that the fresh-session-per-turn design has kept it from arising
+  - item: EVIDENCE_TOOLING section 11 item 7 - whether Fable 5.1 has a separate allowance
+      from other models on this plan
+    status: open
+    resolves_from: [state/usage.json]
+    resolution: append an entry the first time state/usage.json appears, quoting its
+      rate_limits fields; or from an interactive /usage view, dated
+
+thresholds:
+  arc_agi_locked_version: "0.9.9"
+  cached_games_required: 25
+  cache_manifest_drift_files_max: 0
+  network_calls_allowed: 0
+  network_attempts_max: 0
+  model_calls_allowed: 0
+  games_attempted_min: 25
+  terminal_games_min: 1
+  step_failures_max: 0
+  replay_final_frame_identity_min: 1.0
+  replay_divergent_games_max: 0
+  throughput_fps_min: 500.0
+  throughput_min_steps_measured: 1000
+  determinism_identity_min: 1.0
+  contrast_seed_must_differ: true
+  excluded_key_max_depth: 1
+  excluded_key_container_values_allowed: false
+  sha256sums_verified_fraction_min: 1.0
+  sha256sums_must_list_every_artifact_file: true
+  uv_sync_exit_code: 0
+  pytest_exit_code: 0
+  pytest_min_tests_collected: 1
+  ruff_exit_code: 0
+  mypy_exit_code: 0
+  git_status_porcelain_lines_max: 0
+  licence_required_text: "MIT No Attribution"
+
+threshold_reasoning:
+  arc_agi_locked_version: >
+    The predicate requires arc-agi pinned in uv.lock. 0.9.9 is the version installed and the
+    one docs/EVIDENCE_ARC.md section 3 names (2026-06-10). The verifier reads uv.lock, not
+    pip, and also records the arcengine version it finds (0.9.3 at authoring) as an observed
+    value. Any other arc-agi version fails: the whole point of the pin is that the benchmark
+    substrate does not move under the experiments.
+  cached_games_required: >
+    Exactly the 25 public games (EVIDENCE_ARC section 1.1, two mirrors agree). Fewer means
+    the cache is incomplete; more means something was downloaded that the evidence base does
+    not describe.
+  cache_manifest_drift_files_max: >
+    Zero files may differ from the committed manifest in either direction. The environment
+    files ARE the benchmark; a silently changed file would make every later result
+    incomparable with every earlier one.
+  network_calls_allowed: "Step 2 of the predicate: the run is entirely offline."
+  network_attempts_max: >
+    Zero. Asserted by the socket guard, recorded in the manifest. One attempt would mean the
+    toolkit reached for the network in OFFLINE mode, contradicting EVIDENCE_ARC section 3.1.
+  model_calls_allowed: "G1 tests the interface; no model is involved (see model_call_nondeterminism)."
+  games_attempted_min: >
+    All 25, so every cached environment is shown to load through make() and reset(). A game
+    that fails to load is a real interface failure and must not be hidden by a smaller sample.
+  terminal_games_min: >
+    The predicate's own number: at least one public game runs to a terminal state (WIN or
+    GAME_OVER, EVIDENCE_ARC section 1.3). It is not raised because a random policy is not
+    expected to win, and how many games a random walk kills is not a quality measure of the
+    interface. If no game reaches a terminal state within 5000 random actions, that is
+    recorded and handled under kill_rule, not by raising the budget after the fact.
+  step_failures_max: >
+    step() returning None means the toolkit hit an exception; the wrapper swallows it and logs
+    it. Zero is required because a swallowed exception is exactly the kind of failure this
+    gate exists to surface.
+  replay_final_frame_identity_min: "See primary_metric.reasoning."
+  replay_divergent_games_max: "Restates the primary metric as a count so the verdict can name the games."
+  throughput_fps_min: >
+    The predicate's number, 500 frames per second, where one frame is one step() call and its
+    response (a response holding several animation grids still counts once, which is the
+    conservative direction). EVIDENCE_ARC section 3.1 documents ~2,000 FPS with a 1,000 FPS
+    engine floor, so 500 leaves a 2x margin for WSL2 and Python overhead while still ruling out
+    an interface that would make later gates unaffordable. Measured as total steps divided by
+    the summed wall-clock of the step() calls alone (time.perf_counter around each call),
+    aggregated over the whole run; per-game values are recorded in throughput.json for the
+    referee but are not thresholded, because a single tiny game can produce a noisy rate.
+  throughput_min_steps_measured: >
+    A rate over fewer than 1000 steps is not a measurement. 25 games at up to 5000 actions
+    each makes this floor trivially satisfiable unless most games terminate almost at once,
+    in which case the number should be looked at rather than trusted.
+  determinism_identity_min: "As G0: anything below 1.0 means the run is not reproducible."
+  contrast_seed_must_differ: "As G0: a policy that ignores its seed must not pass."
+  excluded_key_max_depth: >
+    Depth 1 means top level of results.json. See exclusion_nesting_rule; an excluded name
+    deeper than that fails the gate.
+  excluded_key_container_values_allowed: >
+    False. An excluded key with an object or array value could carry arbitrary result data
+    past the identity check; the categories G0 allows (identifiers, timestamps, durations,
+    host descriptors) are all scalars, so nothing legitimate is lost.
+  sha256sums_verified_fraction_min: "As G0: every hash verifies; a mismatch means an artifact was rewritten."
+  sha256sums_must_list_every_artifact_file: "As G0: an unlisted file has no integrity record; throughput.json is an artifact and must be listed."
+  uv_sync_exit_code: "As G0."
+  pytest_exit_code: "As G0."
+  pytest_min_tests_collected: "As G0: the predicate floor; test count is not a quality measure."
+  ruff_exit_code: "As G0."
+  mypy_exit_code: "As G0."
+  git_status_porcelain_lines_max: "As G0: the commit submitted for verdict describes the tree exactly."
+  licence_required_text: "As G0: MIT-0 (PROPOSAL_v2 section 0.2, EVIDENCE_ARC section 4)."
+
+verification:
+  verifier: scripts/verify_run.py
+  verifier_reads_thresholds_from: preregistration/G1.yaml
+  artifacts_root: artifacts/E100_arc_interface/
+  additional_run_artifacts: [throughput.json]
+  checks_in_order:
+    - arc_agi_version_pinned (uv.lock)
+    - environment_cache_manifest (experiments/environment_cache_manifest.json vs environment_files/)
+    - run_artifact_completeness (the G0 contract plus throughput.json)
+    - sha256sums_verify
+    - offline_run (manifest network_calls_allowed/network_attempts, results.json operation_mode and network_guard)
+    - games_attempted_and_terminal (results.json per-game records)
+    - exclusion_nesting (before the identity check)
+    - determinism_identity (results.json, metrics.csv; G0 exclusions)
+    - replay_final_frame_identity (verifier re-executes every game from transitions.jsonl in its own process)
+    - throughput (throughput.json aggregate)
+    - git_status_clean, licence_text, uv_sync, pytest, ruff, mypy (as G0)
+  referee_inspects:
+    - experiments/environment_cache_manifest.json against sha256sum of every file under environment_files/
+    - artifacts/E100_arc_interface/<run_id>/SHA256SUMS against recomputed sha256sum of every file
+    - transitions.jsonl of the terminal game(s) to confirm the recorded action sequence is what the replay used
+    - throughput.json per-game values against the aggregate the verifier reports
+    - tests/unit/test_guards.py to confirm the socket guard raises on a connect attempt
+  cited_evidence_required: every number in the verdict cites an artifact path and its SHA-256
+
+kill_rule: >
+  Not applicable as a mechanism kill. G1 has no mechanism. A failed item caused by project
+  code is fixed and the gate re-run under the escalation ladder (constitution section 5). A
+  failed item caused by the toolkit or by an environment file itself (a game that does not
+  replay identically from its own action log, a game whose step() raises, a cache that cannot
+  be loaded offline, an engine slower than 500 FPS on this machine) is a substrate finding:
+  it is recorded in the ledger with the raw artifact, added to docs/EVIDENCE_ARC.md as a
+  dated entry, and raised to the human under section 6 item 12 or 13 if resolving it requires
+  changing a control surface, or handled as a route change (L4) if it requires excluding a
+  game from every later family. The threshold is never lowered to fit the observation.
+
+known_conflicts_at_authoring:
+  - >
+    Every in-turn run records git_dirty true because the supervisor edits state counters
+    inside the turn (G0 verdict section 9 item 3). G1 artifacts will carry the same flag; the
+    referee should judge reproducibility from the cross-invocation identity and the replay,
+    not from that flag. Fixing it means changing a frozen file and is not attempted here.
+  - >
+    The G0 evaluator's strip_keys still removes excluded names at any depth; the G1 evaluator
+    enforces exclusion_nesting_rule first, so an artifact that would exploit the hole fails
+    G1 even though the shared helper is unchanged.
+  - >
+    docs/EVIDENCE_ARC.md section 1.1 says only three games are reachable with an anonymous
+    key; the cache holds all 25 because the human supplied a real key before the programme
+    started. The manifest records date_downloaded from each metadata.json so provenance is
+    explicit.
