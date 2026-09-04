@@ -23,6 +23,11 @@ packages = ["src/arc_plasticity"]
 [tool.ruff]
 line-length = 100
 src = ["src", "tests", "scripts"]
+# scripts/supervisor.py is frozen by AGENT_CONSTITUTION.md section 6 item 13; the agent may
+# not edit it. Its 11 remaining findings are style only (re.I aliases, datetime.UTC,
+# subprocess check=, one blind except) and are the human's to fix. Lift this exclusion once
+# they are. See LEDGER decision 2026-09-04T06:44:21Z.
+extend-exclude = ["scripts/supervisor.py"]
 
 [tool.mypy]
 python_version = "3.12"

@@ -8,7 +8,9 @@ succeeds the project runs offline forever with no key and no network.
     ARC_API_KEY=... uv run python scripts/warm_environment_cache.py
 """
 from __future__ import annotations
-import os, sys
+
+import os
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

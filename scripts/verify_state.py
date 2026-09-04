@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Assert that PROJECT_STATE.json is well formed and agrees with the repository."""
 from __future__ import annotations
-import json, subprocess, sys
+
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +19,7 @@ def main() -> int:
         print("FAIL state/PROJECT_STATE.json is missing"); return 1
     try:
         st = json.loads(sp.read_text())
-    except Exception as e:
+    except (OSError, ValueError) as e:
         print(f"FAIL PROJECT_STATE.json is not valid JSON: {e}"); return 1
 
     missing = REQUIRED - set(st)
@@ -36,7 +39,7 @@ def main() -> int:
                 continue
             try:
                 rec = json.loads(line)
-            except Exception as e:
+            except ValueError as e:
                 problems.append(f"LEDGER line {i} is not valid JSON: {e}"); continue
             for k in ("ts","gate","task","event","summary"):
                 if k not in rec:
@@ -45,7 +48,7 @@ def main() -> int:
     commit = st.get("last_verified_commit")
     if commit:
         r = subprocess.run(["git","cat-file","-e",f"{commit}^{{commit}}"],
-                           cwd=ROOT, capture_output=True)
+                           cwd=ROOT, capture_output=True, check=False)
         if r.returncode != 0:
             problems.append(f"last_verified_commit {commit} does not exist in this repository")
 

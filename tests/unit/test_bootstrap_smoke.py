@@ -1,5 +1,6 @@
 """Smoke tests. These must pass for G0. They are deliberately about the traps."""
 from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -51,8 +52,9 @@ def test_rhae_reference_implementation_matches_the_evidence_base() -> None:
 
 def test_offline_mode_finds_nothing_without_a_populated_cache() -> None:
     # Documents the trap rather than asserting a bug: make() returns None, it does not raise.
-    from arc_agi import Arcade, OperationMode
     import tempfile
+
+    from arc_agi import Arcade, OperationMode
 
     with tempfile.TemporaryDirectory() as d:
         arc = Arcade(operation_mode=OperationMode.OFFLINE, environments_dir=d)
