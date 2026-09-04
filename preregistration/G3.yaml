@@ -1,0 +1,792 @@
+# preregistration/G3.yaml - write-once, hash-locked (constitution section 7, C1).
+#
+# Authored with the Write tool before any G3 artifact exists (artifacts/E300_ref and
+# artifacts/E310_ref_backtest_rejection absent, experiments/E300_ref an empty skeleton
+# directory, checked immediately before writing). Every numeric threshold scripts/verify_run.py
+# applies to G3 is read from this file (section `thresholds`), never from PROPOSAL_v2.md prose.
+# Nothing may amend this file afterwards; an objection is recorded in the ledger instead.
+
+schema_version: 1
+gate: G3
+title: >-
+  Reference architecture - a verified executable world model (REF) run offline on the 25 cached
+  public games under the official 5x per-level action budget, scored by RHAE against the official
+  baselines, with replay verification demonstrated on injected wrong models, after a three-game
+  cost pre-flight
+authored_utc: "2026-09-04T16:43:50Z"
+authored_at_commit: b9c7bbb
+author: agent (Claude Fable 5.1, supervisor turn 28 per state/counters.json turns_used 27 at the start of this turn)
+governing_predicate: >-
+  PROPOSAL_v2.md section 9, row G3; the reference architecture is described in PROPOSAL_v2.md
+  section 5 (bullet "Reference architecture (was B4)") and section 7 (row REF); the convergent
+  architecture and its evidence in docs/EVIDENCE_ARC.md section 5.3-5.4; the cost pre-flight in
+  docs/EVIDENCE_TOOLING.md section 10 and AGENT_CONSTITUTION.md section 2 (BUDGET.json g3_preflight)
+  and section 6 item 10; the metric in docs/EVIDENCE_ARC.md section 2 and preregistration/G2.yaml rhae
+predecessor_verdict: >-
+  docs/decisions/G2_VERDICT.md (GO, SHA-256 8f4e980c65be78a41f3495b5271130fd72bc52aa9c2fb0c61c12a1d7d97c57e7,
+  graded commit 9e66b0d, recorded at commit 8a0699b)
+mechanism: none (REF is the substrate every mechanism is later added to; it is neither a mechanism nor a baseline)
+mandated_baselines: []
+revision_limit: 0
+graded_sets_limit: 2
+
+hypothesis: >
+  G3 carries two engineering claims and no scientific claim. Claim 1 (quality bar): a reference
+  architecture built on the convergent design the evidence base records (induce an executable
+  Python program that simulates the game, certify it by backtesting against the complete transition
+  history, plan inside the certified program, predict before every executed action and abandon the
+  plan on a mismatch), calling one frozen language model through the subscription's headless CLI
+  within the per-game call and token ceilings fixed below, and carrying nothing between games,
+  reaches a total RHAE of at least 55 percent on the 25 cached public games under the official
+  per-level action budget of 5 times the official baseline, scored against the official
+  metadata.json baselines by the G2 adapter. Claim 2 (verification is real): the backtester REF uses
+  to certify programs rejects, on the complete recorded history, at least 95 percent of injected
+  wrong models drawn from eight pre-registered mutation classes while accepting the true simulator
+  in every trial, and every plan REF executes in the graded runs cites a program certified by that
+  backtester over the whole history available at the time. Prediction, recorded before any run
+  exists: claim 2 should hold near 100 percent, because a full-history exact backtest rejects any
+  model that mispredicts a single recorded field; claim 1 is genuinely uncertain, because the
+  published systems that exceed 55 percent spent 5,780 to 15,200 USD per pass and the ceilings
+  below are one to two orders of magnitude tighter (cost_preflight.reasoning). A REF below 55
+  percent within the ceilings is an engineering finding about what the subscription buys, not a
+  scientific result, and the kill_rule says what happens then. The public set is disavowed as a
+  progress measure (docs/EVIDENCE_ARC.md section 0 item 1); the 55 percent bar establishes only that
+  the substrate is competently built.
+
+primary_metric:
+  name: rhae_total_public_25
+  definition: >
+    The plain mean over the 25 graded game-runs of the environment score computed by
+    src/arc_plasticity/evaluation/rhae.py (delegating to arc_agi.scorecard.EnvironmentScoreCalculator)
+    from, for each level l of the game, the official metadata.json baseline_actions[l] as h and the
+    attributed action count a_l of that run under level_accounting_rule, with completed = whether the
+    run first reached levels_completed >= l. Reported in percent. The verifier recomputes it from every
+    run's level_accounting.json and compares it with results.json (rhae_recompute_abs_tolerance).
+  pass_value: 55.0
+  co_primary_machine_checks: >
+    backtest_rejection (E310: rejection fraction of discriminating wrong-model trials >=
+    backtest_rejection_fraction_min and acceptance of the true simulator ==
+    backtest_correct_model_acceptance_min) and verification_active (E300: every executed plan cites a
+    hypothesis whose certification record shows a full-history backtest with zero mismatches). Both are
+    pass/fail.
+  reasoning: >
+    The predicate names three things: the RHAE floor, the injected-wrong-model rejection rate, and
+    offline operation. RHAE is primary because it is the one quantity that measures the substrate's
+    competence rather than the correctness of a component. 55.0 is the predicate's own number, fixed
+    as the lower published figure (Rodionov, arXiv 2605.05138, 58.12 percent with GPT-5.5) minus a
+    3-point implementation margin; OPINE-World's 78.4 and the 100.00 entries used other models and
+    more compute and are not the target. PROPOSAL_v2.md section 14 item 5 lists 60 percent as a
+    deliverable; section 9 holds the gate predicates (CLAUDE.md) and its 55 governs here; the
+    difference is recorded under known_conflicts_at_authoring and is for the referee to note, not for
+    this file to resolve.
+
+reference_architecture:
+  what_is_fixed_here: >
+    The component list, the interfaces that later gates and the verifier depend on, the leak
+    controls, the budgets and the logging contract. Internal design choices (prompt wording, grid
+    encoding, search algorithm, exploration heuristic, refactoring toward simpler programs, object
+    segmentation) are implementation, may change under the escalation ladder until the first graded
+    run of a set starts, and are frozen within a graded set by the config hash and prompt hash
+    recorded in every manifest.
+  components:
+    - id: observation_layer
+      contract: >
+        Raw 64x64 integer grids exactly as the toolkit returns them (one or more grids per frame,
+        docs/EVIDENCE_ARC.md section 1.3), the frame-to-frame cell delta, state, levels_completed,
+        win_levels and available_actions. No perception model. Any object segmentation is a pure
+        function of the grid and is recorded in the transition record when used.
+    - id: episodic_store
+      contract: >
+        transitions.jsonl holds, per executed action, the full pre-action frame digest, the action
+        (id and data), the full post-action frame (all grids, verbatim), state, levels_completed,
+        available_actions, the hypothesis id whose prediction was compared (or null), the predicted
+        frame digest, and whether the prediction matched. Append-only; never rewritten or
+        summarised in place (constitution section 4, preserve raw evidence).
+    - id: program_induction
+      contract: >
+        The language model is asked for a Python program implementing the world-model interface
+        below, given the run's own transitions and the counterexamples of rejected programs.
+        Every proposed program is written verbatim to world_models/<hypothesis_id>.py and logged in
+        hypotheses.jsonl with its sha256, the model_call index that produced it, and its parent
+        hypothesis id when it is a revision.
+    - id: backtest_certification
+      contract: >
+        src/arc_plasticity/hypotheses/backtest.py replays the COMPLETE transition history recorded so
+        far through a candidate program and certifies it only if every recorded transition's frame
+        (all grids), state and levels_completed are reproduced exactly (backtest_mismatches_for_certification_max
+        0). It records history_length, history_length_checked (must be equal), mismatch count, the
+        index of the first mismatch, and wall-clock. Windowed, sampled or tolerance-based backtests
+        are forbidden; available_actions is compared and recorded but is not a certification field.
+        A program that raises, times out or exceeds the sandbox limits is not certified. The same
+        module, at the same sha256, is what E310 tests.
+    - id: planner
+      contract: >
+        Search (breadth-first, A*, or bounded simulation) inside the certified program for an action
+        sequence that increases levels_completed, under simulation_steps_per_game_max program steps
+        per run. Every plan is logged in plans.jsonl with the certified hypothesis id it was derived
+        from, that hypothesis's certification history_length, the sequence, and the outcome.
+    - id: predict_before_act
+      contract: >
+        Before every executed action the current certified program's predicted next frame digest is
+        recorded; on a mismatch the plan is abandoned immediately, the program is decertified, and the
+        mismatch is a counterexample for the next induction call. Without a certified program the
+        run may execute exploration actions (exploration_fallback) with predicted digest null.
+    - id: exploration_fallback
+      contract: >
+        A deterministic, seeded, model-free policy used when no certified program or no plan exists:
+        it prefers untested (frame digest, action) pairs and draws any randomness from one numpy
+        Generator seeded from (experiment seed, game index). It is the only source of randomness
+        inside REF and its use is counted per run (results.json exploration_actions).
+    - id: budget_enforcement
+      contract: level_accounting_rule and per_game_stop_rule below; enforced by the runner, not by the model.
+    - id: scoring
+      contract: >
+        src/arc_plasticity/evaluation/rhae.py (G2 adapter, delegating to the toolkit) with the official
+        metadata.json baseline_actions as h (canonical_scoring_baseline, carried unchanged from G2),
+        written per run to rhae.json and results.json.
+  world_model_interface: >
+    A candidate program defines predict(history, action) -> {"frame": grids, "state": str,
+    "levels_completed": int, "available_actions": list[int]} where history is the list of the run's
+    recorded transitions up to the point of prediction, or equivalently a stateful step(action) after
+    reset(first_frame). The exact signature is fixed by src/arc_plasticity/hypotheses/interface.py
+    before the first graded run and its sha256 is recorded in every E300 and E310 manifest.
+  sandbox: >
+    Candidate programs execute in a separate Python subprocess with NetworkGuard(allowed_calls=0)
+    installed, an address-space limit of 2 GiB (resource.RLIMIT_AS), a wall-clock limit of
+    sandbox_backtest_seconds_max per backtest and sandbox_predict_seconds_max per single prediction,
+    no write access to the repository, and no access to environment_files/ or data/. Violations are
+    recorded in hypotheses.jsonl and count as not certified.
+  cross_game_state: >
+    Nothing is carried between games: no program, no memory, no transcript. Each game-run starts from
+    an empty hypothesis set. The persistent-state boundary of PROPOSAL_v2.md section 5 belongs to the
+    mechanism gates; in G3 its size is zero (cross_game_persistent_state_bytes_max 0) so that the
+    RHAE reflects per-game induction alone.
+  leak_controls:
+    - >
+      Every model call runs as a fresh headless session with tool use disabled and with its working
+      directory set to a fresh temporary directory outside the repository, so the model cannot read
+      environment_files/ (game sources and metadata), data/human_replays/ (complete human solutions)
+      or the project code. The adapter records cwd and the tool-disabling flags per call in
+      model_calls.jsonl; the verifier checks both (model_call_accounting).
+    - >
+      Prompts are built only from the committed prompt template (configs/prompts/, sha256 recorded as
+      prompt_hash in the manifest) and from the run's own transitions, hypotheses, backtest records
+      and the remaining per-level action budget. The official baseline numbers may be shown to the
+      model as budgets because the platform's 5n termination rule is public; nothing from
+      human_baselines.json, the replays or the environment files is ever placed in a prompt. The
+      referee inspects the adapter and a sample of prompt files.
+    - >
+      The public games and their solutions are on the public internet and may be in the frozen
+      model's training data; this cannot be controlled and is one reason the public set is not a
+      progress measure. It is recorded as a standing threat, not mitigated.
+  level_accounting_rule: >
+    Identical to preregistration/G2.yaml human_baselines.level_attribution_rule and to the toolkit's
+    scorecard: the initial env.reset() that starts the game is not an action; every action issued
+    afterwards, RESET included, is counted; level l is completed at the first action index c_l at
+    which levels_completed reaches at least l; actions attributed to level l are c_l - c_(l-1) with
+    c_0 = 0; a later full reset and re-completion are ignored; a level never reached has no
+    completion and its actions are the run's remaining actions after c_(l-1).
+  per_game_stop_rule: >
+    A game-run stops at the first of: (a) state WIN; (b) the actions attributed to the current
+    uncompleted level reach action_budget_multiplier times its official baseline (the platform's
+    termination rule; stop_reason level_budget_exhausted); (c) model_calls_per_game_max or
+    tokens_per_game_max reached and no certified program can make progress (stop_reason
+    model_budget_exhausted); (d) the invocation wall-clock limit (stop_reason wallclock, resumable);
+    (e) step() returning None (stop_reason step_failed, a run failure, never skipped silently).
+    GAME_OVER is not terminal for REF: the runner issues RESET (counted, attributed to the current
+    level) and continues under the same budgets.
+  resumption_rule: >
+    A game-run interrupted by (d) may be resumed at most resumptions_per_game_max times by exact
+    replay of its own transitions.jsonl through a fresh offline environment (G1 established replay
+    identity); the resumption is recorded in manifest.resumptions with the replayed final frame digest,
+    which must equal the last recorded one, and all per-game ceilings count across resumptions. The
+    sum of invocation wall-clocks may not exceed wallclock_per_game_total_seconds_max.
+
+model_calls:
+  channel: >
+    The subscription's headless CLI: one `claude -p` invocation per call, fresh session (no
+    --continue), --output-format json, --model <model_identifier>, --effort <model_effort>, tool use
+    disabled, working directory a fresh temporary directory (leak_controls). No API key is used;
+    an API key would be a paid service and needs a section 6 item 2 escalation. The adapter is
+    src/arc_plasticity/agents/model_client.py; its sha256 is recorded in every E300 manifest.
+  logging: >
+    model_calls.jsonl carries, per call: call_index, purpose (induce, revise, other), model
+    identifier as sent and as reported in the response, effort, cwd, tools_disabled (bool), prompt
+    sha256, response sha256, the usage fields of the JSON response verbatim (whatever the CLI
+    reports: input, output, cache-creation and cache-read token counts; model_cost_breakdown if
+    present; total_cost_usd, expected null under subscription auth), wall-clock seconds, exit code,
+    and the paths model_calls/<call_index>.prompt.txt and model_calls/<call_index>.response.json
+    holding the verbatim prompt and raw response. All are artifacts listed in SHA256SUMS.
+  authentication_status_at_authoring: >
+    Inside this headless turn `claude auth status` reports loggedIn false and authMethod none, and the
+    shell environment carries no CLAUDE_CODE_OAUTH_TOKEN (docs/EVIDENCE_TOOLING.md section 11 item 4
+    records the same: the token sustains the supervisor's turns but is stripped from child
+    processes). A model call made by scripts/run_experiment.py from inside a turn is therefore
+    expected to be unauthenticated. This is a section 6 item 1 condition (a credential is needed) and
+    is escalated as planned under escalation_plan, not debugged under the ladder.
+  nondeterminism_protocol: >
+    Owed to G3 by preregistration/G1.yaml model_call_nondeterminism. Raw logging: every prompt and
+    response verbatim (logging above). Identity claimed across same-seed E300 invocations: NONE for
+    any model-dependent field; the model is a nondeterministic external component and two graded
+    runs of the same game are not required to agree, which is why E300 is excluded from the byte
+    identity check and why one run per game is graded. What IS claimed and checked: (1) every
+    graded run's action log replays offline to the recorded final frame digest
+    (replay_final_frame_identity, as G1), so the transitions and hence the score are reproducible
+    from the artifact without the model; (2) the RHAE in results.json is recomputed by the verifier
+    from level_accounting.json within rhae_recompute_abs_tolerance; (3) E310, which makes no model
+    call, is byte-identical across two same-seed invocations and differs under the contrast seed.
+    Fields declared nondeterministic and why: model responses, hypotheses, plans, executed action
+    sequences, level completions and scores (all downstream of the model); token counts and
+    wall-clock (external). The experiment seed still governs exploration_fallback and tie-breaking
+    so that, holding the model responses fixed, the runner is deterministic; this is asserted by
+    tests/unit against a recorded-response stub, not by a graded run.
+
+escalation_plan:
+  ordering: >
+    As at G2: first build everything that needs no credential and no model (task order in
+    verification.task_plan): the world-model interface, the sandbox, the backtester, E310 and its
+    graded runs, the planner and exploration fallback on the true simulator, the level accounting
+    and stop rule, the E300 runner with a recorded-response model stub, the model-call adapter, and
+    evaluate_g3. Then probe authentication with one minimal headless call from inside a turn (a
+    fixed one-word prompt; recorded in the ledger with exit code and stderr; if it succeeds the
+    call's usage is the first data point). If the probe fails, escalate under section 6 item 1.
+  item_1_escalation_asks:
+    - >
+      A way for scripts/run_experiment.py, started inside a supervisor turn, to authenticate headless
+      `claude -p` calls (for example the long-lived token in a file outside the repository that the
+      adapter reads, or the supervisor passing the variable through), and confirmation that the
+      subscription is the intended payer.
+    - >
+      The weekly allowance denominator for the cost pre-flight, in whichever form the human can
+      read: the seven_day used_percentage from an interactive /usage view or the claude.ai usage page
+      at the time of the answer (a gauge reading), and, if known, the plan's weekly allowance
+      expressed in list-price USD equivalent. The gauge never fires in headless mode
+      (docs/EVIDENCE_TOOLING.md section 11 item 2) and the CLI has no usage query (item 7), so the
+      agent cannot obtain this itself.
+    - >
+      Optionally, a different model identifier available to the subscription for the REF's calls
+      (model_identifier below explains the default and why this is the one variable the file leaves
+      to the answer).
+  what_happens_with_each_answer: >
+    Credential supplied -> the adapter is pointed at it, the probe is repeated and its usage logged,
+    and the pre-flight starts. Credential refused or an API key with a spend cap offered -> section 6
+    item 2 (money) is raised in the same thread before any call; without either, G3 cannot run as
+    pre-registered and the human decides between waiting and a route change (section 6 item 12).
+    Denominator supplied -> cost_preflight.decision_rule applies mechanically. No denominator ->
+    cost_preflight.no_denominator_rule applies.
+
+cost_preflight:
+  purpose: >
+    PROPOSAL_v2.md section 9 row G3 and AGENT_CONSTITUTION.md section 2: build REF, measure
+    consumption on 3 games, extrapolate to 25, escalate under section 6 item 10 if the projection
+    exceeds escalate_above_fraction of the weekly allowance.
+  games:
+    - cd82
+    - s5i5
+    - wa30
+  game_selection_rule: >
+    Fixed here so they are not chosen after costs are seen: the games with the smallest, the median
+    (13th of 25) and the largest total action budget 5 x sum(baseline_actions) as recorded in
+    g1_termination_vs_budget.json (sha256 82c592f0ef357e337f7aefa62a9b297a86d39e15eaaef810a5d8c86b29095f5f,
+    run 20260904T154531Z_seed12345_2599f0a4): cd82 855, s5i5 3190, wa30 9215 of a total 85675 over
+    all 25 games. The three together carry 13260 of the 85675 budget actions.
+  measurement: >
+    The three pre-flight runs are ordinary E300_ref game-runs under exactly the graded configuration
+    (same config hash, prompt hash, model identifier, effort, ceilings). Consumption per run is the
+    sum over model_calls.jsonl of each usage field, converted to a list-price USD equivalent with the
+    prices the evidence base records for the model used (docs/EVIDENCE_TOOLING.md section 1 for
+    claude-fable-5-1: 10 USD per million input tokens, 50 output, 0.25 cache read, 12.50 cache write
+    at the 5-minute tier; a different identifier's prices are first added to that document with URL
+    and date). The evidence base states this is the right proxy for how fast the allowance is
+    consumed (section 1, "On price").
+  extrapolation_rule: >
+    projected_usd_25 = max( count_weighted, budget_weighted ) with count_weighted = (sum of the three
+    runs' USD equivalent) x 25 / 3 and budget_weighted = (sum of the three runs' USD equivalent) x
+    85675 / 13260. The larger is used because the pre-flight exists to prevent an under-estimate;
+    both are recorded.
+  decision_rule: >
+    projected_fraction_of_weekly_allowance = projected_usd_25 / weekly_allowance_usd_equivalent,
+    where the denominator is the value the human supplied (escalation_plan) or, if the human supplied
+    two gauge readings around the three runs instead, the delta method: fraction = (used_percentage
+    after - before) / 100 x (extrapolation factor as above). The agent writes games_measured 3,
+    projected_fraction_of_weekly_allowance, projected_usd_25, both extrapolations, the three run ids
+    with their SHA256SUMS digests and the denominator's source into state/BUDGET.json g3_preflight and
+    a ledger decision entry, and commits, before any fourth game-run starts. If the fraction exceeds
+    preflight_escalate_above_fraction (0.35, read from state/BUDGET.json escalate_above_fraction at
+    authoring and fixed here), escalate under section 6 item 10 before the fourth game-run; the
+    escalation offers the options: proceed as pre-registered, stop G3, or a successor
+    pre-registration with human-chosen ceilings or model (a route change; this file is not amended
+    and its thresholds 55.0 and 0.95 are inherited unchanged). If the fraction is at or below 0.35,
+    the remaining 22 game-runs proceed without asking.
+  no_denominator_rule: >
+    If no denominator and no gauge readings are available when the three runs are complete, the
+    fraction is undefined and the constitution's trigger cannot be evaluated; the pre-flight then
+    escalates unconditionally under section 6 item 10 with the absolute numbers (tokens by kind,
+    projected_usd_25, wall-clock), because spending an unknown fraction of a shared allowance is what
+    the trigger exists to prevent. This is not a question asked when a safe default exists: there is
+    no safe default for an unknown denominator.
+  preflight_runs_are_graded: >
+    The three pre-flight runs are graded runs (run set role preflight_graded) because their
+    configuration is the graded configuration. If a successor pre-registration changes the
+    configuration, its experiment id differs and these runs stay preserved under E300_ref, listed and
+    never graded under the successor.
+  reasoning: >
+    Every published system above 55 percent cost 5,780 to 15,200 USD per pass (docs/EVIDENCE_ARC.md
+    section 0 item 3 and 5.3). At the ceilings below, 25 games x 4,000,000 tokens is at most 100
+    million tokens, and at list prices dominated by cached input that is on the order of a few hundred
+    to two thousand USD equivalent per set; the pre-flight measures where in that range REF actually
+    lands and whether the subscription can carry it. The ceilings are deliberately below the published
+    spend because the programme must re-run this substrate under every mechanism campaign
+    (docs/EVIDENCE_TOOLING.md section 10, consequence 2); if REF cannot reach 55 percent within them,
+    that is the finding.
+
+experiment:
+  experiment_id: E300_ref
+  config: configs/experiments/E300_ref.yaml
+  entry_point: uv run python scripts/run_experiment.py --config configs/experiments/E300_ref.yaml --game <stem>
+  runner: ref_world_model
+  operation_mode: OFFLINE
+  environments_dir: environment_files
+  cache_manifest: experiments/environment_cache_manifest.json (sha256 023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af, hash-locked in thresholds)
+  one_game_per_run: >
+    Each invocation runs exactly one game (the --game stem selects it; the config lists all 25) so
+    that a run fits one invocation wall-clock and one supervisor turn, and so that a game's raw
+    evidence is never entangled with another's. The graded unit is the set of 25 game-runs listed in
+    the run set manifest.
+  cached_versions_run: >
+    The 25 full game ids of the cache the manifest pins, which are the versions G3 runs and scores
+    against (G2 verdict section 12 item 3): ar25-0c556536, bp35-0a0ad940, cd82-fb555c5d,
+    cn04-2fe56bfb, dc22-fdcac232, ft09-0d8bbf25, g50t-5849a774, ka59-38d34dbb, lf52-271a04aa,
+    lp85-305b61c3, ls20-9607627b, m0r0-492f87ba, r11l-495a7899, re86-8af5384d, s5i5-18d95033,
+    sb26-7fbdac44, sc25-635fd71a, sk48-d8078629, sp80-589a99af, su15-1944f8ab, tn36-ef4dde99,
+    tr87-cd924810, tu93-0768757b, vc33-5430563c, wa30-ee6fef47. For 15 of these (ar25, cn04, dc22,
+    ka59, m0r0, r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36, tu93, vc33) the human replays'
+    client-side action_input.data.game_id names an older version (e3c63847, 65d47d14, 4c9bff3e,
+    9f096b4a, dadda488, aa269680, 4e57566e, a48e4b1d, f9b21a2f, 41055498, 0ee2d095, 4c352900,
+    ab4f63cc, 2b534c15, 9851e02b; the Hugging Face copy dated 2026-04-02) while their frame-side
+    data.game_id names the cached version (docs/EVIDENCE_ARC.md section 3.3, G2 verdict section 9
+    argument B). G3 cites the replays as evidence about the frame-side version only.
+  run_set_manifest:
+    file: experiments/E300_ref_run_set.json
+    rule: >
+      Committed before the verifier is invoked. Lists EVERY run directory under artifacts/E300_ref/
+      with run_id, stem, set_index, role in {preflight_graded, graded, failed} and the SHA256SUMS
+      digest. A set is gradable only when it holds exactly one preflight_graded or graded run per
+      stem for all 25 stems, each with completion_status completed. A run may be labelled failed only
+      if its completion_status is not completed (a completed run can never be dropped). A second set
+      (set_index 2, the full 25 games again) is permitted only after a ladder entry in the ledger
+      names the defect fixed and the first set is preserved unchanged; graded_sets_limit is 2. The
+      verifier grades the highest-numbered complete set.
+  seed: 12345
+  seed_role: exploration_fallback and tie-breaking only (model_calls.nondeterminism_protocol)
+  network_calls_allowed: 0
+  network_guard: >
+    NetworkGuard(allowed_calls=0) is installed in the runner process before the toolkit is imported,
+    exactly as G1 (preregistration/G1.yaml socket_guard). The model call is a subprocess and is the
+    only external channel; the guard proves the environment stepping and scoring are offline. The
+    manifest records network_attempts 0; results.json records network_guard and operation_mode
+    OFFLINE.
+  model_calls_allowed: 60
+  model_identifier: claude-fable-5-1
+  model_effort: high
+  budgets_per_game_run:
+    action_budget: 5 x sum(baseline_actions) of the game, with the per-level rule binding first (per_game_stop_rule)
+    simulation_budget: 5000000
+    token_budget: 4000000
+    persistent_state_size_cap_bytes: 0
+  wallclock_limit_seconds: 7200
+  extra_artifacts:
+    - model_calls.jsonl
+    - model_calls/ (one .prompt.txt and one .response.json per call)
+    - world_models/ (one .py per hypothesis)
+    - backtests.jsonl
+    - plans.jsonl
+    - level_accounting.json
+    - rhae.json
+  results_json_contract: >
+    results.json['results'] carries operation_mode "OFFLINE", network_guard, game_id, stem, seed,
+    win_levels, levels_completed, final_state, stop_reason, actions_total, exploration_actions,
+    levels (per level: level, official_baseline_actions, budget, actions_attributed, completed),
+    rhae_environment_score (percent), model_calls, tokens_by_kind, hypotheses_proposed,
+    hypotheses_certified, plans_executed, prediction_mismatches, resumptions, backtest_module_sha256,
+    interface_module_sha256, model_client_sha256, prompt_hash. No timing value appears in results.json
+    or metrics.csv (timing lives in the manifest, model_calls.jsonl and stdout.log). metrics.csv
+    carries one row per level with the same per-level fields plus rhae_level_score.
+
+backtest_rejection_experiment:
+  experiment_id: E310_ref_backtest_rejection
+  config: configs/experiments/E310_ref_backtest_rejection.yaml
+  entry_point: uv run python scripts/run_experiment.py --config configs/experiments/E310_ref_backtest_rejection.yaml
+  runner: backtest_rejection
+  network_calls_allowed: 0
+  model_calls_allowed: 0
+  wallclock_limit_seconds: 3600
+  histories: >
+    The action logs of the graded G1 run 20260904T074939Z_seed12345_8383cad8 (SHA256SUMS
+    6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190, all 25 games, 30 to 526 actions
+    each), replayed through the offline toolkit to obtain full-frame histories. The runner records the
+    digest of the transitions.jsonl it read and the replayed final frame digests, which must equal the
+    G1 results.json final_frame_sha256 values.
+  true_model: >
+    A wrapper that answers predict() by replaying the history prefix through a fresh offline
+    environment and stepping the action; correct by construction. Control trials submit it unmutated
+    and it must be accepted (backtest_correct_model_acceptance_min 1.0).
+  wrong_models: >
+    The true model wrapped with one seeded mutation. Eight classes, drawn uniformly by the trial seed:
+    identity_model (predicts no change), stale_frame (predicts the frame from two steps back),
+    single_cell_flip (one cell of one transition's frame changed; transition index uniform over the
+    history INCLUDING the first and the last, so a windowed backtester fails), colour_permutation (all
+    cells of one transition's frame remapped by a seeded permutation), action_semantics_swap (two
+    action ids swapped for the whole history), levels_completed_off_by_one (one transition), state_field_wrong
+    (one transition's state NOT_FINISHED <-> GAME_OVER), other_game_simulator (the true model of a
+    different game). A trial is discriminating when the mutated predictions differ from the history on
+    at least one certification field; the generator checks this and re-draws mutation parameters up to
+    20 times within the same class, recording the count; a trial still non-discriminating is recorded
+    as vacuous and excluded from the rejection denominator (backtest_vacuous_trials_max).
+  trials: >
+    25 games x 10 trial seeds = 250 wrong-model trials plus 25 control trials per invocation; trial
+    seeds derive from the experiment seed. The backtester under test is imported from
+    src/arc_plasticity/hypotheses/backtest.py and sees only the history and the model, never the
+    mutation. results.json records rejection_fraction, per-class counts and fractions, vacuous trials,
+    correct_model_acceptance_fraction, backtest_module_sha256 and history_length_checked ==
+    history_length for every trial.
+  determinism_protocol:
+    fixed_seed: 12345
+    identical_invocations: 2
+    contrast_seed: 12346
+    contrast_invocations: 1
+    require_contrast_differs: true
+    contrast_variable: the trial seed (mutation classes, positions and permutations), a policy-side variable; Arcade.make(seed) is inert and is not cited (G1 verdict item 1)
+    excluded_fields_source: configs/nondeterministic_fields.yaml
+    compared_files:
+      - results.json
+      - metrics.csv
+    reasoning: >
+      E310 has no model and its randomness is a pure function of the seed, so two same-seed
+      invocations must agree byte for byte after the G0 exclusions under the G1 exclusion_nesting_rule,
+      and the contrast seed must change the trial table. The identity that matters for REF itself is
+      replay identity of its action logs, claimed in model_calls.nondeterminism_protocol.
+
+carry_forward_from_g2_verdict:
+  - item: 1
+    text: >
+      Every RHAE computation uses the official metadata.json baseline_actions as h
+      (canonical_scoring_baseline), read from the cache pinned by experiments/environment_cache_manifest.json
+      (023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af); the derived table
+      human_baselines.json (1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185) is cited
+      by that digest wherever a per-level human distribution is used, and any use of its lp85 or vc33
+      rows carries the G2 verdict section 9(a) caveat.
+    g3_application: >
+      Hash-locked in thresholds (cache_manifest_sha256, human_baselines_json_sha256). G3 uses no
+      per-level human distribution; if any G3 artifact or document cites human_baselines.json it does so
+      by that digest, and for lp85 or vc33 adds: the official values are the toolkit's scoring baseline,
+      the derived values differ (lp85 levels 1-5, 7, 8; vc33 levels 1, 3-7) for a reason outside the
+      dataset, and the lp85 release is 54 sessions over two months, not the study's population.
+  - item: 2
+    text: >
+      The per-level action budget is 5 times the official baseline_actions[l]
+      (action_budget_multiplier_for_later_gates 5), and the budget design must read
+      g1_termination_vs_budget.json (82c592f0ef357e337f7aefa62a9b297a86d39e15eaaef810a5d8c86b29095f5f)
+      rather than re-measure it.
+    g3_application: >
+      action_budget_multiplier 5 is read from preregistration/G2.yaml thresholds by the verifier and
+      restated here; per_game_stop_rule (b) enforces it per level; cost_preflight.game_selection_rule
+      and the per-game action budgets are read from the cited artifact, whose digest is hash-locked
+      (g1_termination_vs_budget_sha256). G1's observation that random play ends in GAME_OVER within
+      30-742 actions on every game is why GAME_OVER is not terminal for REF (RESET and continue).
+  - item: 3
+    text: >
+      G3 runs the cached environment versions and must name them; it may not cite the human replays as
+      evidence about a version other than the frame-side one, and must record that for 15 games the
+      replays' client-side version differs.
+    g3_application: experiment.cached_versions_run names all 25 ids and the 15 client-side versions.
+  - item: 4
+    text: >
+      Participant identity is absent from the release; any per-participant claim drawn from the
+      replays is per-session, and lp85's 54 sessions are not the study's ten-participant population.
+    g3_application: >
+      G3 makes no per-participant claim. Any later use of the replays in a G3 document says
+      per-session, never per-participant.
+  - item: 5
+    text: >
+      Any G3 threshold that depends on throughput states step-only or all-in (1577-1640 versus 777-823
+      fps on this machine).
+    g3_application: >
+      G3 has no throughput threshold. The simulation budget counts steps of the induced program, not
+      toolkit frames. Any fps figure a G3 artifact reports is labelled step-only or all-in.
+  - item: 6
+    text: >
+      Any project-produced number cited in an evidence document is backed by a preserved artifact under
+      artifacts/ with a SHA256SUMS entry; a /tmp re-derivation is not a substitute.
+    g3_application: >
+      The pre-flight numbers, the RHAE total and the rejection fraction are cited only from
+      artifacts/E300_ref/<run_id>/ and artifacts/E310_ref_backtest_rejection/<run_id>/ files listed in
+      their SHA256SUMS; state/BUDGET.json g3_preflight names the run ids and digests it was computed
+      from.
+
+thresholds:
+  public_games_total: 25
+  public_levels_total: 183
+  rhae_total_min: 55.0
+  rhae_recompute_abs_tolerance: 1.0e-09
+  rhae_level_cap: 1.15
+  action_budget_multiplier: 5
+  action_budget_multiplier_source: preregistration/G2.yaml thresholds.action_budget_multiplier_for_later_gates
+  per_level_actions_over_budget_max: 0
+  graded_games_required: 25
+  graded_runs_per_game: 1
+  graded_sets_max: 2
+  unlisted_run_dirs_max: 0
+  completed_runs_labelled_failed_max: 0
+  model_identifier: claude-fable-5-1
+  model_effort: high
+  model_calls_per_game_max: 60
+  tokens_per_game_max: 4000000
+  simulation_steps_per_game_max: 5000000
+  wallclock_per_invocation_seconds: 7200
+  resumptions_per_game_max: 3
+  wallclock_per_game_total_seconds_max: 14400
+  cross_game_persistent_state_bytes_max: 0
+  model_call_cwd_must_be_outside_repo: true
+  model_call_tools_must_be_disabled: true
+  backtest_mismatches_for_certification_max: 0
+  backtest_must_cover_full_history: true
+  executed_plans_must_cite_certified_hypothesis: true
+  sandbox_backtest_seconds_max: 120
+  sandbox_predict_seconds_max: 5
+  sandbox_address_space_bytes_max: 2147483648
+  backtest_wrong_model_trials_min: 250
+  backtest_control_trials_min: 25
+  backtest_mutation_classes_min: 8
+  backtest_trials_per_class_min: 20
+  backtest_vacuous_trials_max: 12
+  backtest_rejection_fraction_min: 0.95
+  backtest_correct_model_acceptance_min: 1.0
+  backtest_history_min_length: 2
+  backtest_module_sha256_must_match_between_e300_and_e310: true
+  preflight_games_measured: 3
+  preflight_escalate_above_fraction: 0.35
+  preflight_must_precede_fourth_game_run: true
+  replay_final_frame_identity_min: 1.0
+  replay_divergent_games_max: 0
+  network_calls_allowed: 0
+  network_attempts_max: 0
+  cache_manifest_sha256: 023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af
+  cache_manifest_drift_files_max: 0
+  cached_games_required: 25
+  arc_agi_locked_version: 0.9.9
+  official_baselines_must_match_metadata: true
+  human_baselines_json_sha256: 1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185
+  g1_termination_vs_budget_sha256: 82c592f0ef357e337f7aefa62a9b297a86d39e15eaaef810a5d8c86b29095f5f
+  g1_history_run_sha256sums_sha256: 6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190
+  determinism_identity_min: 1.0
+  contrast_seed_must_differ: true
+  excluded_key_max_depth: 1
+  excluded_key_container_values_allowed: false
+  sha256sums_verified_fraction_min: 1.0
+  sha256sums_must_list_every_artifact_file: true
+  uv_sync_exit_code: 0
+  pytest_exit_code: 0
+  pytest_min_tests_collected: 1
+  ruff_exit_code: 0
+  mypy_exit_code: 0
+  git_status_porcelain_lines_max: 0
+  licence_required_text: MIT No Attribution
+
+threshold_reasoning:
+  public_games_total: As G2; the cache manifest pins the 25 games and G3 must run all of them.
+  public_levels_total: As G2; the RHAE denominator per game is the metadata level count, checked against the sum 183.
+  rhae_total_min: >
+    55.0 percent is the predicate's number: the lower published figure for this class of system
+    (Rodionov, arXiv 2605.05138, 58.12 percent, GPT-5.5 high) minus a 3-point implementation margin,
+    per PROPOSAL_v2.md section 9 row G3. Not raised toward the 78.4 or 100.00 entries, which used other
+    models and more compute; not lowered because below it the substrate would not be at the standard
+    the evidence base says every downstream comparison requires (docs/EVIDENCE_ARC.md section 5.4).
+  rhae_recompute_abs_tolerance: As the G2 synthetic tolerance, 1e-9 in percent units; the recomputation uses the same adapter on the same integers.
+  rhae_level_cap: Carried from G2 (1.15, square inside the min); restated so the G3 verifier can assert the adapter is unchanged.
+  action_budget_multiplier: >
+    5, the documented termination rule (docs/EVIDENCE_ARC.md section 2), fixed by G2 for later gates;
+    the verifier reads it from the G2 file and requires this value to equal it.
+  per_level_actions_over_budget_max: >
+    Zero: a level whose attributed count exceeds 5h would be a level the platform would have terminated;
+    scoring it would inflate RHAE. The runner stops the game; the verifier checks the artifact.
+  graded_games_required: All 25; a subset would let the easiest games be chosen.
+  graded_runs_per_game: >
+    One: with a nondeterministic model, grading the best of several runs is selection, not measurement.
+    The platform also scores a single run.
+  graded_sets_max: >
+    Two full sets: one honest re-run after a ladder fix is a real second attempt; more would be
+    fishing at a cost the pre-flight was designed to bound.
+  unlisted_run_dirs_max: Zero hidden runs; every attempt is preserved and listed.
+  completed_runs_labelled_failed_max: Zero; a completed run cannot be discarded by relabelling.
+  model_identifier: >
+    claude-fable-5-1 is the only model identifier the evidence base documents (docs/EVIDENCE_TOOLING.md
+    section 1) and the model this harness runs on. It is also the most expensive documented, which is
+    what the pre-flight measures. Because the credential escalation (escalation_plan) must precede every
+    model call, the human's answer may name a different identifier available to the subscription; if it
+    does, that identifier is recorded in the ledger decision, in every manifest and in
+    state/PROJECT_STATE.json, and it, not this default, is the frozen value the verifier requires on
+    every call. This is the one variable the file leaves to a human answer, stated here so it is not a
+    post-hoc choice: it is a resource decision made before any G3 result exists and it moves no threshold.
+  model_effort: high, the constitution's implementation effort; the REF's calls are program-writing calls. Fixed so the pre-flight measures the graded setting.
+  model_calls_per_game_max: >
+    60 calls per game: enough for an initial induction and dozens of counterexample-driven revisions
+    across up to ten levels, and small enough that 25 games are at most 1,500 calls. The published
+    systems do not report call counts; this is the project's own ceiling and the pre-flight will say
+    whether it is affordable.
+  tokens_per_game_max: >
+    4,000,000 tokens per game summed over all usage kinds; with prompts carrying the transition history
+    and the current program, calls of 30,000-60,000 tokens x 60 calls fit. At list prices this bounds a
+    game at roughly 40-200 USD equivalent depending on the cache mix, and a set at a few thousand at the
+    very worst, which is why the pre-flight exists.
+  simulation_steps_per_game_max: >
+    5,000,000 program steps per game for planning; a pure-Python model at 10,000 steps per second gives
+    about eight minutes of search, well inside the wall-clock.
+  wallclock_per_invocation_seconds: 7200, the BUDGET.json default; the constitution forbids running without a limit.
+  resumptions_per_game_max: >
+    Three, so a game interrupted by the invocation limit can finish across supervisor turns by exact
+    replay without the wall-clock becoming unbounded.
+  wallclock_per_game_total_seconds_max: 14400 across resumptions, twice the invocation limit.
+  cross_game_persistent_state_bytes_max: Zero; nothing crosses games in G3 (reference_architecture.cross_game_state).
+  model_call_cwd_must_be_outside_repo: Leak control; the model must not be able to read the game sources or the human replays.
+  model_call_tools_must_be_disabled: Leak control; a model with tools could read files or the network regardless of cwd.
+  backtest_mismatches_for_certification_max: >
+    Zero: the evidence base's load-bearing component is exact replay verification; a tolerance would let
+    a wrong program plan.
+  backtest_must_cover_full_history: The constitution's own example failure is a verifier that checks only the last 20 transitions.
+  executed_plans_must_cite_certified_hypothesis: This is what "replay verification demonstrably active" means inside the graded runs, not only in E310.
+  sandbox_backtest_seconds_max: 120 s per backtest of a history of at most a few thousand transitions.
+  sandbox_predict_seconds_max: 5 s per single prediction; a slower program cannot be planned with.
+  sandbox_address_space_bytes_max: 2 GiB; a runaway program must not take the machine down.
+  backtest_wrong_model_trials_min: >
+    250 seeded trials (25 games x 10) so that a 95 percent floor is tested with a resolution of 0.4
+    percent per trial and every game contributes.
+  backtest_control_trials_min: One control per game; a backtester that rejects everything would otherwise pass.
+  backtest_mutation_classes_min: Eight, the pre-registered list; each must be present so a single easy class cannot carry the rate.
+  backtest_trials_per_class_min: 20 per class, the smallest count at which one failure is visible as 5 percent of the class.
+  backtest_vacuous_trials_max: 12, under 5 percent of 250, so exclusion of non-discriminating trials cannot materially move the rate.
+  backtest_rejection_fraction_min: 0.95, the predicate's number.
+  backtest_correct_model_acceptance_min: 1.0; the true simulator reproduces its own history and any rejection is a backtester defect.
+  backtest_history_min_length: Every G1 history has at least 30 actions; 2 is the floor at which "full history" is distinguishable from "last frame".
+  backtest_module_sha256_must_match_between_e300_and_e310: The E310 result certifies exactly the code the graded runs used, or it certifies nothing.
+  preflight_games_measured: Three, the predicate's number; the games are fixed in cost_preflight.games.
+  preflight_escalate_above_fraction: 0.35, state/BUDGET.json g3_preflight.escalate_above_fraction at authoring.
+  preflight_must_precede_fourth_game_run: The pre-flight is worthless if the full run has already started.
+  replay_final_frame_identity_min: As G1; a graded run whose action log does not replay is not evidence.
+  replay_divergent_games_max: As G1, zero.
+  network_calls_allowed: Zero in the runner process; the model subprocess is the only external channel and is counted separately.
+  network_attempts_max: Zero, asserted by the live guard as in G1.
+  cache_manifest_sha256: Hash-locked from the G2 verdict section 12 item 1; a different cache is a different experiment.
+  cache_manifest_drift_files_max: As G1, zero.
+  cached_games_required: As G1, 25.
+  arc_agi_locked_version: As G1, 0.9.9 from uv.lock.
+  official_baselines_must_match_metadata: Every h used by a run must equal the cached metadata.json value; the derived table never substitutes.
+  human_baselines_json_sha256: The digest any citation of the derived table must carry (G2 verdict section 12 item 1).
+  g1_termination_vs_budget_sha256: The digest of the budget artifact the design reads rather than re-measures (item 2).
+  g1_history_run_sha256sums_sha256: The G1 run whose action logs are E310's histories, by its SHA256SUMS digest.
+  determinism_identity_min: As G0-G2, for E310 only.
+  contrast_seed_must_differ: As G1, for E310; the contrast variable is the trial seed.
+  excluded_key_max_depth: As G1 exclusion_nesting_rule.
+  excluded_key_container_values_allowed: As G1, false.
+  sha256sums_verified_fraction_min: As G0-G2, every hash verifies, including files under model_calls/ and world_models/.
+  sha256sums_must_list_every_artifact_file: As G0-G2; the directories of extra artifacts are listed file by file.
+  uv_sync_exit_code: As G0.
+  pytest_exit_code: As G0.
+  pytest_min_tests_collected: As G0.
+  ruff_exit_code: As G0.
+  mypy_exit_code: As G0.
+  git_status_porcelain_lines_max: As G0.
+  licence_required_text: As G0, MIT-0.
+
+verification:
+  verifier: scripts/verify_run.py
+  verifier_reads_thresholds_from: preregistration/G3.yaml
+  verifier_sha256_at_authoring: de5fc873619c11e06f19def16d6aa138910e84e6de90cba0fcb4dde0ad4b416b
+  verifier_extension_rule: >
+    G3 extends scripts/verify_run.py with evaluate_g3 (and the module it imports for the RHAE
+    recomputation and replay). Extension is authoring, not goalpost movement, because every number
+    above lives here; the referee's verdict records the sha256 of the verify_run.py that graded G3
+    (constitution section 7, correction of 2026-09-04).
+  artifacts_root: artifacts/E300_ref/
+  secondary_artifacts_root: artifacts/E310_ref_backtest_rejection/
+  checks_in_order:
+    - cache_manifest_locked (experiments/environment_cache_manifest.json sha256 == cache_manifest_sha256; 25 games; zero drift against environment_files/; arc-agi 0.9.9 in uv.lock)
+    - run_set_manifest (experiments/E300_ref_run_set.json lists every directory under artifacts/E300_ref/; the highest-numbered complete set has one completed run per stem for all 25 stems; no completed run labelled failed; sets <= graded_sets_max)
+    - run_artifact_completeness (the G0 contract plus the seven extra artifacts, for every run of the graded set and every E310 run)
+    - sha256sums_verify (every listed file verifies, every file present is listed, both roots)
+    - offline_run (manifest network_calls_allowed 0 and network_attempts 0, results operation_mode OFFLINE and network_guard, both experiments)
+    - official_baselines_used (every graded run's level_accounting.json h values equal the cached metadata.json baseline_actions; rhae.py still contains the delegation text and imports arc_agi)
+    - action_budget_enforced (per level actions_attributed <= action_budget_multiplier x h; a stop_reason consistent with per_game_stop_rule; multiplier equals the G2 value)
+    - replay_final_frame_identity (every graded run's transitions.jsonl replayed offline in the verifier's process reproduces final_frame_sha256; as G1)
+    - rhae_recomputed (per run from level_accounting.json through the adapter, within tolerance of results.json; the mean over the 25 >= rhae_total_min)
+    - model_call_accounting (every call in model_calls.jsonl has prompt and response files with matching digests, identifier == the frozen identifier, effort == model_effort, cwd outside the repository, tools disabled; calls <= model_calls_per_game_max and summed tokens <= tokens_per_game_max per run; zero calls in E310)
+    - verification_active (every plans.jsonl record cites a hypothesis whose backtests.jsonl certification has mismatches 0 and history_length_checked == history_length; backtest_module_sha256 equal across all E300 runs and the E310 runs)
+    - backtest_rejection (E310 results: trials, classes, per-class minima, vacuous <= max, rejection_fraction >= min, correct acceptance == 1.0, histories replayed to the G1 final frame digests)
+    - preflight_recorded (state/BUDGET.json g3_preflight.games_measured == 3, projected_fraction_of_weekly_allowance non-null or a ledger human_escalation entry for the no-denominator case, the three named games' run ids present in the run set with role preflight_graded)
+    - exclusion_nesting (E310, before the identity check)
+    - determinism_identity (E310: two same-seed invocations identical on results.json and metrics.csv after the G0 exclusions; the contrast seed differs)
+    - git_status_clean, licence_text, uv_sync, pytest, ruff, mypy (as G0)
+  referee_inspects:
+    - src/arc_plasticity/hypotheses/backtest.py, to confirm it replays the whole history with exact comparison and no window, sampling or tolerance
+    - src/arc_plasticity/agents/model_client.py and a sample of at least five model_calls/<n>.prompt.txt files across three games, for any content from environment_files/ or data/human_replays/ and for the tool-disabling flags and cwd
+    - the wrong-model generator in E310, to confirm the mutations are applied on the model side and the backtester never sees the mutation
+    - three graded runs traced by hand from transitions.jsonl to level_accounting.json to rhae.json (the highest-scoring game, the lowest-scoring game that completed at least one level, and wa30)
+    - state/BUDGET.json g3_preflight against the three runs' model_calls.jsonl sums and the prices in docs/EVIDENCE_TOOLING.md section 1
+    - the ledger for the credential escalation, the pre-flight decision entry, and any objection recorded against this file
+  cited_evidence_required: every number in the verdict cites an artifact path and its SHA-256
+  task_plan:
+    - G3.1 this file (done when committed and its digest recorded)
+    - G3.2 world-model interface, sandbox and backtester with unit tests, including a regression test that a windowed backtester fails the single_cell_flip-at-index-1 case
+    - G3.3 E310 runner and config; graded E310 runs (two at 12345, one at 12346); evaluate_g3 checks for E310
+    - G3.4 level accounting, stop rule, planner and exploration fallback exercised on the true simulator with zero model calls; E300 runner with a recorded-response stub; run set manifest tooling
+    - G3.5 model-call adapter, prompt template, leak controls, cost accounting; authentication probe; section 6 item 1 escalation if the probe fails
+    - G3.6 the three pre-flight game-runs; g3_preflight written; item 10 escalation if required
+    - G3.7 the remaining 22 game-runs, one or more per turn, with resumption as needed
+    - G3.8 verifier on a clean tree, C5 self-review (arguments to check by default: budget accounting that under-counts actions, a leak of game sources or replays into prompts, a backtester that certifies on a partial history, a model that memorised the public games), then the referee
+
+kill_rule: >
+  G3 has no mechanism, so there is no mechanism kill. A failed check caused by project code is fixed
+  under the escalation ladder and the affected experiment re-run within graded_sets_max. A REF that
+  completes a full set below rhae_total_min within the ceilings, after one ladder-driven second set,
+  is an engineering finding: it is recorded with the artifacts, and the human is asked under section 6
+  item 7 (routes exhausted) and item 10 (the ceilings are the budget) whether to raise the ceilings or
+  change the model under a successor pre-registration, or to proceed to G4 on a substrate below the
+  competitive standard with that limitation recorded in every later verdict; the threshold is never
+  lowered. A pre-flight projection above 0.35 or with no denominator is escalated under item 10 before
+  the fourth game-run. A credential that cannot be obtained is item 1 and, if an API key is the only
+  route, item 2; neither is climbed under the ladder. A backtester that fails E310 is a defect fixed
+  under the ladder before any graded E300 run, because a REF whose verification is broken produces
+  scores that mean nothing.
+
+known_conflicts_at_authoring:
+  - >
+    Model calls from inside a turn are expected to fail authentication (model_calls.authentication_status_at_authoring);
+    the credential escalation is planned, not improvised, and the components that need no model are
+    built first so the wait costs nothing.
+  - >
+    The usage gauge never fires in headless mode and the CLI has no usage query (docs/EVIDENCE_TOOLING.md
+    section 11 items 2 and 7), so the pre-flight denominator can only come from the human; the file
+    says what happens without it (cost_preflight.no_denominator_rule).
+  - >
+    PROPOSAL_v2.md section 14 item 5 lists the reference architecture "at >= 60 percent RHAE" as a
+    deliverable while section 9 row G3 sets the gate predicate at 55; the gate predicate governs
+    (CLAUDE.md names section 9 for gate predicates), 55.0 is what this file locks, and the referee is
+    asked to note the discrepancy in the verdict.
+  - >
+    The Bash tool inside a turn caps a foreground command at ten minutes, while a game-run may need
+    hours; runs are started in the background or per game across turns, and resumption_rule exists for
+    an invocation cut short. Whether a background process survives the end of a supervisor turn is
+    unknown at authoring and will be recorded in the ledger at G3.4; if it does not, one game-run per
+    turn with resumption is the fallback.
+  - >
+    Every in-turn run records git_dirty true because the supervisor's counter edits (now in gitignored
+    state/counters.json) and the turn's own ledger line are uncommitted at run time; the referee judges
+    reproducibility from replay identity, not from that flag (as G1 and G2).
+  - >
+    The experiments/ skeleton already holds an empty experiments/E300_ref/ directory; E300_ref is the
+    id the constitution's own example uses for the reference architecture and is adopted here. It
+    contains no artifact.
+  - >
+    The three open tooling observations of preregistration/G1.yaml open_tooling_observations remain
+    open; the first genuine usage-limit event, if the pre-flight or the full run triggers one, is to be
+    quoted verbatim into docs/EVIDENCE_TOOLING.md section 11 item 3 from state/tool_errors.jsonl.
