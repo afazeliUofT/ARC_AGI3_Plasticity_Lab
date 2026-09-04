@@ -1,0 +1,389 @@
+{
+  "completion_status": "completed",
+  "config_hash": "af91022c5cf46e80b00b5c940f16700473736b3ca02831db480cfeb4049cf909",
+  "created_utc": "2026-09-04T17:16:44Z",
+  "experiment_id": "E310_ref_backtest_rejection",
+  "extra": {},
+  "results": {
+    "backtest_limits": {
+      "address_space_bytes_max": 2147483648,
+      "backtest_seconds_max": 120.0,
+      "predict_seconds_max": 5.0
+    },
+    "backtest_module_sha256": "7e09fefd8b61e31c5a18eaf0035d5b7ca8309b58f59ef22908a21158b71e5784",
+    "backtester": "full_history_exact",
+    "certification_fields": [
+      "frame",
+      "state",
+      "levels_completed"
+    ],
+    "class_assignment": "balanced_blocks",
+    "control_accepted": 25,
+    "control_trials": 25,
+    "control_trials_per_game": 1,
+    "correct_model_acceptance_fraction": 1.0,
+    "environment_generator_version": "arc-agi-offline-cache-1.0.0",
+    "failure_kinds": [
+      "raised"
+    ],
+    "games": [
+      {
+        "final_frame_sha256_expected": "adf20f7ee731ccfe10ad4fd31442ad6825d23d9d1a3e85fb432a1a3b2b8d810d",
+        "final_frame_sha256_replayed": "adf20f7ee731ccfe10ad4fd31442ad6825d23d9d1a3e85fb432a1a3b2b8d810d",
+        "frame_digest_mismatches": 0,
+        "game_id": "ar25-0c556536",
+        "game_index": 0,
+        "history_length": 85,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "561443f5963ae80ed56f4d30dff3c9fd762fd61ddc571cde35c3b17f00feddb5",
+        "final_frame_sha256_replayed": "561443f5963ae80ed56f4d30dff3c9fd762fd61ddc571cde35c3b17f00feddb5",
+        "frame_digest_mismatches": 0,
+        "game_id": "bp35-0a0ad940",
+        "game_index": 1,
+        "history_length": 42,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "a537171de10ee1a57f92d1b702cb8ffd6f20d1cc6fba76a3923c02c5ac2009de",
+        "final_frame_sha256_replayed": "a537171de10ee1a57f92d1b702cb8ffd6f20d1cc6fba76a3923c02c5ac2009de",
+        "frame_digest_mismatches": 0,
+        "game_id": "cd82-fb555c5d",
+        "game_index": 2,
+        "history_length": 100,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "2ca5a8e684cc83833b7e5e0be0cf748d6c3e462ddc895ea962efc22b7f42e16c",
+        "final_frame_sha256_replayed": "2ca5a8e684cc83833b7e5e0be0cf748d6c3e462ddc895ea962efc22b7f42e16c",
+        "frame_digest_mismatches": 0,
+        "game_id": "cn04-2fe56bfb",
+        "game_index": 3,
+        "history_length": 75,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "e53f71594c00e4154fbcc1a738776bb2bfccdb778798fad66d228f1a115f1119",
+        "final_frame_sha256_replayed": "e53f71594c00e4154fbcc1a738776bb2bfccdb778798fad66d228f1a115f1119",
+        "frame_digest_mismatches": 0,
+        "game_id": "dc22-fdcac232",
+        "game_index": 4,
+        "history_length": 128,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "746df728ba43de70200e374b747f0b92981905e8562bd1167316c097ba0c8bd4",
+        "final_frame_sha256_replayed": "746df728ba43de70200e374b747f0b92981905e8562bd1167316c097ba0c8bd4",
+        "frame_digest_mismatches": 0,
+        "game_id": "ft09-0d8bbf25",
+        "game_index": 5,
+        "history_length": 390,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "d5de47d31a6b5bc48b3ab1669c7c3f5a6c2e8cdc9df387e72e0e5b5754e7160b",
+        "final_frame_sha256_replayed": "d5de47d31a6b5bc48b3ab1669c7c3f5a6c2e8cdc9df387e72e0e5b5754e7160b",
+        "frame_digest_mismatches": 0,
+        "game_id": "g50t-5849a774",
+        "game_index": 6,
+        "history_length": 130,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "4a9fa84d09ccda879752e9897baaf4ed17bd48fa775f5ee18c65337d062afec4",
+        "final_frame_sha256_replayed": "4a9fa84d09ccda879752e9897baaf4ed17bd48fa775f5ee18c65337d062afec4",
+        "frame_digest_mismatches": 0,
+        "game_id": "ka59-38d34dbb",
+        "game_index": 7,
+        "history_length": 100,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "707187a1cfdc79cf99cc735c03ced5c5af99764d2876d215c44a33bb10f77fa5",
+        "final_frame_sha256_replayed": "707187a1cfdc79cf99cc735c03ced5c5af99764d2876d215c44a33bb10f77fa5",
+        "frame_digest_mismatches": 0,
+        "game_id": "lf52-271a04aa",
+        "game_index": 8,
+        "history_length": 88,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "1da6e5948eeefe319e75c5e1eeda3a83a32e4cbc04a4a4d4921c962588bbaba4",
+        "final_frame_sha256_replayed": "1da6e5948eeefe319e75c5e1eeda3a83a32e4cbc04a4a4d4921c962588bbaba4",
+        "frame_digest_mismatches": 0,
+        "game_id": "lp85-305b61c3",
+        "game_index": 9,
+        "history_length": 526,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "f157a7b83d502de920217c6ab562e3658eec9211ab8ebc5979ae0bfbcb70b8f9",
+        "final_frame_sha256_replayed": "f157a7b83d502de920217c6ab562e3658eec9211ab8ebc5979ae0bfbcb70b8f9",
+        "frame_digest_mismatches": 0,
+        "game_id": "ls20-9607627b",
+        "game_index": 10,
+        "history_length": 129,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "4daa84e2b54f2f68192dbcc3d3cc1019be8a9085c0cbf313d682f7fbb33360fd",
+        "final_frame_sha256_replayed": "4daa84e2b54f2f68192dbcc3d3cc1019be8a9085c0cbf313d682f7fbb33360fd",
+        "frame_digest_mismatches": 0,
+        "game_id": "m0r0-492f87ba",
+        "game_index": 11,
+        "history_length": 151,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "328b6c12270890b0b4cb8affeecb061b67230d093f5f2a935248d9c437bca1ab",
+        "final_frame_sha256_replayed": "328b6c12270890b0b4cb8affeecb061b67230d093f5f2a935248d9c437bca1ab",
+        "frame_digest_mismatches": 0,
+        "game_id": "r11l-495a7899",
+        "game_index": 12,
+        "history_length": 60,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "d1f72e3680575ad89df7694859953e2e1909e8f8f586cd7bc08517a183d080a0",
+        "final_frame_sha256_replayed": "d1f72e3680575ad89df7694859953e2e1909e8f8f586cd7bc08517a183d080a0",
+        "frame_digest_mismatches": 0,
+        "game_id": "re86-8af5384d",
+        "game_index": 13,
+        "history_length": 100,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "63dc8448af6d2ef96d4e65b51b3e93d39d04bcc20a07fc81bf95bc9bd7dbd887",
+        "final_frame_sha256_replayed": "63dc8448af6d2ef96d4e65b51b3e93d39d04bcc20a07fc81bf95bc9bd7dbd887",
+        "frame_digest_mismatches": 0,
+        "game_id": "s5i5-18d95033",
+        "game_index": 14,
+        "history_length": 50,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "496de7bb7409b3a4d1e28afd157ab11d870bc5dbcef455a6c49f75a6ea9d1aba",
+        "final_frame_sha256_replayed": "496de7bb7409b3a4d1e28afd157ab11d870bc5dbcef455a6c49f75a6ea9d1aba",
+        "frame_digest_mismatches": 0,
+        "game_id": "sb26-7fbdac44",
+        "game_index": 15,
+        "history_length": 179,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "e3a2b60e4523138b99bc7237351b27cc7e9f947ef13650170f27c32671e248d0",
+        "final_frame_sha256_replayed": "e3a2b60e4523138b99bc7237351b27cc7e9f947ef13650170f27c32671e248d0",
+        "frame_digest_mismatches": 0,
+        "game_id": "sc25-635fd71a",
+        "game_index": 16,
+        "history_length": 64,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "6630dd5df1862400efb59bcaee89ec95babf0091d98e8272a959e88a4fa4a0e0",
+        "final_frame_sha256_replayed": "6630dd5df1862400efb59bcaee89ec95babf0091d98e8272a959e88a4fa4a0e0",
+        "frame_digest_mismatches": 0,
+        "game_id": "sk48-d8078629",
+        "game_index": 17,
+        "history_length": 300,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "b71b1a2baf10495427b97d55f347fd849ad37a75df8a8e5ff3adb1528b4561aa",
+        "final_frame_sha256_replayed": "b71b1a2baf10495427b97d55f347fd849ad37a75df8a8e5ff3adb1528b4561aa",
+        "frame_digest_mismatches": 0,
+        "game_id": "sp80-589a99af",
+        "game_index": 18,
+        "history_length": 30,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "4fc95b8aecb60afc14feb1125f75472b2ef75850c1f030372dd36a024c7c98ce",
+        "final_frame_sha256_replayed": "4fc95b8aecb60afc14feb1125f75472b2ef75850c1f030372dd36a024c7c98ce",
+        "frame_digest_mismatches": 0,
+        "game_id": "su15-1944f8ab",
+        "game_index": 19,
+        "history_length": 90,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "66abcab3721a30d2ff8dd2a76100eeb838344433f80f4993cc0fb774763e5a74",
+        "final_frame_sha256_replayed": "66abcab3721a30d2ff8dd2a76100eeb838344433f80f4993cc0fb774763e5a74",
+        "frame_digest_mismatches": 0,
+        "game_id": "tn36-ef4dde99",
+        "game_index": 20,
+        "history_length": 61,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "546b1e9e590ed7ff39b086f1b77f0560abac79e877fd4a37e6ad98df00161869",
+        "final_frame_sha256_replayed": "546b1e9e590ed7ff39b086f1b77f0560abac79e877fd4a37e6ad98df00161869",
+        "frame_digest_mismatches": 0,
+        "game_id": "tr87-cd924810",
+        "game_index": 21,
+        "history_length": 128,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "0cef3d4bff02a7ff613b272830dace84743290930c047eaff701950f5921c310",
+        "final_frame_sha256_replayed": "0cef3d4bff02a7ff613b272830dace84743290930c047eaff701950f5921c310",
+        "frame_digest_mismatches": 0,
+        "game_id": "tu93-0768757b",
+        "game_index": 22,
+        "history_length": 50,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "633c527eb8c2976690734079652f5952533d37fc6c2ba70d675a9d9f54cf40bc",
+        "final_frame_sha256_replayed": "633c527eb8c2976690734079652f5952533d37fc6c2ba70d675a9d9f54cf40bc",
+        "frame_digest_mismatches": 0,
+        "game_id": "vc33-5430563c",
+        "game_index": 23,
+        "history_length": 50,
+        "replay_identity": true
+      },
+      {
+        "final_frame_sha256_expected": "fa1dedcb39a9dd94c11976d221f524d9532a2f8f82163011bc6968e208f28fa2",
+        "final_frame_sha256_replayed": "fa1dedcb39a9dd94c11976d221f524d9532a2f8f82163011bc6968e208f28fa2",
+        "frame_digest_mismatches": 0,
+        "game_id": "wa30-ee6fef47",
+        "game_index": 24,
+        "history_length": 200,
+        "replay_identity": true
+      }
+    ],
+    "generator_sha256": "9a0ee6510e5d6377e021d33fb0949b3479a5090b339e432087b18d3139e53a52",
+    "history_length_checked_equal_length_all": false,
+    "history_length_checked_unequal_trials": [
+      {
+        "game_id": "cn04-2fe56bfb",
+        "kind": "wrong_model",
+        "trial_index": 4
+      }
+    ],
+    "history_source": {
+      "environment_seed": 12345,
+      "results_sha256": "2700036d38e78412a63030d4ef1979fc8396a0e18f2aadce9c872e0670ac05d0",
+      "run_id": "20260904T074939Z_seed12345_8383cad8",
+      "sha256sums_sha256": "6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190",
+      "transitions_path": "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/transitions.jsonl",
+      "transitions_sha256": "b09cde6f7168f573cd2f36b77d34cec02d149162658782258aa83a8d503fa1b3"
+    },
+    "interface_sha256": "97624aa135788f61d25a9ac2bb8442ccfbe317c7152abaea58de48af6b252164",
+    "mutation_classes": [
+      "identity_model",
+      "stale_frame",
+      "single_cell_flip",
+      "colour_permutation",
+      "action_semantics_swap",
+      "levels_completed_off_by_one",
+      "state_field_wrong",
+      "other_game_simulator"
+    ],
+    "mutation_classes_used": [
+      "action_semantics_swap",
+      "colour_permutation",
+      "identity_model",
+      "levels_completed_off_by_one",
+      "other_game_simulator",
+      "single_cell_flip",
+      "stale_frame",
+      "state_field_wrong"
+    ],
+    "mutations_sha256": "bf8b6e06367fa6b2d50335ba067c5cfe6758381d37f44882d6013e5d7f24aaea",
+    "network_guard": "NetworkGuard",
+    "non_vacuous_trials": 250,
+    "operation_mode": "OFFLINE",
+    "per_class": {
+      "action_semantics_swap": {
+        "non_vacuous_trials": 31,
+        "redraws_total": 1,
+        "rejected_trials": 31,
+        "rejection_fraction": 1.0,
+        "trials": 31,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "colour_permutation": {
+        "non_vacuous_trials": 33,
+        "redraws_total": 0,
+        "rejected_trials": 33,
+        "rejection_fraction": 1.0,
+        "trials": 33,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "identity_model": {
+        "non_vacuous_trials": 35,
+        "redraws_total": 0,
+        "rejected_trials": 35,
+        "rejection_fraction": 1.0,
+        "trials": 35,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "levels_completed_off_by_one": {
+        "non_vacuous_trials": 30,
+        "redraws_total": 0,
+        "rejected_trials": 30,
+        "rejection_fraction": 1.0,
+        "trials": 30,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "other_game_simulator": {
+        "non_vacuous_trials": 31,
+        "redraws_total": 0,
+        "rejected_trials": 31,
+        "rejection_fraction": 1.0,
+        "trials": 31,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "single_cell_flip": {
+        "non_vacuous_trials": 31,
+        "redraws_total": 0,
+        "rejected_trials": 31,
+        "rejection_fraction": 1.0,
+        "trials": 31,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "stale_frame": {
+        "non_vacuous_trials": 30,
+        "redraws_total": 0,
+        "rejected_trials": 30,
+        "rejection_fraction": 1.0,
+        "trials": 30,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      },
+      "state_field_wrong": {
+        "non_vacuous_trials": 29,
+        "redraws_total": 0,
+        "rejected_trials": 29,
+        "rejection_fraction": 1.0,
+        "trials": 29,
+        "vacuous_rejected_anyway": 0,
+        "vacuous_trials": 0
+      }
+    },
+    "redraw_max": 20,
+    "rejected_trials": 250,
+    "rejection_denominator": "non_vacuous_trials",
+    "rejection_fraction": 1.0,
+    "replay_divergent_games": 0,
+    "replay_identity_games": 25,
+    "seed": 12345,
+    "trial_seed_derivation": "default_rng([seed, game_index]) for the class plan; default_rng([seed, game_index, trial_index]) for the mutation parameters",
+    "trial_seeds_per_game": 10,
+    "trials_backtested": 275,
+    "true_model_sha256": "33fff33df81cb0944036e0497a18fd0760d8918f8803819bee583a4b9e8084aa",
+    "vacuous_trials": 0,
+    "wrong_model_trials": 250
+  },
+  "run_id": "20260904T171644Z_seed12345_7a06fb6f",
+  "seed": 12345,
+  "wallclock_seconds": 42.607702204957604
+}

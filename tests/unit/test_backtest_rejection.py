@@ -390,6 +390,35 @@ def test_history_source_digest_mismatch_is_refused(tmp_path: Path) -> None:
         br.load_history_source(run / "transitions.jsonl", good)
 
 
+def test_history_source_record_nests_no_excluded_name(tmp_path: Path) -> None:
+    """Regression (G3.3, 2026-09-04): the first three graded E310 runs recorded the G1 run id
+    under ``history_source.run_id``; ``run_id`` is an excluded field and the G1
+    exclusion_nesting_rule allows excluded names only at the top level of results.json, so
+    every run failed the verifier's exclusion_nesting check. The record must use another
+    name and, more generally, never nest an excluded name."""
+    vr = _load_module("verify_run")
+    cfg = yaml.safe_load((ROOT / "configs" / "nondeterministic_fields.yaml").read_text())
+    excluded = frozenset(
+        str(name) for names in cfg["excluded_fields"].values() for name in names or []
+    )
+    assert "run_id" in excluded
+    source = br.HistorySource(
+        run_dir=tmp_path,
+        transitions_path=tmp_path / "transitions.jsonl",
+        transitions_sha256="t" * 64,
+        sha256sums_sha256="s" * 64,
+        results_sha256="r" * 64,
+        environment_seed=12345,
+        run_id="20260904T074939Z_seed12345_8383cad8",
+        final_digests={},
+        steps_taken={},
+    )
+    record = source.record(tmp_path)
+    assert record["history_run_id"] == source.run_id
+    results = {"results": {"history_source": record}}
+    assert vr.excluded_key_hits(results, excluded) == []
+
+
 def _load_module(name: str) -> ModuleType:
     if name in sys.modules:
         return sys.modules[name]

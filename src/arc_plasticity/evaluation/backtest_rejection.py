@@ -226,7 +226,10 @@ class HistorySource:
             "sha256sums_sha256": self.sha256sums_sha256,
             "results_sha256": self.results_sha256,
             "environment_seed": self.environment_seed,
-            "run_id": self.run_id,
+            # Not "run_id": that name is an excluded field (configs/nondeterministic_fields.yaml)
+            # and the G1 exclusion_nesting_rule allows excluded names only at the top level of
+            # results.json. The first three graded runs failed exclusion_nesting on this key.
+            "history_run_id": self.run_id,
         }
 
 

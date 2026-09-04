@@ -74,6 +74,31 @@ G2 conventions (``preregistration/G2.yaml`` ``experiment``, ``human_baselines``,
   ``human_replays.derive_vector_case``, the same paths the unit tests use.
 * The determinism check compares every file in ``determinism_protocol.compared_files`` across
   the fixed-seed runs and has no contrast group (``contrast_runs_required`` 0).
+
+G3 conventions (``preregistration/G3.yaml`` ``backtest_rejection_experiment``,
+``verification``), which the E310 runner (``arc_plasticity.evaluation.backtest_rejection``)
+produces and this verifier consumes:
+
+* ``results.json["results"]`` carries ``G3_E310_RESULTS_KEYS``: ``history_source`` (the G1
+  run's ``transitions_path``, ``transitions_sha256``, ``sha256sums_sha256``,
+  ``results_sha256``, ``environment_seed``, ``history_run_id`` - not ``run_id``, which is
+  an excluded name and may only occur at the top level), ``games[]`` (``game_id``,
+  ``history_length``, ``final_frame_sha256_expected``, ``final_frame_sha256_replayed``,
+  ``frame_digest_mismatches``, ``replay_identity``), the trial counts and fractions,
+  ``per_class``, ``backtest_limits`` and the module digests.
+* ``transitions.jsonl`` holds one row per trial (``game_id``, ``trial_index``, ``kind``,
+  ``mutation_class``, ``vacuous``, ``backtested``); ``hypotheses.jsonl`` holds the
+  backtester's record per trial (``certified``, ``mismatches``, ``history_length``,
+  ``history_length_checked``, ``failure_kind``, module digests). The verifier recomputes
+  every rejection number from these two files and grades the recomputation; results.json
+  must agree with it.
+* The G1 history run is located from ``history_source.transitions_path`` and bound to the
+  hash-locked ``g1_history_run_sha256sums_sha256``; its ``results.json`` supplies the final
+  frame digests and step counts the E310 histories must reproduce.
+* The E310 determinism protocol lives under ``backtest_rejection_experiment``; the G0
+  exclusion bounds apply, as G2.
+* E300 checks whose artifacts arrive with G3.4-G3.8 are reported as failures (never passes,
+  never skips) until their evaluators exist, so an incomplete G3 cannot read as PASS.
 """
 
 from __future__ import annotations
@@ -983,16 +1008,20 @@ def check_offline_run(
     *,
     mode_key: str = "operation_mode",
     expected_mode: str | None = None,
+    model_allowed: int | None = None,
 ) -> CheckResult:
     """Every run declared zero network and zero model calls, attempted none, ran offline.
 
     ``mode_key`` names the results.json field carrying the mode (G1 ``operation_mode``, G2
     ``operation``); ``expected_mode`` defaults to ``experiment.operation_mode`` of the
-    pre-registration.
+    pre-registration. ``model_allowed`` defaults to ``thresholds.model_calls_allowed``; G3
+    passes the E310 experiment's own ``model_calls_allowed`` (zero) because its thresholds
+    carry a per-game model-call ceiling for E300 instead.
     """
     net_allowed = int(threshold(prereg, "network_calls_allowed"))
     attempts_max = int(threshold(prereg, "network_attempts_max"))
-    model_allowed = int(threshold(prereg, "model_calls_allowed"))
+    if model_allowed is None:
+        model_allowed = int(threshold(prereg, "model_calls_allowed"))
     if expected_mode is None:
         expected_mode = str(section(prereg, "experiment").get("operation_mode") or "")
     if not expected_mode:
@@ -1995,7 +2024,608 @@ def evaluate_g2(
     return checks
 
 
-GATE_EVALUATORS = {"G0": evaluate_g0, "G1": evaluate_g1, "G2": evaluate_g2}
+# --------------------------------------------------------------------------- G3 checks
+
+G3_E310_RESULTS_KEYS: tuple[str, ...] = (
+    "operation_mode",
+    "network_guard",
+    "history_source",
+    "games",
+    "wrong_model_trials",
+    "vacuous_trials",
+    "non_vacuous_trials",
+    "rejected_trials",
+    "rejection_fraction",
+    "per_class",
+    "control_trials",
+    "control_accepted",
+    "correct_model_acceptance_fraction",
+    "replay_identity_games",
+    "replay_divergent_games",
+    "history_length_checked_equal_length_all",
+    "backtest_limits",
+    "backtest_module_sha256",
+    "interface_sha256",
+)
+
+G3_E310_GAME_KEYS: tuple[str, ...] = (
+    "game_id",
+    "history_length",
+    "final_frame_sha256_expected",
+    "final_frame_sha256_replayed",
+    "frame_digest_mismatches",
+    "replay_identity",
+)
+
+G3_E310_HISTORY_SOURCE_KEYS: tuple[str, ...] = (
+    "transitions_path",
+    "transitions_sha256",
+    "sha256sums_sha256",
+    "results_sha256",
+    "environment_seed",
+    "history_run_id",
+)
+
+G3_E310_TRANSITION_KEYS: tuple[str, ...] = (
+    "game_id",
+    "trial_index",
+    "kind",
+    "mutation_class",
+    "vacuous",
+    "backtested",
+)
+
+G3_E310_HYPOTHESIS_KEYS: tuple[str, ...] = (
+    "game_id",
+    "trial_index",
+    "kind",
+    "mutation_class",
+    "certified",
+    "mismatches",
+    "history_length",
+    "history_length_checked",
+    "failure_kind",
+    "backtest_module_sha256",
+    "interface_sha256",
+)
+
+G3_E310_LIMIT_THRESHOLDS: tuple[tuple[str, str], ...] = (
+    ("backtest_seconds_max", "sandbox_backtest_seconds_max"),
+    ("predict_seconds_max", "sandbox_predict_seconds_max"),
+    ("address_space_bytes_max", "sandbox_address_space_bytes_max"),
+)
+
+# E300 checks named in verification.checks_in_order whose evaluators arrive with the
+# artifacts they grade (task_plan G3.4-G3.8). Until then each is a failure, never a pass.
+G3_E300_PENDING_CHECKS: tuple[tuple[str, str], ...] = (
+    ("run_set_manifest", "experiments/E300_ref_run_set.json and artifacts/E300_ref/ (G3.4)"),
+    ("official_baselines_used", "artifacts/E300_ref/<run>/level_accounting.json (G3.4)"),
+    ("action_budget_enforced", "artifacts/E300_ref/<run>/level_accounting.json (G3.4)"),
+    ("replay_final_frame_identity", "artifacts/E300_ref/<run>/transitions.jsonl (G3.4)"),
+    ("rhae_recomputed", "artifacts/E300_ref/<run>/rhae.json (G3.4)"),
+    ("model_call_accounting", "artifacts/E300_ref/<run>/model_calls.jsonl (G3.5)"),
+    ("verification_active", "artifacts/E300_ref/<run>/plans.jsonl and backtests.jsonl (G3.4)"),
+    ("preflight_recorded", "state/BUDGET.json g3_preflight and the three pre-flight runs (G3.6)"),
+)
+
+
+def _pending_e300_check(name: str, needs: str, artifacts_root: Path) -> CheckResult:
+    """A pre-registered E300 check that cannot be evaluated yet: a failure, not a skip."""
+    return CheckResult(
+        name,
+        passed=False,
+        observed={
+            "status": "not_yet_evaluable",
+            "needs": needs,
+            "artifacts_root_present": artifacts_root.exists(),
+        },
+        threshold="evaluator added with its artifacts (verification.task_plan); "
+        "never a pass until it exists",
+        detail="not yet evaluable; reported as a failure so an incomplete G3 cannot pass",
+        evidence=[_rel(artifacts_root)],
+    )
+
+
+def _g3_e310_section(prereg: dict[str, Any]) -> dict[str, Any]:
+    return section(prereg, "backtest_rejection_experiment")
+
+
+def _g3_e310_view(prereg: dict[str, Any]) -> dict[str, Any]:
+    """The pre-registration with the E310 determinism protocol hoisted to the top level, so
+    the G0/G1 determinism and exclusion checks apply to E310 unchanged."""
+    proto = _g3_e310_section(prereg).get("determinism_protocol")
+    if not isinstance(proto, dict):
+        raise PreregistrationError("backtest_rejection_experiment.determinism_protocol missing")
+    return {**prereg, "determinism_protocol": proto}
+
+
+def _g3_cache_manifest_path(prereg: dict[str, Any]) -> str:
+    text = str(section(prereg, "experiment").get("cache_manifest") or "").strip()
+    rel = text.split()[0] if text else ""
+    if not rel:
+        raise PreregistrationError("experiment.cache_manifest missing")
+    return rel
+
+
+def check_cache_manifest_locked(prereg: dict[str, Any], root: Path = ROOT) -> CheckResult:
+    """The committed cache manifest has the hash-locked digest, describes environment_files/
+    exactly (as G1) and uv.lock pins arc-agi at the locked version."""
+    locked = str(threshold(prereg, "cache_manifest_sha256")).lower()
+    rel = _g3_cache_manifest_path(prereg)
+    path = root / rel
+    problems: list[str] = []
+    digest = sha256_file(path) if path.exists() else None
+    if digest != locked:
+        problems.append(f"{rel} sha256 {digest!r} != locked {locked!r}")
+    drift = check_environment_cache_manifest(
+        {**prereg, "cache_warming": {"manifest_path": rel}}, root
+    )
+    version = check_arc_agi_version_pinned(prereg, root)
+    for sub in (drift, version):
+        if not sub.passed:
+            sub_problems = sub.observed.get("problems") if isinstance(sub.observed, dict) else None
+            problems.append(f"{sub.name}: {sub_problems}")
+    return CheckResult(
+        "cache_manifest_locked",
+        passed=not problems,
+        observed={
+            "manifest": rel,
+            "sha256": digest,
+            drift.name: drift.observed,
+            version.name: version.observed,
+            "problems": problems,
+        },
+        threshold={"cache_manifest_sha256": locked, **drift.threshold, **version.threshold},
+        evidence=[rel, *drift.evidence, *version.evidence],
+    )
+
+
+def _read_jsonl_records(
+    run: Path, name: str, required: tuple[str, ...], problems: list[str]
+) -> list[dict[str, Any]]:
+    path = run / name
+    if not path.exists():
+        problems.append(f"{run.name}: {name} missing")
+        return []
+    records: list[dict[str, Any]] = []
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except ValueError as exc:
+            problems.append(f"{run.name}: {name} line {lineno}: {exc}")
+            continue
+        if not isinstance(rec, dict):
+            problems.append(f"{run.name}: {name} line {lineno} is not a mapping")
+            continue
+        missing = [k for k in required if k not in rec]
+        if missing:
+            problems.append(f"{run.name}: {name} line {lineno} lacks {missing}")
+            continue
+        records.append(rec)
+    return records
+
+
+def _parse_sha256sums(path: Path) -> dict[str, str]:
+    listed: dict[str, str] = {}
+    for line in path.read_text().splitlines():
+        m = re.match(r"^([0-9a-fA-F]{64})\s+\*?(.+)$", line)
+        if m:
+            listed[m.group(2).strip()] = m.group(1).lower()
+    return listed
+
+
+def _g1_history_run(
+    prereg: dict[str, Any], root: Path, run_name: str, source: Any, problems: list[str]
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Locate the G1 run the E310 histories came from and bind it to the locked digest.
+
+    Returns the G1 per-game records keyed by game_id and the evidence paths read. The path
+    comes from the run's own ``history_source`` record; the binding comes from the
+    pre-registration's ``g1_history_run_sha256sums_sha256``, never from the record.
+    """
+    locked = str(threshold(prereg, "g1_history_run_sha256sums_sha256")).lower()
+    if not isinstance(source, dict):
+        problems.append(f"{run_name}: history_source is not a mapping")
+        return {}, []
+    missing = [k for k in G3_E310_HISTORY_SOURCE_KEYS if k not in source]
+    if missing:
+        problems.append(f"{run_name}: history_source lacks {missing}")
+        return {}, []
+    transitions = root / str(source["transitions_path"])
+    g1_run = transitions.parent
+    sums = g1_run / "SHA256SUMS"
+    results = g1_run / "results.json"
+    evidence = [_rel(p) for p in (sums, transitions, results)]
+    if not (sums.exists() and transitions.exists() and results.exists()):
+        problems.append(f"{run_name}: G1 history run {_rel(g1_run)} is incomplete")
+        return {}, evidence
+    sums_digest = sha256_file(sums)
+    if sums_digest != locked:
+        problems.append(f"{run_name}: G1 run SHA256SUMS sha256 {sums_digest} != locked {locked}")
+    if str(source["sha256sums_sha256"]).lower() != locked:
+        problems.append(f"{run_name}: recorded history sha256sums_sha256 != locked digest")
+    listed = _parse_sha256sums(sums)
+    t_digest = sha256_file(transitions)
+    if t_digest != str(source["transitions_sha256"]).lower():
+        problems.append(f"{run_name}: G1 transitions.jsonl sha256 {t_digest} != recorded")
+    if listed.get("transitions.jsonl") != t_digest:
+        problems.append(f"{run_name}: G1 transitions.jsonl is not sealed by its SHA256SUMS")
+    r_digest = sha256_file(results)
+    if r_digest != str(source["results_sha256"]).lower():
+        problems.append(f"{run_name}: G1 results.json sha256 {r_digest} != recorded")
+    if listed.get("results.json") != r_digest:
+        problems.append(f"{run_name}: G1 results.json is not sealed by its SHA256SUMS")
+    manifest = _load_manifest(g1_run) or {}
+    if manifest.get("run_id") != source["history_run_id"]:
+        problems.append(f"{run_name}: G1 manifest run_id {manifest.get('run_id')!r} != recorded")
+    if manifest.get("seed") != source["environment_seed"]:
+        problems.append(
+            f"{run_name}: G1 manifest seed {manifest.get('seed')!r} != recorded environment_seed"
+        )
+    records, rec_problems = _game_records(g1_run)
+    problems.extend(f"{run_name}: G1 {p}" for p in rec_problems)
+    return {str(r["game_id"]): r for r in records}, evidence
+
+
+def check_backtest_rejection(
+    prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT
+) -> CheckResult:
+    """E310: the backtester rejects wrong models and accepts the true one, recomputed.
+
+    Every count and fraction is recomputed from ``hypotheses.jsonl`` (the backtester's
+    records) joined with ``transitions.jsonl`` (the trial table, which carries ``vacuous``)
+    and graded on the recomputation; ``results.json`` must agree with it. The histories are
+    bound to the G1 run by the locked SHA256SUMS digest and must reproduce its final frame
+    digests and step counts. The sandbox limits must be the locked ones, the recorded
+    backtester digest must be the live module's and the same across runs, and every record's
+    ``certified`` must follow from its mismatches, coverage and failure kind.
+    """
+    from arc_plasticity.hypotheses import backtest as backtest_mod
+
+    wrong_min = int(threshold(prereg, "backtest_wrong_model_trials_min"))
+    control_min = int(threshold(prereg, "backtest_control_trials_min"))
+    classes_min = int(threshold(prereg, "backtest_mutation_classes_min"))
+    per_class_min = int(threshold(prereg, "backtest_trials_per_class_min"))
+    vacuous_max = int(threshold(prereg, "backtest_vacuous_trials_max"))
+    rejection_min = float(threshold(prereg, "backtest_rejection_fraction_min"))
+    acceptance_min = float(threshold(prereg, "backtest_correct_model_acceptance_min"))
+    history_min = int(threshold(prereg, "backtest_history_min_length"))
+    mismatch_max = int(threshold(prereg, "backtest_mismatches_for_certification_max"))
+    full_history = bool(threshold(prereg, "backtest_must_cover_full_history"))
+    games_total = int(threshold(prereg, "public_games_total"))
+    identity_min = float(threshold(prereg, "replay_final_frame_identity_min"))
+    divergent_max = int(threshold(prereg, "replay_divergent_games_max"))
+    limits_expected = {key: threshold(prereg, name) for key, name in G3_E310_LIMIT_THRESHOLDS}
+    live = {
+        "backtest_module_sha256": backtest_mod.backtest_module_sha256(),
+        "interface_sha256": backtest_mod.interface_sha256(),
+    }
+
+    problems: list[str] = []
+    runs = _completed_runs(artifacts_root, problems)
+    per_run: dict[str, dict[str, Any]] = {}
+    evidence: list[str] = []
+    module_digests: set[str] = set()
+    for run in runs:
+        name = run.name
+        evidence.extend(
+            _rel(run / f) for f in ("results.json", "transitions.jsonl", "hypotheses.jsonl")
+        )
+        try:
+            results = _runner_results(_load_json(run / "results.json"))
+        except (OSError, ValueError) as exc:
+            problems.append(f"{name}: results.json unreadable: {exc}")
+            continue
+        missing = [k for k in G3_E310_RESULTS_KEYS if k not in results]
+        if missing:
+            problems.append(f"{name}: results.json lacks {missing}")
+            continue
+
+        # Histories: located from the run's record, bound to the locked G1 digest.
+        g1_games, g1_evidence = _g1_history_run(
+            prereg, root, name, results["history_source"], problems
+        )
+        evidence.extend(e for e in g1_evidence if e not in evidence)
+        games = results["games"]
+        if not isinstance(games, list):
+            problems.append(f"{name}: games is not a list")
+            games = []
+        identical = 0
+        divergent: list[str] = []
+        game_ids: list[str] = []
+        for i, game in enumerate(games):
+            if not isinstance(game, dict) or any(k not in game for k in G3_E310_GAME_KEYS):
+                problems.append(f"{name}: game record {i} lacks {list(G3_E310_GAME_KEYS)}")
+                continue
+            game_id = str(game["game_id"])
+            game_ids.append(game_id)
+            ref = g1_games.get(game_id)
+            if ref is None:
+                problems.append(f"{name}: {game_id} is not in the G1 history run")
+                divergent.append(game_id)
+                continue
+            expected = str(ref["final_frame_sha256"])
+            ok = (
+                game["final_frame_sha256_expected"] == expected
+                and game["final_frame_sha256_replayed"] == expected
+                and game["frame_digest_mismatches"] == 0
+                and game["replay_identity"] is True
+            )
+            if ok:
+                identical += 1
+            else:
+                divergent.append(game_id)
+            length = int(game["history_length"])
+            if length != int(ref["steps_taken"]):
+                problems.append(
+                    f"{name}: {game_id} history_length {length} != G1 steps_taken "
+                    f"{ref['steps_taken']}"
+                )
+            if length < history_min:
+                problems.append(f"{name}: {game_id} history_length {length} < {history_min}")
+        if len(game_ids) != games_total:
+            problems.append(f"{name}: {len(game_ids)} games, required {games_total}")
+        if g1_games and set(game_ids) != set(g1_games):
+            problems.append(f"{name}: game set differs from the G1 history run")
+        identity = (identical / len(game_ids)) if game_ids else 0.0
+        if identity < identity_min:
+            problems.append(f"{name}: replay identity {identity} < {identity_min}")
+        if len(divergent) > divergent_max:
+            problems.append(f"{name}: divergent games {divergent} (max {divergent_max})")
+        if results["replay_identity_games"] != identical:
+            problems.append(f"{name}: results replay_identity_games != recomputed {identical}")
+        if results["replay_divergent_games"] != len(divergent):
+            problems.append(f"{name}: results replay_divergent_games != recomputed")
+
+        # Trials: recomputed from the backtester's records joined with the trial table.
+        transitions = _read_jsonl_records(
+            run, "transitions.jsonl", G3_E310_TRANSITION_KEYS, problems
+        )
+        hyps = _read_jsonl_records(run, "hypotheses.jsonl", G3_E310_HYPOTHESIS_KEYS, problems)
+        trial_table: dict[tuple[str, int], dict[str, Any]] = {}
+        for t in transitions:
+            key = (str(t["game_id"]), int(t["trial_index"]))
+            if key in trial_table:
+                problems.append(f"{name}: duplicate trial {key} in transitions.jsonl")
+            trial_table[key] = t
+        hyp_keys = [(str(h["game_id"]), int(h["trial_index"])) for h in hyps]
+        if len(set(hyp_keys)) != len(hyp_keys):
+            problems.append(f"{name}: duplicate trial records in hypotheses.jsonl")
+        if set(hyp_keys) != set(trial_table):
+            problems.append(
+                f"{name}: hypotheses.jsonl trials != transitions.jsonl trials "
+                f"(every trial must be backtested exactly once)"
+            )
+        inconsistent = 0
+        partial_certified = 0
+        module_mismatches = 0
+        wrong: list[tuple[dict[str, Any], dict[str, Any] | None]] = []
+        controls: list[dict[str, Any]] = []
+        for h in hyps:
+            key = (str(h["game_id"]), int(h["trial_index"]))
+            checked, length = int(h["history_length_checked"]), int(h["history_length"])
+            expected_certified = (
+                int(h["mismatches"]) <= mismatch_max
+                and checked == length
+                and h["failure_kind"] is None
+            )
+            if bool(h["certified"]) != expected_certified:
+                inconsistent += 1
+            if full_history and bool(h["certified"]) and checked != length:
+                partial_certified += 1
+            if (
+                h["backtest_module_sha256"] != results["backtest_module_sha256"]
+                or h["interface_sha256"] != results["interface_sha256"]
+            ):
+                module_mismatches += 1
+            if h["kind"] == "wrong_model":
+                wrong.append((h, trial_table.get(key)))
+            elif h["kind"] == "control":
+                controls.append(h)
+            else:
+                problems.append(f"{name}: trial {key} has kind {h['kind']!r}")
+        if inconsistent:
+            problems.append(
+                f"{name}: {inconsistent} records whose certified flag does not follow from "
+                f"mismatches <= {mismatch_max}, full coverage and no failure"
+            )
+        if partial_certified:
+            problems.append(f"{name}: {partial_certified} certifications on a partial history")
+        if module_mismatches:
+            problems.append(f"{name}: {module_mismatches} records with other module digests")
+        non_vacuous = [
+            (h, trial) for h, trial in wrong if trial is not None and not bool(trial["vacuous"])
+        ]
+        rejected = [h for h, _ in non_vacuous if not bool(h["certified"])]
+        vacuous = len(wrong) - len(non_vacuous)
+        per_class: dict[str, dict[str, int]] = {}
+        for h, trial in wrong:
+            cls = str(h["mutation_class"])
+            row = per_class.setdefault(cls, {"trials": 0, "non_vacuous": 0, "rejected": 0})
+            row["trials"] += 1
+            if trial is not None and not bool(trial["vacuous"]):
+                row["non_vacuous"] += 1
+                if not bool(h["certified"]):
+                    row["rejected"] += 1
+        rejection = (len(rejected) / len(non_vacuous)) if non_vacuous else 0.0
+        accepted = sum(1 for h in controls if bool(h["certified"]))
+        acceptance = (accepted / len(controls)) if controls else 0.0
+
+        if len(wrong) < wrong_min:
+            problems.append(f"{name}: wrong-model trials {len(wrong)} < {wrong_min}")
+        if len(controls) < control_min:
+            problems.append(f"{name}: control trials {len(controls)} < {control_min}")
+        if len(per_class) < classes_min:
+            problems.append(f"{name}: {len(per_class)} mutation classes < {classes_min}")
+        for cls, row in sorted(per_class.items()):
+            if row["trials"] < per_class_min:
+                problems.append(f"{name}: class {cls} has {row['trials']} trials < {per_class_min}")
+        if vacuous > vacuous_max:
+            problems.append(f"{name}: vacuous trials {vacuous} > {vacuous_max}")
+        if rejection < rejection_min:
+            problems.append(f"{name}: rejection fraction {rejection} < {rejection_min}")
+        if acceptance < acceptance_min:
+            problems.append(f"{name}: correct-model acceptance {acceptance} < {acceptance_min}")
+
+        recorded = {
+            "wrong_model_trials": len(wrong),
+            "vacuous_trials": vacuous,
+            "non_vacuous_trials": len(non_vacuous),
+            "rejected_trials": len(rejected),
+            "rejection_fraction": rejection,
+            "control_trials": len(controls),
+            "control_accepted": accepted,
+            "correct_model_acceptance_fraction": acceptance,
+        }
+        for field_name, value in recorded.items():
+            if results[field_name] != value:
+                problems.append(
+                    f"{name}: results {field_name} {results[field_name]!r} != recomputed {value!r}"
+                )
+        results_classes = results["per_class"] if isinstance(results["per_class"], dict) else {}
+        for cls, row in per_class.items():
+            rec = results_classes.get(cls)
+            if (
+                not isinstance(rec, dict)
+                or rec.get("trials") != row["trials"]
+                or rec.get("rejected_trials") != row["rejected"]
+            ):
+                problems.append(f"{name}: results per_class[{cls}] disagrees with recomputation")
+
+        # The sandbox limits and the backtester are the pre-registered ones.
+        limits = results["backtest_limits"] if isinstance(results["backtest_limits"], dict) else {}
+        for limit_name, expected_value in limits_expected.items():
+            if limit_name not in limits or float(limits[limit_name]) != float(expected_value):
+                problems.append(
+                    f"{name}: backtest_limits.{limit_name} {limits.get(limit_name)!r} != "
+                    f"{expected_value!r}"
+                )
+        for digest_name, digest in live.items():
+            if results[digest_name] != digest:
+                problems.append(
+                    f"{name}: results {digest_name} {results[digest_name]!r} != live module {digest}"
+                )
+        module_digests.add(str(results["backtest_module_sha256"]))
+
+        per_run[name] = {
+            "games": len(game_ids),
+            "replay_identity": identity,
+            "divergent": divergent,
+            "wrong_model_trials": len(wrong),
+            "vacuous_trials": vacuous,
+            "rejected_trials": len(rejected),
+            "rejection_fraction": rejection,
+            "per_class": per_class,
+            "control_trials": len(controls),
+            "control_accepted": accepted,
+            "correct_model_acceptance_fraction": acceptance,
+            "inconsistent_certifications": inconsistent,
+            "history_length_checked_equal_length_all": results[
+                "history_length_checked_equal_length_all"
+            ],
+            "backtest_limits": limits,
+            "backtest_module_sha256": results["backtest_module_sha256"],
+        }
+    if not runs:
+        problems.append(f"no completed run under {_rel(artifacts_root)}")
+    if len(module_digests) > 1:
+        problems.append(f"backtest_module_sha256 differs across runs: {sorted(module_digests)}")
+    return CheckResult(
+        "backtest_rejection",
+        passed=bool(runs) and not problems,
+        observed={"runs": per_run, "live_modules": live, "problems": problems},
+        threshold={
+            "backtest_wrong_model_trials_min": wrong_min,
+            "backtest_control_trials_min": control_min,
+            "backtest_mutation_classes_min": classes_min,
+            "backtest_trials_per_class_min": per_class_min,
+            "backtest_vacuous_trials_max": vacuous_max,
+            "backtest_rejection_fraction_min": rejection_min,
+            "backtest_correct_model_acceptance_min": acceptance_min,
+            "backtest_history_min_length": history_min,
+            "backtest_mismatches_for_certification_max": mismatch_max,
+            "backtest_must_cover_full_history": full_history,
+            "public_games_total": games_total,
+            "replay_final_frame_identity_min": identity_min,
+            "replay_divergent_games_max": divergent_max,
+            "g1_history_run_sha256sums_sha256": threshold(
+                prereg, "g1_history_run_sha256sums_sha256"
+            ),
+            "backtest_limits": limits_expected,
+        },
+        evidence=evidence,
+    )
+
+
+def evaluate_g3(
+    prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT, skip_tooling: bool = False
+) -> list[CheckResult]:
+    """G3 checks in the order ``verification.checks_in_order`` lists them.
+
+    ``artifacts_root`` is the E300 root (``verification.artifacts_root``); the E310 root is
+    ``verification.secondary_artifacts_root``. Checks over E310 carry the ``_e310`` suffix.
+    The E300 checks in ``G3_E300_PENDING_CHECKS`` are failures until their evaluators arrive
+    with the artifacts they grade.
+    """
+    verification = section(prereg, "verification")
+    e310_rel = str(verification.get("secondary_artifacts_root") or "")
+    if not e310_rel:
+        raise PreregistrationError("verification.secondary_artifacts_root missing")
+    e310_root = root / e310_rel
+    e310 = _g3_e310_section(prereg)
+    if "model_calls_allowed" not in e310:
+        raise PreregistrationError("backtest_rejection_experiment.model_calls_allowed missing")
+    e310_model_calls = int(e310["model_calls_allowed"])
+    view = _g3_e310_view(prereg)
+    pending = dict(G3_E300_PENDING_CHECKS)
+
+    def suffixed(check: CheckResult) -> CheckResult:
+        check.name = f"{check.name}_e310"
+        return check
+
+    checks: list[CheckResult] = []
+    checks.append(check_cache_manifest_locked(prereg, root))
+    checks.append(
+        _pending_e300_check("run_set_manifest", pending["run_set_manifest"], artifacts_root)
+    )
+    checks.append(suffixed(check_run_completeness(e310_root)))
+    checks.append(suffixed(check_sha256sums(prereg, e310_root)))
+    checks.append(suffixed(check_offline_run(prereg, e310_root, model_allowed=e310_model_calls)))
+    for name in (
+        "official_baselines_used",
+        "action_budget_enforced",
+        "replay_final_frame_identity",
+        "rhae_recomputed",
+        "model_call_accounting",
+        "verification_active",
+    ):
+        checks.append(_pending_e300_check(name, pending[name], artifacts_root))
+    checks.append(check_backtest_rejection(prereg, e310_root, root))
+    checks.append(
+        _pending_e300_check("preflight_recorded", pending["preflight_recorded"], artifacts_root)
+    )
+    # "after the G0 exclusions" under the G1 exclusion_nesting_rule: the category bounds are
+    # the hash-locked G0 pre-registration's, read from the project, and its digest recorded.
+    g0, g0_path, g0_sha256 = load_preregistration("G0", ROOT)
+    nd_check, excluded = check_nondeterministic_fields(
+        view, root, bounds=section(g0, "determinism_protocol")
+    )
+    nd_check.threshold = {
+        **nd_check.threshold,
+        "bounds_source": {"preregistration": _rel(g0_path), "sha256": g0_sha256},
+    }
+    checks.append(suffixed(check_exclusion_nesting(prereg, e310_root, excluded)))
+    checks.append(nd_check)
+    checks.append(suffixed(check_determinism(view, e310_root, excluded)))
+    checks.append(check_git_clean(prereg, root))
+    checks.append(check_licence(prereg, root))
+    checks.extend(_tooling_checks(prereg, root, skip_tooling))
+    return checks
+
+
+GATE_EVALUATORS = {"G0": evaluate_g0, "G1": evaluate_g1, "G2": evaluate_g2, "G3": evaluate_g3}
 
 
 def evaluate(

@@ -1,0 +1,54 @@
+run_id=20260904T171814Z_seed12346_a36cebc5 experiment=E310_ref_backtest_rejection runner=backtest_rejection seed=12346 config_hash=0a9c30de41474e93b95114dbe140efd99e2d8d652a6421f26e6a58fbbbe121e0 git=935b616ddb7f21d1af0a6cf05c06169b19ebe757 dirty=True wallclock_limit=3600s network_allowed=0
+backtest_rejection seed=12346 history_run=20260904T074939Z_seed12345_8383cad8 transitions_sha256=b09cde6f7168f573cd2f36b77d34cec02d149162658782258aa83a8d503fa1b3 environment_seed=12345 trials_per_game=10 controls_per_game=1 redraw_max=20 operation_mode=OFFLINE
+replayed ar25-0c556536: length=85 final=adf20f7ee731ccfe10ad4fd31442ad6825d23d9d1a3e85fb432a1a3b2b8d810d identity=True
+replayed bp35-0a0ad940: length=42 final=561443f5963ae80ed56f4d30dff3c9fd762fd61ddc571cde35c3b17f00feddb5 identity=True
+replayed cd82-fb555c5d: length=100 final=a537171de10ee1a57f92d1b702cb8ffd6f20d1cc6fba76a3923c02c5ac2009de identity=True
+replayed cn04-2fe56bfb: length=75 final=2ca5a8e684cc83833b7e5e0be0cf748d6c3e462ddc895ea962efc22b7f42e16c identity=True
+replayed dc22-fdcac232: length=128 final=e53f71594c00e4154fbcc1a738776bb2bfccdb778798fad66d228f1a115f1119 identity=True
+replayed ft09-0d8bbf25: length=390 final=746df728ba43de70200e374b747f0b92981905e8562bd1167316c097ba0c8bd4 identity=True
+replayed g50t-5849a774: length=130 final=d5de47d31a6b5bc48b3ab1669c7c3f5a6c2e8cdc9df387e72e0e5b5754e7160b identity=True
+replayed ka59-38d34dbb: length=100 final=4a9fa84d09ccda879752e9897baaf4ed17bd48fa775f5ee18c65337d062afec4 identity=True
+replayed lf52-271a04aa: length=88 final=707187a1cfdc79cf99cc735c03ced5c5af99764d2876d215c44a33bb10f77fa5 identity=True
+replayed lp85-305b61c3: length=526 final=1da6e5948eeefe319e75c5e1eeda3a83a32e4cbc04a4a4d4921c962588bbaba4 identity=True
+replayed ls20-9607627b: length=129 final=f157a7b83d502de920217c6ab562e3658eec9211ab8ebc5979ae0bfbcb70b8f9 identity=True
+replayed m0r0-492f87ba: length=151 final=4daa84e2b54f2f68192dbcc3d3cc1019be8a9085c0cbf313d682f7fbb33360fd identity=True
+replayed r11l-495a7899: length=60 final=328b6c12270890b0b4cb8affeecb061b67230d093f5f2a935248d9c437bca1ab identity=True
+replayed re86-8af5384d: length=100 final=d1f72e3680575ad89df7694859953e2e1909e8f8f586cd7bc08517a183d080a0 identity=True
+replayed s5i5-18d95033: length=50 final=63dc8448af6d2ef96d4e65b51b3e93d39d04bcc20a07fc81bf95bc9bd7dbd887 identity=True
+replayed sb26-7fbdac44: length=179 final=496de7bb7409b3a4d1e28afd157ab11d870bc5dbcef455a6c49f75a6ea9d1aba identity=True
+replayed sc25-635fd71a: length=64 final=e3a2b60e4523138b99bc7237351b27cc7e9f947ef13650170f27c32671e248d0 identity=True
+replayed sk48-d8078629: length=300 final=6630dd5df1862400efb59bcaee89ec95babf0091d98e8272a959e88a4fa4a0e0 identity=True
+replayed sp80-589a99af: length=30 final=b71b1a2baf10495427b97d55f347fd849ad37a75df8a8e5ff3adb1528b4561aa identity=True
+replayed su15-1944f8ab: length=90 final=4fc95b8aecb60afc14feb1125f75472b2ef75850c1f030372dd36a024c7c98ce identity=True
+replayed tn36-ef4dde99: length=61 final=66abcab3721a30d2ff8dd2a76100eeb838344433f80f4993cc0fb774763e5a74 identity=True
+replayed tr87-cd924810: length=128 final=546b1e9e590ed7ff39b086f1b77f0560abac79e877fd4a37e6ad98df00161869 identity=True
+replayed tu93-0768757b: length=50 final=0cef3d4bff02a7ff613b272830dace84743290930c047eaff701950f5921c310 identity=True
+replayed vc33-5430563c: length=50 final=633c527eb8c2976690734079652f5952533d37fc6c2ba70d675a9d9f54cf40bc identity=True
+replayed wa30-ee6fef47: length=200 final=fa1dedcb39a9dd94c11976d221f524d9532a2f8f82163011bc6968e208f28fa2 identity=True
+game 0 ar25-0c556536: history=85 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 1 bp35-0a0ad940: history=42 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 2 cd82-fb555c5d: history=100 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 3 cn04-2fe56bfb: history=75 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 4 dc22-fdcac232: history=128 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 5 ft09-0d8bbf25: history=390 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 6 g50t-5849a774: history=130 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 7 ka59-38d34dbb: history=100 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 8 lf52-271a04aa: history=88 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 9 lp85-305b61c3: history=526 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 10 ls20-9607627b: history=129 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 11 m0r0-492f87ba: history=151 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 12 r11l-495a7899: history=60 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 13 re86-8af5384d: history=100 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 14 s5i5-18d95033: history=50 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 15 sb26-7fbdac44: history=179 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 16 sc25-635fd71a: history=64 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 17 sk48-d8078629: history=300 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 18 sp80-589a99af: history=30 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 19 su15-1944f8ab: history=90 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 20 tn36-ef4dde99: history=61 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 21 tr87-cd924810: history=128 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 22 tu93-0768757b: history=50 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 23 vc33-5430563c: history=50 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+game 24 wa30-ee6fef47: history=200 replay_identity=True wrong=10 vacuous=0 rejected=10 controls_accepted=1/1
+finished wrong_model_trials=250 vacuous=0 rejected=250 rejection_fraction=1.0 controls=25/25
+completion_status=completed wallclock_seconds=50.093
