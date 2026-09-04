@@ -1,0 +1,30 @@
+budgets:
+  action_budget: 0
+  persistent_state_size_cap_bytes: 0
+  simulation_budget: 5000000
+  token_budget: 0
+description: Seeded wrong models (eight mutation classes of the true offline simulator)
+  submitted to the full-history exact backtester over the replayed G1 histories of
+  all 25 cached games, with unmutated controls.
+experiment_id: E310_ref_backtest_rejection
+language_model:
+  identifier: null
+  prompt: null
+model_calls_allowed: 0
+network_calls_allowed: 0
+runner: backtest_rejection
+runner_params:
+  control_trials_per_game: 1
+  environments_dir: environment_files
+  games: all
+  history_source: artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/transitions.jsonl
+  history_source_sha256sums_sha256: 6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190
+  redraw_max: 20
+  sandbox_limits:
+    address_space_bytes_max: 2147483648
+    backtest_seconds_max: 120
+    predict_seconds_max: 5
+  trial_seeds_per_game: 10
+schema_version: 1
+seed: 12346
+wallclock_limit_seconds: 3600
