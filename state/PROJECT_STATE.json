@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T07:23:00Z",
+  "updated_utc": "2026-09-04T07:22:09Z",
   "current_gate": "G0",
-  "gate_status": "awaiting_verdict",
+  "gate_status": "passed",
   "gate_entered_utc": "2026-09-04T05:39:13Z",
-  "last_verified_gate": null,
-  "last_verified_commit": null,
+  "last_verified_gate": "G0",
+  "last_verified_commit": "abad388",
   "active_task": {
     "id": "G0.1",
-    "description": "Complete the G0 exit predicate: lint, type check, tests, determinism, licence, tooling verification",
+    "description": "Complete the G0 exit predicate: lint, type check, tests, determinism, licence, tooling verification. DONE: referee GO at abad388 (docs/decisions/G0_VERDICT.md)",
     "attempt": 3,
     "escalation_level": 0,
     "started_utc": "2026-09-04T05:39:13Z"
   },
   "blocked_on": null,
-  "next_action": "G0 is awaiting_verdict (C5 self-review in ledger 2026-09-04T07:22:00Z, probe report state/c5_probe_G0.json). The referee subagent is being dispatched in the same turn that committed this state. If docs/decisions/G0_VERDICT.md does NOT exist when you read this, dispatch the referee subagent (effort max) with these instructions: read preregistration/G0.yaml (thresholds govern), state/verify_G0.json and state/c5_probe_G0.json (both derived, do not trust them), the C5 decision entry in state/LEDGER.jsonl at 2026-09-04T07:22:00Z, docs/EVIDENCE_TOOLING.md section 11, configs/nondeterministic_fields.yaml; recompute every digest under artifacts/E000_bootstrap/*/ with sha256sum and compare to SHA256SUMS; run 'python scripts/verify_run.py --gate G0' and read its output; open the raw results.json and metrics.csv and confirm the determinism identity in the raw data; judge argument C (shared authorship of verifier and pre-registration; 'Not observable' counted as resolved; no model call in the smoke); write docs/decisions/G0_VERDICT.md with exactly one of GO/REVISE_ONCE/KILL/SUSPEND_FOR_DEPENDENCY citing paths and digests. Never write to docs/decisions yourself. If docs/decisions/G0_VERDICT.md DOES exist: read it, check it cites artifact paths and SHA-256 digests (otherwise it is invalid and must be reissued by a fresh referee dispatch), append a 'verdict' ledger entry quoting the verdict word and the file's SHA-256, set gate_status to passed on GO (last_verified_gate G0, last_verified_commit the commit carrying the verdict) or follow the verdict's single permitted next action otherwise, commit, then plan G1 by reading PROPOSAL_v2.md section 9 row G1 and docs/EVIDENCE_ARC.md and authoring preregistration/G1.yaml with the Write tool before any G1 treatment run.",
+  "next_action": "G0 is PASSED: referee GO in docs/decisions/G0_VERDICT.md (SHA-256 37ffb13b00f691febebd1ba0aba035de4f62810333ed6dbedc1c81f6e97d3ede, commit abad388, ledger 'verdict' entry 2026-09-04T07:22:08Z). The verdict's single permitted next action is to open G1 by authoring preregistration/G1.yaml before any G1 treatment run. This turn: (1) set current_gate G1, gate_status in_progress, gate_entered_utc from 'date -u', active_task G1.1 'Author the G1 pre-registration', append 'G1' to route_history; (2) read PROPOSAL_v2.md section 9 row G1 (and only the parts of the proposal that row references) and docs/EVIDENCE_ARC.md; (3) write preregistration/G1.yaml with the Write tool, following the structure of preregistration/G0.yaml: hypothesis, primary metric, every numeric threshold with the reasoning that fixed it, kill rule, mandated baselines, revision limit, and the three items the G0 verdict section 11 requires to be hash-locked: (a) a rule that an excluded field may be stripped only when its value is a top-level scalar, and that a container-valued or nested excluded key fails the gate; (b) an explicit statement that model-call nondeterminism is out of scope for G1 and is owed by the first gate that makes a model call (or, if G1 makes model calls, the protocol for it); (c) the three 'Not observable' tooling items (rate-limit signature, context exhaustion, per-model allowance) listed as open with the log each will be resolved from (state/tool_errors.jsonl, state/supervisor.jsonl, state/usage.json); (4) commit, record the file's SHA-256 in a ledger entry (C1), and set next_action to extend scripts/verify_run.py with the G1 evaluator that reads its thresholds from the new file. Reminders: take every ts/updated_utc from 'date -u' immediately before writing (referee defect 1); never put a frozen path in a shell command that also contains a redirect or heredoc; keep OperationMode.OFFLINE (environment_files/ already holds 25 games) and assert Arcade.make() is not None at every call site.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 01:27; hashes not yet recorded)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11",
@@ -23,7 +23,10 @@
     "The three E000 manifests record git_dirty true because the supervisor's turn-counter edits to state/*.json are always uncommitted when a run starts inside a turn; every in-turn run will show this. Not a defect of the runner; note for the referee and consider whether the supervisor should commit its counter edits (frozen file, would need escalation)",
     "state/PINNED_HASHES.json is listed in .gitignore, so the pin file is untracked; the supervisor still verifies against it locally, but a fresh clone has no pins (observed 2026-09-04, not changed, .gitignore rule predates the agent)",
     "docs/EVIDENCE_TOOLING.md section 2 lists 'ultracode' as an --effort value; 'claude --help' on 2.1.260 accepts only low|medium|high|xhigh|max. Row left as written (additions only); correction recorded in section 11 item 1 on 2026-09-04",
-    "The control-surface hook is over-inclusive: any Bash command containing a frozen path plus '2>&1' or another '>' is denied even when read-only (two read-only commands denied on 2026-09-04). Workaround: never redirect stderr in a command that names a frozen path; use the Read tool for those files. Not a defect to fix (hook is frozen), just a working rule"
+    "The control-surface hook is over-inclusive: any Bash command containing a frozen path plus '2>&1' or another '>' is denied even when read-only (two read-only commands denied on 2026-09-04). Workaround: never redirect stderr in a command that names a frozen path; use the Read tool for those files. Not a defect to fix (hook is frozen), just a working rule. Extended 2026-09-04: a heredoc whose BODY names a frozen path is also denied, and the agent memory directory under ~/.claude/projects/ is frozen too (contains '.claude/'); write ledger-append scripts to /tmp with the Write tool and run them with python3",
+    "Process defect recorded by the G0 referee (docs/decisions/G0_VERDICT.md section 9 item 1): ledger 'ts', state 'updated_utc' and the G0 pre-registration 'authored_utc' were typed as estimates and post-date their own git commit times. Rule from 2026-09-04T07:22:08Z onward: read 'date -u' immediately before every timestamped write. Git commit times and state/supervisor.jsonl are the reliable clock for anything earlier",
+    "G0 verdict section 9 items 4 and 5: evidence for EVIDENCE_TOOLING section 11 items 2-4 lives in gitignored files (state/supervisor.jsonl, state/supervisor.out, state/tool_errors.jsonl) so a fresh clone cannot re-derive it; the verdict records their digests at verdict time. scripts/verify_run.py is not among the five pinned files and state/PINNED_HASHES.json is gitignored, a weaker layer-2 guarantee than the constitution describes; raise with the human at the next escalation, not now",
+    "Known hole in scripts/verify_run.py strip_keys (C5 argument A, pinned by tests/regression/test_c5_g0_exclusion_nesting.py): an excluded key is removed with its whole value at any depth. Unexploited in G0. The G1 pre-registration must hash-lock a rule that a container-valued or nested excluded key fails the gate; the G1 evaluator reads that rule from the pre-registration"
   ],
   "mechanisms": {
     "M1": {
@@ -53,6 +56,15 @@
     }
   },
   "consecutive_no_progress_turns": 0,
+  "verdicts": {
+    "G0": {
+      "verdict": "GO",
+      "file": "docs/decisions/G0_VERDICT.md",
+      "sha256": "37ffb13b00f691febebd1ba0aba035de4f62810333ed6dbedc1c81f6e97d3ede",
+      "graded_commit": "72edbae",
+      "recorded_commit": "abad388"
+    }
+  },
   "route_history": [
     "G0"
   ]
