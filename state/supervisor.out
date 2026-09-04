@@ -1,3 +1,0 @@
-nohup: ignoring input
-[supervisor] claude=/home/afazeli2006/.local/bin/claude model=claude-fable-5-1 root=/home/afazeli2006/ARC_AGI3_Plasticity_Lab
-[supervisor] turn 1  gate=G0 status=in_progress effort=high  [gauge: none]

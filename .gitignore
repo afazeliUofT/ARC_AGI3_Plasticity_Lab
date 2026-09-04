@@ -13,3 +13,5 @@ state/tool_errors.jsonl
 .env
 *.log
 state/PINNED_HASHES.json
+state/supervisor.out
+state/supervisor.jsonl
