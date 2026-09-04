@@ -475,6 +475,86 @@ def test_params_from_the_committed_config_match_the_pre_registration() -> None:
     assert config.budgets.persistent_state_size_cap_bytes == t(
         "cross_game_persistent_state_bytes_max"
     )
+    # The human's provisional spend control (2026-09-04) tightens, never loosens, the locked
+    # ceilings; the token-file route is absent from the committed config.
+    assert params.spend_control_mapping() == {
+        "calls_per_run_max": 40,
+        "model_wallclock_per_run_seconds": 1200.0,
+        "concurrency": 1,
+    }
+    assert 0 < params.spend_calls_per_run_max <= t("model_calls_per_game_max")
+    assert 0 < params.spend_model_wallclock_per_run_seconds < config.wallclock_limit_seconds
+    assert params.model_client == {"kind": "headless_cli", "call_wallclock_seconds": 900}
+
+
+def test_spend_control_calls_cap_binds_before_the_pre_registered_ceiling(
+    tmp_path: Path,
+) -> None:
+    """calls_per_run_max 2 under model_calls_per_game_max 5: two rejected programs, then the
+    model budget counts as consumed with the cap named as the binding limit."""
+    run_dir, report = _run_synthetic(
+        tmp_path, "calls_cap", [IDENTITY_PROGRAM] * 5, spend_calls_per_run_max=2
+    )
+    assert report.model_calls == 2 and report.hypotheses_proposed == 2
+    assert report.hypotheses_certified == 0
+    assert report.model_budget_binding == rwm.BINDING_CALLS_PER_RUN
+    assert report.accounting.stop_reason == la.STOP_MODEL_BUDGET_EXHAUSTED
+    results = json.loads((run_dir / "results.json").read_text())["results"]
+    assert results["model_budget_binding"] == "spend_control.calls_per_run_max"
+    assert results["spend_control"] == {
+        "calls_per_run_max": 2,
+        "model_wallclock_per_run_seconds": 0.0,
+        "concurrency": 1,
+    }
+    assert results["model_calls_per_game_max"] == 5 and results["model_calls"] == 2
+    rows = _jsonl(run_dir / "model_calls.jsonl")
+    assert [r["call_wallclock_seconds_max"] for r in rows] == [None, None]
+    assert "wallclock" not in (run_dir / "metrics.csv").read_text()  # results.json only
+    assert "binding=spend_control.calls_per_run_max" in (run_dir / "stdout.log").read_text()
+
+
+def test_spend_control_wallclock_cap_accumulates_and_bounds_the_next_call(
+    tmp_path: Path,
+) -> None:
+    """A recorded client with a stepping clock: 100 s per call, cap 250 s. The third call
+    ends at 300 s, so the budget is consumed by the wall-clock cap; each request carried the
+    remaining cap as its per-call limit (250, 150, 50)."""
+    path = _responses(tmp_path / "wc_responses.json", [IDENTITY_PROGRAM] * 5)
+    ticks = iter(range(0, 100_000, 100))
+    client = mc.RecordedResponseClient(path, clock=lambda: float(next(ticks)))
+    params = _params(spend_model_wallclock_per_run_seconds=250.0)
+    run_dir = tmp_path / "wc_cap"
+    with RunArtifactWriter(run_dir, rwm.EXTRA_ARTIFACTS) as writer:
+        game = rwm.RefGameRun(
+            game_id="syn0-00000000", game_index=0, seed=12345,
+            environment=SyntheticEnvironment(), baselines=[16, 16], params=params,
+            client=client, writer=writer, deadline=Deadline(600),
+            model_identifier="stub", prompt_template="T",
+            guards=SandboxGuards(ROOT, (ENV_DIR, ROOT / "data")),
+        )  # fmt: skip
+        report = game.run()
+        writer.write_resolved_config("synthetic: true\n")
+        writer.write_git_state("none\n")
+        writer.write_environment_info({})
+        writer.write_results({"results": rwm.results_mapping(report, params, _config_stub())})
+        writer.write_metrics(rwm.metrics_rows(report))
+        writer.write_environment_results(rwm.environment_rows(report), rwm.ENVIRONMENT_COLUMNS)
+        writer.write_manifest(_manifest_stub())
+        writer.finalize()
+    assert report.model_calls == 3 and report.model_wallclock_seconds_total == 300.0
+    assert report.model_budget_binding == rwm.BINDING_WALLCLOCK_PER_RUN
+    assert report.accounting.stop_reason == la.STOP_MODEL_BUDGET_EXHAUSTED
+    rows = _jsonl(run_dir / "model_calls.jsonl")
+    assert [r["call_wallclock_seconds_max"] for r in rows] == [250.0, 150.0, 50.0]
+    assert [r["model_wallclock_seconds_total_after"] for r in rows] == [100.0, 200.0, 300.0]
+    results = json.loads((run_dir / "results.json").read_text())["results"]
+    assert results["model_wallclock_seconds_total"] == 300.0
+    assert results["model_budget_binding"] == "spend_control.model_wallclock_per_run_seconds"
+    # Without caps the pre-registered ceiling is the binding limit.
+    _, uncapped = _run_synthetic(tmp_path, "uncapped", [IDENTITY_PROGRAM] * 5)
+    assert uncapped.model_calls == 5 and uncapped.model_budget_binding == (
+        rwm.BINDING_CALLS_PER_GAME
+    )
 
 
 def test_params_reject_malformed_runner_params() -> None:
@@ -491,6 +571,27 @@ def test_params_reject_malformed_runner_params() -> None:
         ({"extra_artifacts": ["plans.jsonl"]}, "extra_artifacts"),
         ({"cache_manifest_sha256": "abc"}, "64-hex"),
         ({"model_client": "recorded"}, "model_client"),
+        ({"spend_control": {"calls_per_run_max": 40}}, "spend_control"),
+        (
+            {
+                "spend_control": {
+                    "calls_per_run_max": 40,
+                    "model_wallclock_per_run_seconds": 1200,
+                    "concurrency": 2,
+                }
+            },
+            "concurrency",
+        ),
+        (
+            {
+                "spend_control": {
+                    "calls_per_run_max": 40,
+                    "model_wallclock_per_run_seconds": -1,
+                    "concurrency": 1,
+                }
+            },
+            "model_wallclock_per_run_seconds",
+        ),
     ):
         with pytest.raises(rwm.RunnerConfigError, match=message):
             rwm.RefParams.from_config(with_params(**changes))
@@ -600,7 +701,17 @@ def test_entry_point_runs_one_cached_game_with_recorded_responses(tmp_path: Path
         la.STOP_LEVEL_BUDGET_EXHAUSTED,
     )
     assert results["exploration_actions"] >= 4 and results["resumptions"] == 0
-    assert "wallclock" not in json.dumps(results)
+    # One duration is deliberately in results.json: the model wall-clock total the human's
+    # spend control asks for (2026-09-04), declared nondeterministic by the G3
+    # pre-registration's model_calls.nondeterminism_protocol. Nothing else is.
+    assert isinstance(results["model_wallclock_seconds_total"], float)
+    assert results["spend_control"]["model_wallclock_per_run_seconds"] == 1200.0  # a constant
+    deterministic = {
+        k: v
+        for k, v in results.items()
+        if k not in ("model_wallclock_seconds_total", "spend_control")
+    }
+    assert "wallclock" not in json.dumps(deterministic)
     assert results["backtest_module_sha256"] == bt.backtest_module_sha256()
 
     rows = _jsonl(run_dir / "transitions.jsonl")

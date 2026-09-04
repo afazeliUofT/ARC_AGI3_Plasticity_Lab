@@ -17,10 +17,18 @@
 # model_client.kind headless_cli is the graded channel (model_calls.channel): one `claude -p`
 # subprocess per call, fresh session, tools disabled, prompt on stdin, cwd a temporary
 # directory outside the repository, ARC_* stripped from the environment; each call is bounded
-# by call_wallclock_seconds (an internal design choice frozen by the config hash). token_file,
-# if the human supplies one, names a file OUTSIDE the repository holding the long-lived OAuth
-# token; it is read into the child's environment only and never recorded. Tests replace the
-# channel with kind recorded (a canned-response file).
+# by call_wallclock_seconds (an internal design choice frozen by the config hash). The
+# credential is CLAUDE_CODE_OAUTH_TOKEN forwarded from the runner's own environment; a call
+# with no such variable is refused before anything is spawned (authentication_unavailable).
+# token_file is a declined route and is refused by the adapter (human's answer 2026-09-04,
+# state/escalations/20260904T211800Z.md). Tests replace the channel with kind recorded (a
+# canned-response file).
+#
+# spend_control (same answer): calls are strictly serial; a run makes at most
+# calls_per_run_max model calls or model_wallclock_per_run_seconds of cumulative nested
+# wall-clock, whichever binds first, then completes model-free. Both numbers are provisional,
+# derived from the supervisor's 5000 s per five-hour throttle (state/throttle.json), not
+# measured; they tighten the pre-registered ceilings above and never loosen them.
 #
 # Run:  uv run python scripts/run_experiment.py --config configs/experiments/E300_ref.yaml --game <stem>
 
@@ -95,6 +103,10 @@ runner_params:
   model_client:
     kind: headless_cli
     call_wallclock_seconds: 900
+  spend_control:
+    calls_per_run_max: 40
+    model_wallclock_per_run_seconds: 1200
+    concurrency: 1
   extra_artifacts:
     - model_calls.jsonl
     - model_calls/

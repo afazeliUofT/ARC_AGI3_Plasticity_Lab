@@ -26,6 +26,14 @@ from tests.g3_synthetic import DEFAULT_ACTIONS, synthetic_history
 
 ROOT = Path(__file__).resolve().parents[2]
 ENV_DIR = ROOT / "environment_files"
+# A stand-in credential with the real prefix shape, so the leak scan below is meaningful.
+TEST_TOKEN = "sk-ant-oat01-TESTTOKEN-not-a-real-credential"
+SECRET_PATTERN = "sk-ant-"
+
+
+def _env(**extra: str) -> dict[str, str]:
+    """A parent environment carrying the credential, as a turn's would after forwarding."""
+    return {"PATH": os.environ["PATH"], mc.TOKEN_ENV_KEY: TEST_TOKEN, **extra}
 
 
 def _fake_claude(tmp_path: Path, stdout: str, exit_code: int = 0, sleep: float = 0) -> Path:
@@ -84,22 +92,22 @@ def _success_json(text: str = "```python\ndef predict(h, a):\n    return h[-1]\n
 
 def test_headless_call_flags_cwd_stdin_env_and_usage(tmp_path: Path) -> None:
     script = _fake_claude(tmp_path, _success_json())
-    env = {
-        "PATH": os.environ["PATH"],
-        "HOME": str(tmp_path),
-        "ARC_API_KEY": "secret-benchmark-key",
-        "ARC_OTHER": "x",
-        "CLAUDECODE": "1",
-        "CLAUDE_CODE_ENTRYPOINT": "sdk-cli",
-        "KEEP_ME": "yes",
-    }
+    env = _env(
+        HOME=str(tmp_path),
+        ARC_API_KEY="secret-benchmark-key",
+        ARC_OTHER="x",
+        CLAUDECODE="1",
+        CLAUDE_CODE_ENTRYPOINT="sdk-cli",
+        KEEP_ME="yes",
+    )
     client = mc.HeadlessCliClient(
         executable=str(script),
         call_wallclock_seconds=30,
         repository_root=ROOT,
         environment=env,
     )
-    assert client.kind == "headless_cli" and client.token_source == "none"
+    assert client.kind == "headless_cli" and client.token_source == "environment"
+    assert client.credential_present
     assert client.stripped_env_keys == [
         "ARC_API_KEY",
         "ARC_OTHER",
@@ -125,7 +133,9 @@ def test_headless_call_flags_cwd_stdin_env_and_usage(tmp_path: Path) -> None:
     assert "--continue" not in record["argv"] and "--resume" not in record["argv"]
     assert record["stdin"] == "the prompt\nwith two lines"
     assert "ARC_API_KEY" not in record["env"] and "CLAUDECODE" not in record["env"]
-    assert record["env"]["KEEP_ME"] == "yes" and "CLAUDE_CODE_OAUTH_TOKEN" not in record["env"]
+    assert record["env"]["KEEP_ME"] == "yes"
+    # The human's route: the credential is forwarded from the parent as-is, nothing else.
+    assert record["env"]["CLAUDE_CODE_OAUTH_TOKEN"] == TEST_TOKEN
     cwd = Path(record["cwd"])
     assert cwd == Path(response.cwd).resolve() or cwd == Path(response.cwd)
     assert not cwd.is_relative_to(ROOT) and not cwd.exists()
@@ -141,13 +151,135 @@ def test_headless_call_flags_cwd_stdin_env_and_usage(tmp_path: Path) -> None:
     }
     assert response.raw["argv"][0] == str(script) and response.raw["total_cost_usd"] is None
     assert response.raw["response"]["session_id"] == "abc" and response.raw["parse_error"] is None
-    assert response.raw["token_source"] == "none" and response.wallclock_seconds >= 0
-    assert "secret-benchmark-key" not in mc.canonical_response_text(response.raw)
+    assert response.raw["token_source"] == "environment" and response.wallclock_seconds >= 0
+    recorded = mc.canonical_response_text(response.raw) + json.dumps(dict(response.extra))
+    assert "secret-benchmark-key" not in recorded and SECRET_PATTERN not in recorded
     assert client.calls_made == 1
     client.close()
 
 
+def test_headless_refuses_before_spawning_without_credential(tmp_path: Path) -> None:
+    """The human's rule (2026-09-04): absent at call time -> authentication_unavailable, no
+    process, no login attempt. The fake would have written record.json had it started."""
+    script = _fake_claude(tmp_path, _success_json())
+    client = mc.HeadlessCliClient(
+        executable=str(script),
+        repository_root=ROOT,
+        environment={"PATH": os.environ["PATH"], "CLAUDECODE": "1"},
+    )
+    assert client.token_source == "none" and not client.credential_present
+    with pytest.raises(mc.CallRefused) as info:
+        client.call(_request(index=7))
+    assert info.value.reason == mc.REFUSAL_AUTHENTICATION_UNAVAILABLE
+    assert "call 7 not attempted" in str(info.value) and "CLAUDE_CODE_OAUTH_TOKEN" in str(
+        info.value
+    )
+    assert info.value.raw["exit_code"] == mc.EXIT_CODE_NOT_STARTED
+    assert info.value.raw["cwd"] is None and info.value.raw["usage"] == {}
+    assert not (tmp_path / "record.json").exists() and client.calls_made == 0
+    # An empty value counts as absent.
+    empty = mc.HeadlessCliClient(
+        executable=str(script), repository_root=ROOT, environment=_env(CLAUDE_CODE_OAUTH_TOKEN="")
+    )
+    with pytest.raises(mc.CallRefused, match="authentication_unavailable"):
+        empty.call(_request())
+    assert not (tmp_path / "record.json").exists()
+
+
+def test_headless_per_request_wallclock_override_tightens_the_call_limit(tmp_path: Path) -> None:
+    script = _fake_claude(tmp_path, _success_json(), sleep=5)
+    client = mc.HeadlessCliClient(
+        executable=str(script), call_wallclock_seconds=30, repository_root=ROOT, environment=_env()
+    )
+    request = mc.ModelRequest(
+        call_index=1,
+        purpose="induce",
+        prompt="p",
+        model_identifier="claude-fable-5-1",
+        effort="high",
+        wallclock_seconds_max=0.5,
+    )
+    response = client.call(request)
+    assert response.exit_code == mc.EXIT_CODE_TIMED_OUT and response.extra["timed_out"]
+    assert response.raw["call_wallclock_seconds"] == 0.5 and response.wallclock_seconds < 5
+    with pytest.raises(ValueError, match="wallclock_seconds_max"):
+        mc.ModelRequest(
+            call_index=1,
+            purpose="induce",
+            prompt="p",
+            model_identifier="m",
+            effort="high",
+            wallclock_seconds_max=0,
+        )
+
+
+def test_no_run_artifact_carries_the_credential(tmp_path: Path) -> None:
+    """The human's test (2026-09-04): a full synthetic game-run through the headless adapter
+    with the credential in the parent environment; no file the run writes may contain a value
+    matching the credential prefix, and the child did receive it."""
+    from arc_plasticity.core.artifacts import RunArtifactWriter
+    from arc_plasticity.core.guards import Deadline
+    from arc_plasticity.hypotheses.sandbox import SandboxGuards
+    from tests.g3_synthetic import SYNTHETIC_PROGRAM_SOURCE
+    from tests.unit import test_ref_world_model as trw
+
+    fenced = "```python\n" + SYNTHETIC_PROGRAM_SOURCE + "\n```"
+    script = _fake_claude(tmp_path, _success_json(fenced))
+    client = mc.HeadlessCliClient(
+        executable=str(script),
+        call_wallclock_seconds=60,
+        repository_root=ROOT,
+        environment=_env(ARC_API_KEY="benchmark-key-must-not-leak"),
+    )
+    params = trw._params(model_client={"kind": "headless_cli"}, spend_calls_per_run_max=5)
+    run_dir = tmp_path / "leak_scan_run"
+    with RunArtifactWriter(run_dir, trw.rwm.EXTRA_ARTIFACTS) as writer:
+        game = trw.rwm.RefGameRun(
+            game_id="syn0-00000000",
+            game_index=0,
+            seed=12345,
+            environment=trw.SyntheticEnvironment(),
+            baselines=[16, 16],
+            params=params,
+            client=client,
+            writer=writer,
+            deadline=Deadline(600),
+            model_identifier="claude-fable-5-1",
+            prompt_template="Write the world model.",
+            guards=SandboxGuards(ROOT, (ENV_DIR, ROOT / "data")),
+        )
+        report = game.run()
+        writer.write_resolved_config("synthetic: true\n")
+        writer.write_git_state("none\n")
+        writer.write_environment_info({})
+        writer.write_results(
+            {"results": trw.rwm.results_mapping(report, params, trw._config_stub())}
+        )
+        writer.write_metrics(trw.rwm.metrics_rows(report))
+        writer.write_environment_results(
+            trw.rwm.environment_rows(report), trw.rwm.ENVIRONMENT_COLUMNS
+        )
+        writer.write_manifest(trw._manifest_stub())
+        writer.finalize()
+    record = json.loads((tmp_path / "record.json").read_text())
+    assert record["env"]["CLAUDE_CODE_OAUTH_TOKEN"] == TEST_TOKEN
+    assert "ARC_API_KEY" not in record["env"]
+    assert report.model_calls >= 1 and report.hypotheses_certified >= 1
+    files = sorted(p for p in run_dir.rglob("*") if p.is_file())
+    assert len(files) > 12 and any(p.name == "model_calls.jsonl" for p in files)
+    for path in files:
+        text = path.read_bytes().decode("utf-8", errors="replace")
+        assert SECRET_PATTERN not in text, path
+        assert TEST_TOKEN not in text and "benchmark-key-must-not-leak" not in text, path
+    results = json.loads((run_dir / "results.json").read_text())["results"]
+    assert results["model_client_kind"] == "headless_cli"
+    assert results["model_wallclock_seconds_total"] > 0
+    assert results["spend_control"]["calls_per_run_max"] == 5
+
+
 def test_headless_token_file_is_exported_and_never_recorded(tmp_path: Path) -> None:
+    """The declined route, kept only as the pin that a token read into the child is never
+    recorded; build_client refuses it for configs (test_build_client_headless_spec)."""
     script = _fake_claude(tmp_path, _success_json("ok"))
     token_file = tmp_path / "token.txt"
     token_file.write_text("sk-ant-oat01-SECRET\n")
@@ -155,7 +287,7 @@ def test_headless_token_file_is_exported_and_never_recorded(tmp_path: Path) -> N
         executable=str(script),
         token_file=token_file,
         repository_root=ROOT,
-        environment={"PATH": os.environ["PATH"]},
+        environment=_env(),
     )
     assert client.token_source == "file"
     response = client.call(_request())
@@ -184,9 +316,7 @@ def test_headless_token_file_is_exported_and_never_recorded(tmp_path: Path) -> N
 
 def test_headless_nonzero_exit_is_a_made_call_without_program(tmp_path: Path) -> None:
     script = _fake_claude(tmp_path, "boom, not json", exit_code=3)
-    client = mc.HeadlessCliClient(
-        executable=str(script), repository_root=ROOT, environment={"PATH": os.environ["PATH"]}
-    )
+    client = mc.HeadlessCliClient(executable=str(script), repository_root=ROOT, environment=_env())
     response = client.call(_request())
     assert response.exit_code == 3 and response.text == "" and response.extra["is_error"]
     assert response.tokens_total() == 0 and response.model_reported is None
@@ -201,9 +331,7 @@ def test_headless_is_error_result_is_a_made_call(tmp_path: Path) -> None:
          "result": "API Error: 529 overloaded", "usage": {"input_tokens": 5}}
     )  # fmt: skip
     script = _fake_claude(tmp_path, payload, exit_code=0)
-    client = mc.HeadlessCliClient(
-        executable=str(script), repository_root=ROOT, environment={"PATH": os.environ["PATH"]}
-    )
+    client = mc.HeadlessCliClient(executable=str(script), repository_root=ROOT, environment=_env())
     response = client.call(_request())
     assert (
         response.exit_code == 0
@@ -236,18 +364,14 @@ def test_headless_refuses_on_auth_and_usage_limit_signatures(
     tmp_path: Path, stdout: str, exit_code: int, reason: str
 ) -> None:
     script = _fake_claude(tmp_path, stdout, exit_code=exit_code)
-    client = mc.HeadlessCliClient(
-        executable=str(script), repository_root=ROOT, environment={"PATH": os.environ["PATH"]}
-    )
+    client = mc.HeadlessCliClient(executable=str(script), repository_root=ROOT, environment=_env())
     with pytest.raises(mc.CallRefused) as info:
         client.call(_request())
     assert info.value.reason == reason and isinstance(info.value, mc.ModelClientError)
     assert info.value.raw["exit_code"] == exit_code
     # A successful answer that merely mentions a limit is not a refusal.
     ok = _fake_claude(tmp_path, _success_json("no usage limit here, program follows"))
-    client = mc.HeadlessCliClient(
-        executable=str(ok), repository_root=ROOT, environment={"PATH": os.environ["PATH"]}
-    )
+    client = mc.HeadlessCliClient(executable=str(ok), repository_root=ROOT, environment=_env())
     assert client.call(_request()).text.startswith("no usage limit")
 
 
@@ -257,7 +381,7 @@ def test_headless_timeout_is_recorded(tmp_path: Path) -> None:
         executable=str(script),
         call_wallclock_seconds=0.5,
         repository_root=ROOT,
-        environment={"PATH": os.environ["PATH"]},
+        environment=_env(),
     )
     response = client.call(_request())
     assert response.exit_code == mc.EXIT_CODE_TIMED_OUT and response.extra["timed_out"]
@@ -292,8 +416,10 @@ def test_build_client_headless_spec(tmp_path: Path) -> None:
         mc.build_client({"kind": "headless_cli", "responses_file": "x"}, ROOT)
     with pytest.raises(mc.ModelClientError, match="positive number"):
         mc.build_client({"kind": "headless_cli", "call_wallclock_seconds": -1}, ROOT)
-    with pytest.raises(mc.ModelClientError, match="token_file"):
-        mc.build_client({"kind": "headless_cli", "token_file": ""}, ROOT)
+    # The token-file route is declined (human's answer 2026-09-04): no config may name it.
+    for value in ("", "/outside/token.txt", None):
+        with pytest.raises(mc.ModelClientError, match="declined credential route"):
+            mc.build_client({"kind": "headless_cli", "token_file": value}, ROOT)
     with pytest.raises(mc.ModelClientError, match="not found on PATH"):
         mc.build_client({"kind": "headless_cli", "executable": "no-such-claude-xyz"}, ROOT)
 

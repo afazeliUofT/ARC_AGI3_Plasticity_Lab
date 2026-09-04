@@ -7,7 +7,21 @@
   "default_experiment_wallclock_seconds": 7200,
   "g3_preflight": {
     "projected_fraction_of_weekly_allowance": null,
-    "escalate_above_fraction": 0.35
+    "escalate_above_fraction": 0.35,
+    "weekly_allowance_usd_equivalent": "unknown",
+    "weekly_allowance_source": "human's answer 2026-09-04T21:17Z (state/escalations/20260904T211800Z.md item 2): no denominator exists, the gauge never fires headless, and none is to be fabricated; cost_preflight.no_denominator_rule therefore applies after the three pre-flight runs (unconditional escalation with the absolute numbers)",
+    "spend_currency": {
+      "unit": "model wall-clock seconds per rolling five-hour window",
+      "ceiling_seconds": 5000,
+      "source": "state/throttle.json max_model_seconds_per_5h (supervisor-enforced)",
+      "calibration": "6853 s of supervisor-turn model time over 12 turns exhausted one five-hour window (human's answer, from state/supervisor.jsonl)"
+    },
+    "per_run_caps": {
+      "calls_per_run_max": 40,
+      "model_wallclock_per_run_seconds": 1200,
+      "concurrency": 1,
+      "status": "provisional, derived from the throttle ceiling (four runs per window), not measured; set in configs/experiments/E300_ref.yaml spend_control and frozen within a graded set by the config hash; the human resets them from the observed distribution after the first complete E300_ref run"
+    }
   },
   "effort_policy": {
     "planning": "max",

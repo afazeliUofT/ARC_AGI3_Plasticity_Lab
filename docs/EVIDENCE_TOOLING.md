@@ -383,3 +383,22 @@ Each is [VERIFY-ON-MACHINE]. Bootstrap records the observed value and the date h
    `usage` verbatim and sums only the four documented keys (section 7). Source of the
    flags: `claude --help` on 2.1.260 and
    [code.claude.com/docs/en/headless](https://code.claude.com/docs/en/headless).
+   **Extended 2026-09-04T21:27Z (G3.5 second half; ledger entries for task G3.5 dated
+   2026-09-04 after 21:29Z in `state/LEDGER.jsonl`) — where the credential is dropped.**
+   Environment key sets were compared by name only, through `/proc/<pid>/environ`
+   ([proc_pid_environ(5)](https://man7.org/linux/man-pages/man5/proc_pid_environ.5.html));
+   no value was read or printed. The supervisor process (`python3 scripts/supervisor.py`) and
+   the turn's own `claude -p` process (2.1.260) both carry `CLAUDE_CODE_OAUTH_TOKEN`. The Bash
+   tool's shell inside that turn carries every other key of the turn process, plus twelve
+   session markers the CLI adds (`CLAUDECODE`, `CLAUDE_CODE_ENTRYPOINT`,
+   `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_CHILD_SESSION`, `CLAUDE_CODE_EXECPATH`,
+   `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`, `CLAUDE_EFFORT`,
+   `CLAUDE_PID`, `AI_AGENT`, `GIT_EDITOR`, `COREPACK_ENABLE_AUTO_PIN`), and lacks exactly one
+   key: `CLAUDE_CODE_OAUTH_TOKEN`. So the CLI itself removes the credential from the
+   environment of its tool subprocesses; `scripts/supervisor.py` (`env = dict(os.environ)`)
+   and the adapter (which forwards the parent environment minus `ARC_*` and two markers) do
+   not. Consequence: "forward the variable the turn already has" cannot authenticate a
+   runner-spawned call, because the turn's shell never has it. The adapter now refuses such a
+   call before any process starts (`CallRefused`, reason `authentication_unavailable`; the
+   repeated probe at 21:27:28Z: exit_code -2, 0.0 s, no temporary directory created, no login
+   attempted). Item 4 above stands; this extends it.

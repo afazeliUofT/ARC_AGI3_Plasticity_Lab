@@ -19,6 +19,16 @@ Two clients share one interface, :class:`ModelClient`:
   usage-limit signature is a refusal (:class:`ModelClientError`), because such a call reached
   no model and the runner then marks the model unavailable rather than burning its budget.
 
+  Credential (the human's answer of 2026-09-04, ``state/escalations/20260904T211800Z.md``):
+  the child receives ``CLAUDE_CODE_OAUTH_TOKEN`` forwarded from the calling process's own
+  environment, and nothing else. If the variable is absent at call time the call is refused
+  **before any process starts** (:class:`CallRefused`, reason
+  ``authentication_unavailable``); the adapter never attempts a login. The value is never
+  logged, never placed in an artifact, a prompt, a ledger entry or an error message. The
+  ``token_file`` parameter (a file outside the repository) is declined for configs by
+  :func:`build_client`, kept only for the unit test that pins secret handling, and is untested
+  against the real binary.
+
 Every call is described by a :class:`ModelRequest` and answered by a :class:`ModelResponse`
 whose fields are exactly what ``model_calls.jsonl`` records: model as sent and as reported,
 effort, cwd, ``tools_disabled``, the verbatim usage mapping, wall-clock and exit code. The
@@ -67,6 +77,11 @@ EXIT_CODE_NOT_STARTED = -2
 STRIPPED_ENV_PREFIXES: tuple[str, ...] = ("ARC_",)
 STRIPPED_ENV_KEYS: tuple[str, ...] = ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")
 TOKEN_ENV_KEY = "CLAUDE_CODE_OAUTH_TOKEN"
+# Refusal reasons of CallRefused. The first two come from a failed process; the third is
+# raised before any process starts, when the credential variable is absent.
+REFUSAL_AUTH = "auth"
+REFUSAL_USAGE_LIMIT = "usage_limit"
+REFUSAL_AUTHENTICATION_UNAVAILABLE = "authentication_unavailable"
 # Signatures classifying a failed call as a refusal (no model was reached). Substrings,
 # case-insensitive, matched against stderr and the result text. The usage-limit wording is the
 # one docs/EVIDENCE_TOOLING.md section 7 and the supervisor's captured payloads record.
@@ -97,7 +112,8 @@ class ResponsesExhausted(ModelClientError):
 
 
 class CallRefused(ModelClientError):
-    """The headless CLI reached no model: authentication or usage-limit failure."""
+    """The headless CLI reached no model: authentication or usage-limit failure, or no
+    credential variable at call time (``authentication_unavailable``, nothing spawned)."""
 
     def __init__(self, reason: str, message: str, raw: Mapping[str, Any]) -> None:
         super().__init__(f"{reason}: {message}")
@@ -107,17 +123,23 @@ class CallRefused(ModelClientError):
 
 @dataclass(frozen=True)
 class ModelRequest:
+    """``wallclock_seconds_max`` (optional) tightens the client's per-call limit for this one
+    call, so a run-level wall-clock cap (the human's spend control) bounds the last call too."""
+
     call_index: int
     purpose: str
     prompt: str
     model_identifier: str
     effort: str
+    wallclock_seconds_max: float | None = None
 
     def __post_init__(self) -> None:
         if self.purpose not in PURPOSES:
             raise ValueError(f"purpose {self.purpose!r} not in {PURPOSES}")
         if self.call_index < 1:
             raise ValueError("call_index is 1-based")
+        if self.wallclock_seconds_max is not None and self.wallclock_seconds_max <= 0:
+            raise ValueError("wallclock_seconds_max must be positive when given")
 
     @property
     def prompt_sha256(self) -> str:
@@ -276,9 +298,9 @@ def classify_refusal(exit_code: int, texts: Sequence[str]) -> str | None:
     if not joined:
         return None
     if any(sig in joined for sig in AUTH_SIGNATURES):
-        return "auth"
+        return REFUSAL_AUTH
     if any(sig in joined for sig in USAGE_LIMIT_SIGNATURES):
-        return "usage_limit"
+        return REFUSAL_USAGE_LIMIT
     return None
 
 
@@ -305,8 +327,11 @@ def headless_argv(executable: str, model_identifier: str, effort: str) -> list[s
 class HeadlessCliClient:
     """One ``claude -p`` subprocess per call. See the module docstring.
 
-    ``token_file`` (optional) is a file outside the repository holding the long-lived OAuth
-    token; it is read once and exported to the child only (never logged, never written).
+    The credential is ``CLAUDE_CODE_OAUTH_TOKEN`` forwarded from ``environment`` (default: this
+    process's own); a call with no such variable is refused before anything is spawned.
+    ``token_file`` (a file outside the repository read once into the child's environment only)
+    is a declined route: no config may name it (:func:`build_client`), it exists for the unit
+    test pinning that a token is never recorded, and it is untested against the real binary.
     ``call_wallclock_seconds`` bounds each subprocess; an overrun is killed and recorded with
     exit code :data:`EXIT_CODE_TIMED_OUT`.
     """
@@ -356,10 +381,40 @@ class HeadlessCliClient:
             raise ModelClientError(f"temporary cwd {cwd} lies inside the repository")
         return cwd
 
+    @property
+    def credential_present(self) -> bool:
+        """Whether the child environment carries a non-empty credential variable."""
+        return bool(self._env.get(TOKEN_ENV_KEY))
+
     def call(self, request: ModelRequest) -> ModelResponse:
         if not request.model_identifier:
             raise ModelClientError("headless_cli needs a model identifier")
         argv = headless_argv(self.executable, request.model_identifier, request.effort)
+        if not self.credential_present:
+            # The human's rule: absent at call time -> refuse, never attempt a login. Nothing
+            # is spawned, so no process can prompt, retry or consume the allowance.
+            raise CallRefused(
+                REFUSAL_AUTHENTICATION_UNAVAILABLE,
+                f"call {request.call_index} not attempted: {TOKEN_ENV_KEY} is absent from "
+                "the environment of the calling process",
+                {
+                    "channel": self.kind,
+                    "argv": argv,
+                    "cwd": None,
+                    "exit_code": EXIT_CODE_NOT_STARTED,
+                    "is_error": True,
+                    "wallclock_seconds": 0.0,
+                    "stripped_env_keys": self.stripped_env_keys,
+                    "token_source": self.token_source,
+                    "stderr_tail": "",
+                    "response": None,
+                    "usage": {},
+                    "total_cost_usd": None,
+                },
+            )
+        timeout = self.call_wallclock_seconds
+        if request.wallclock_seconds_max is not None:
+            timeout = min(timeout, float(request.wallclock_seconds_max))
         cwd = self._make_cwd()
         started = self._clock()
         exit_code: int
@@ -375,7 +430,7 @@ class HeadlessCliClient:
                     text=True,
                     cwd=cwd,
                     env=self._env,
-                    timeout=self.call_wallclock_seconds,
+                    timeout=timeout,
                     check=False,
                 )
                 exit_code = int(completed.returncode)
@@ -414,7 +469,7 @@ class HeadlessCliClient:
             "argv": argv,
             "cwd": cwd,
             "prompt_bytes": len(request.prompt.encode("utf-8")),
-            "call_wallclock_seconds": self.call_wallclock_seconds,
+            "call_wallclock_seconds": timeout,
             "timed_out": timed_out,
             "exit_code": exit_code,
             "is_error": is_error,
@@ -477,9 +532,10 @@ def build_client(spec: Mapping[str, Any] | None, root: Path) -> ModelClient | No
     """A client from ``runner_params.model_client``. ``None`` means no model at all.
 
     ``kind`` ``recorded`` needs ``responses_file`` (relative to ``root``). ``headless_cli``
-    accepts ``executable`` (default ``claude``), ``call_wallclock_seconds`` (default 600) and
-    ``token_file`` (a path outside ``root``, ``~`` expanded); ``root`` is the repository the
-    call's cwd and the token file must lie outside of.
+    accepts ``executable`` (default ``claude``) and ``call_wallclock_seconds`` (default 600);
+    ``token_file`` is refused (the declined route: the credential is forwarded from the
+    calling process's environment and is never written to disk); ``root`` is the repository
+    the call's cwd must lie outside of.
     """
     if spec is None:
         return None
@@ -496,7 +552,12 @@ def build_client(spec: Mapping[str, Any] | None, root: Path) -> ModelClient | No
             raise ModelClientError("model_client.responses_file is required for kind recorded")
         path = Path(raw)
         return RecordedResponseClient(path if path.is_absolute() else root / path)
-    allowed = {"kind", "executable", "call_wallclock_seconds", "token_file"}
+    if "token_file" in spec:
+        raise ModelClientError(
+            "model_client.token_file is a declined credential route (the human's answer of "
+            "2026-09-04): the token is forwarded from the environment and never read from disk"
+        )
+    allowed = {"kind", "executable", "call_wallclock_seconds"}
     unknown = sorted(set(spec) - allowed)
     if unknown:
         raise ModelClientError(f"model_client keys {unknown} are not understood for headless_cli")
@@ -506,13 +567,9 @@ def build_client(spec: Mapping[str, Any] | None, root: Path) -> ModelClient | No
     seconds = spec.get("call_wallclock_seconds", DEFAULT_CALL_WALLCLOCK_SECONDS)
     if isinstance(seconds, bool) or not isinstance(seconds, int | float) or seconds <= 0:
         raise ModelClientError("model_client.call_wallclock_seconds must be a positive number")
-    token_raw = spec.get("token_file")
-    if token_raw is not None and (not isinstance(token_raw, str) or not token_raw):
-        raise ModelClientError("model_client.token_file must be a non-empty string or absent")
     return HeadlessCliClient(
         executable=executable,
         call_wallclock_seconds=float(seconds),
-        token_file=Path(token_raw) if token_raw is not None else None,
         repository_root=root,
     )
 
@@ -530,6 +587,9 @@ __all__ = [
     "EXIT_CODE_NOT_STARTED",
     "EXIT_CODE_TIMED_OUT",
     "PURPOSES",
+    "REFUSAL_AUTH",
+    "REFUSAL_AUTHENTICATION_UNAVAILABLE",
+    "REFUSAL_USAGE_LIMIT",
     "STRIPPED_ENV_KEYS",
     "STRIPPED_ENV_PREFIXES",
     "TOKEN_ENV_KEY",

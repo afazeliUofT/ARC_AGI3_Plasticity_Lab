@@ -104,6 +104,26 @@ WORLD_MODELS_DIR = "world_models"
 # seconds. An internal design choice (reference_architecture.what_is_fixed_here), recorded in
 # results.json as calls_without_program_max_consecutive.
 CALLS_WITHOUT_PROGRAM_MAX = 3
+# Spend control (the human's answer of 2026-09-04, state/escalations/20260904T211800Z.md):
+# model calls run strictly serially (concurrency 1) and a run makes at most
+# spend_control.calls_per_run_max calls or spend_control.model_wallclock_per_run_seconds of
+# cumulative nested wall-clock, whichever binds first; on either the model budget counts as
+# consumed (stop reason model_budget_exhausted once no certified program remains) and the run
+# completes model-free with partial results. The two numbers are provisional, derived from
+# the supervisor's 5000 s per five-hour throttle rather than measured, and live in the config
+# (frozen within a graded set by the config hash). They tighten, never loosen, the
+# pre-registered ceilings model_calls_per_game_max and tokens_per_game_max, which stay
+# enforced. results.json records which limit bound (model_budget_binding).
+SPEND_CONTROL_KEYS: tuple[str, ...] = (
+    "calls_per_run_max",
+    "model_wallclock_per_run_seconds",
+    "concurrency",
+)
+BINDING_UNAVAILABLE = "model_unavailable"
+BINDING_CALLS_PER_RUN = "spend_control.calls_per_run_max"
+BINDING_WALLCLOCK_PER_RUN = "spend_control.model_wallclock_per_run_seconds"
+BINDING_CALLS_PER_GAME = "model_calls_per_game_max"
+BINDING_TOKENS_PER_GAME = "tokens_per_game_max"
 
 SOURCE_PLAN = "plan"
 SOURCE_EXPLORATION = "exploration"
@@ -175,10 +195,45 @@ class RefParams:
     click_grid_step: int
     limits: bt.BacktestLimits
     model_client: Mapping[str, Any] | None
+    # Spend control (SPEND_CONTROL_KEYS); 0 means no cap of that kind. Concurrency is fixed
+    # at 1: the control loop is single-threaded and a config may not claim otherwise.
+    spend_calls_per_run_max: int = 0
+    spend_model_wallclock_per_run_seconds: float = 0.0
+    spend_concurrency: int = 1
+
+    def __post_init__(self) -> None:
+        if self.spend_concurrency != 1:
+            raise RunnerConfigError("spend_control.concurrency must be 1 (calls are serial)")
+        if self.spend_calls_per_run_max < 0 or self.spend_model_wallclock_per_run_seconds < 0:
+            raise RunnerConfigError("spend_control caps must be non-negative")
+
+    def spend_control_mapping(self) -> dict[str, Any]:
+        return {
+            "calls_per_run_max": self.spend_calls_per_run_max,
+            "model_wallclock_per_run_seconds": self.spend_model_wallclock_per_run_seconds,
+            "concurrency": self.spend_concurrency,
+        }
 
     @classmethod
     def from_config(cls, config: ExperimentConfig, root: Path = PROJECT_ROOT) -> RefParams:
         params = config.runner_params
+        spend_raw = params.get("spend_control")
+        spend: dict[str, Any] = {}
+        if spend_raw is not None:
+            if not isinstance(spend_raw, dict) or set(spend_raw) != set(SPEND_CONTROL_KEYS):
+                raise RunnerConfigError(
+                    f"runner_params.spend_control must be a mapping with exactly "
+                    f"{list(SPEND_CONTROL_KEYS)}"
+                )
+            prefix = "runner_params.spend_control"
+            seconds = spend_raw["model_wallclock_per_run_seconds"]
+            if isinstance(seconds, bool) or not isinstance(seconds, int | float) or seconds < 0:
+                raise RunnerConfigError(f"{prefix}.model_wallclock_per_run_seconds must be >= 0")
+            spend = {
+                "spend_calls_per_run_max": _positive_int(spend_raw, "calls_per_run_max", 0, prefix),
+                "spend_model_wallclock_per_run_seconds": float(seconds),
+                "spend_concurrency": _positive_int(spend_raw, "concurrency", 1, prefix),
+            }
         env_dir = Path(_non_empty_str(params, "environments_dir"))
         if not env_dir.is_absolute():
             env_dir = root / env_dir
@@ -255,6 +310,7 @@ class RefParams:
                 address_space_bytes_max=int(limits_raw["address_space_bytes_max"]),
             ),
             model_client=client_raw,
+            **spend,
         )
 
 
@@ -394,6 +450,8 @@ class GameRunReport:
     step_failed_at: int | None
     counterexamples: list[dict[str, Any]] = field(default_factory=list)
     calls_without_program: int = 0
+    model_wallclock_seconds_total: float = 0.0
+    model_budget_binding: str | None = None
 
 
 class RefGameRun:
@@ -444,6 +502,7 @@ class RefGameRun:
         self.model_unavailable_reason: str | None = None
         self.calls_without_program = 0
         self.consecutive_calls_without_program = 0
+        self.model_wallclock_seconds_total = 0.0
         self.hypotheses_proposed = 0
         self.hypotheses_certified = 0
         self.last_hypothesis_id: str | None = None
@@ -466,19 +525,35 @@ class RefGameRun:
     def tokens_total(self) -> int:
         return sum(self.tokens_by_kind.values())
 
-    def model_budget_consumed(self) -> bool:
-        """Design decision 1: consumed, not merely absent."""
+    def model_budget_binding(self) -> str | None:
+        """Which limit currently binds the model budget, or ``None`` while it is open.
+        Design decision 1: consumed, not merely absent. The spend-control caps are checked
+        first because they are the tighter ones; each name is what results.json records."""
         if self.model_unavailable_reason is not None:
-            return True
+            return BINDING_UNAVAILABLE
         if self.client is None:
-            return False
-        if self.params.model_calls_per_game_max > 0 and (
-            self.model_calls >= self.params.model_calls_per_game_max
-        ):
-            return True
-        return self.params.tokens_per_game_max > 0 and (
-            self.tokens_total >= self.params.tokens_per_game_max
-        )
+            return None
+        p = self.params
+        if 0 < p.spend_calls_per_run_max <= self.model_calls:
+            return BINDING_CALLS_PER_RUN
+        if 0 < p.spend_model_wallclock_per_run_seconds <= self.model_wallclock_seconds_total:
+            return BINDING_WALLCLOCK_PER_RUN
+        if 0 < p.model_calls_per_game_max <= self.model_calls:
+            return BINDING_CALLS_PER_GAME
+        if 0 < p.tokens_per_game_max <= self.tokens_total:
+            return BINDING_TOKENS_PER_GAME
+        return None
+
+    def model_budget_consumed(self) -> bool:
+        return self.model_budget_binding() is not None
+
+    def call_wallclock_remaining(self) -> float | None:
+        """Seconds of nested model wall-clock left under the run cap, or ``None`` if uncapped;
+        passed to the client so the last call cannot overshoot the cap by a full call."""
+        cap = self.params.spend_model_wallclock_per_run_seconds
+        if cap <= 0:
+            return None
+        return max(cap - self.model_wallclock_seconds_total, 1.0)
 
     def may_induce(self) -> bool:
         assert self.history is not None
@@ -510,6 +585,7 @@ class RefGameRun:
             prompt=prompt,
             model_identifier=self.model_identifier or "",
             effort=self.params.model_effort,
+            wallclock_seconds_max=self.call_wallclock_remaining(),
         )
         try:
             response = self.client.call(request)
@@ -521,6 +597,7 @@ class RefGameRun:
             )
             return
         self.model_calls = call_index
+        self.model_wallclock_seconds_total += float(response.wallclock_seconds)
         for kind, value in response.tokens_by_kind().items():
             self.tokens_by_kind[kind] += value
         self.writer.write_extra_file(MODEL_CALLS_DIR, f"{call_index}.prompt.txt", prompt)
@@ -551,6 +628,8 @@ class RefGameRun:
                 "history_length_at_call": len(self.history),
                 "is_error": bool(response.extra.get("is_error", False)),
                 "program_returned": bool(response.text.strip()) and response.exit_code == 0,
+                "call_wallclock_seconds_max": request.wallclock_seconds_max,
+                "model_wallclock_seconds_total_after": self.model_wallclock_seconds_total,
             }
         )
         if not self.model_call_rows[-1]["program_returned"]:
@@ -844,9 +923,10 @@ class RefGameRun:
                 if self.certified is None and self.model_budget_consumed():
                     self.accounting.stop(la.STOP_MODEL_BUDGET_EXHAUSTED)
                     self.writer.log(
-                        f"stop: model budget consumed (calls={self.model_calls}, "
-                        f"tokens={self.tokens_total}, unavailable="
-                        f"{self.model_unavailable_reason!r}) and no certified program"
+                        f"stop: model budget consumed (binding={self.model_budget_binding()}, "
+                        f"calls={self.model_calls}, tokens={self.tokens_total}, "
+                        f"model_wallclock={self.model_wallclock_seconds_total:.1f}s, "
+                        f"unavailable={self.model_unavailable_reason!r}) and no certified program"
                     )
                     break
                 if not self._execute():
@@ -887,6 +967,8 @@ class RefGameRun:
             step_failed_at=self.step_failed_at,
             counterexamples=list(self.counterexamples),
             calls_without_program=self.calls_without_program,
+            model_wallclock_seconds_total=self.model_wallclock_seconds_total,
+            model_budget_binding=self.model_budget_binding(),
         )
 
     def _write_reports(self) -> None:
@@ -989,6 +1071,9 @@ def results_mapping(
         },
         "calls_without_program": report.calls_without_program,
         "calls_without_program_max_consecutive": CALLS_WITHOUT_PROGRAM_MAX,
+        "spend_control": params.spend_control_mapping(),
+        "model_wallclock_seconds_total": report.model_wallclock_seconds_total,
+        "model_budget_binding": report.model_budget_binding,
         "prompt_hash": config.prompt_hash,
         "level_accounting_rule": la.LEVEL_ACCOUNTING_RULE,
     }
@@ -1005,6 +1090,8 @@ def metrics_rows(report: GameRunReport) -> list[dict[str, Any]]:
         {"metric": "plan_actions", "value": report.plan_actions},
         {"metric": "model_calls", "value": report.model_calls},
         {"metric": "tokens_total", "value": sum(report.tokens_by_kind.values())},
+        # model_wallclock_seconds_total is deliberately absent here: metrics.csv stays a
+        # function of the responses; the total lives in results.json and model_calls.jsonl.
         {"metric": "hypotheses_proposed", "value": report.hypotheses_proposed},
         {"metric": "hypotheses_certified", "value": report.hypotheses_certified},
         {"metric": "plans_executed", "value": report.plans_executed},
