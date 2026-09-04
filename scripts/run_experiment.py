@@ -59,7 +59,8 @@ from arc_plasticity.environments import (  # noqa: F401  (registers the built-in
     arc_random_walk,
     toy,
 )
-from arc_plasticity.evaluation import (  # noqa: F401  (registers the E020 runner)
+from arc_plasticity.evaluation import (  # noqa: F401  (registers the E020 and E310 runners)
+    backtest_rejection,
     human_baseline_run,
 )
 

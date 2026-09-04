@@ -1,0 +1,44 @@
+# E310_ref_backtest_rejection: does the full-history exact backtester reject wrong models?
+#
+# Pre-registered in preregistration/G3.yaml, backtest_rejection_experiment. The histories are
+# the action logs of the graded G1 run 20260904T074939Z_seed12345_8383cad8 (SHA256SUMS digest
+# below, hash-locked as g1_history_run_sha256sums_sha256), replayed through the offline
+# toolkit. 25 games x 10 trial seeds = 250 wrong-model trials (eight seeded mutation classes)
+# plus 25 control trials of the unmutated true simulator per invocation. No model, no
+# network. The determinism protocol runs it twice at seed 12345 and once at seed 12346
+# (via --seed); the contrast seed changes the trial table, never the histories.
+#
+# sandbox_limits copy the three thresholds sandbox_backtest_seconds_max,
+# sandbox_predict_seconds_max and sandbox_address_space_bytes_max of the pre-registration;
+# the run records them in results.json and the verifier checks them against the locked values.
+#
+# Run:  uv run python scripts/run_experiment.py --config configs/experiments/E310_ref_backtest_rejection.yaml
+
+schema_version: 1
+experiment_id: E310_ref_backtest_rejection
+description: Seeded wrong models (eight mutation classes of the true offline simulator) submitted to the full-history exact backtester over the replayed G1 histories of all 25 cached games, with unmutated controls.
+runner: backtest_rejection
+seed: 12345
+wallclock_limit_seconds: 3600
+network_calls_allowed: 0
+model_calls_allowed: 0
+budgets:
+  action_budget: 0
+  simulation_budget: 5000000
+  token_budget: 0
+  persistent_state_size_cap_bytes: 0
+language_model:
+  identifier: null
+  prompt: null
+runner_params:
+  environments_dir: environment_files
+  history_source: artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/transitions.jsonl
+  history_source_sha256sums_sha256: 6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190
+  games: all
+  trial_seeds_per_game: 10
+  control_trials_per_game: 1
+  redraw_max: 20
+  sandbox_limits:
+    backtest_seconds_max: 120
+    predict_seconds_max: 5
+    address_space_bytes_max: 2147483648
