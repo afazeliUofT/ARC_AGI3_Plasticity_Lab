@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T16:33:19Z",
-  "current_gate": "G2",
-  "gate_status": "passed",
-  "gate_entered_utc": "2026-09-04T08:05:09Z",
+  "updated_utc": "2026-09-04T16:50:07Z",
+  "current_gate": "G3",
+  "gate_status": "in_progress",
+  "gate_entered_utc": "2026-09-04T16:50:07Z",
   "last_verified_gate": "G2",
   "last_verified_commit": "9e66b0d",
   "active_task": {
-    "id": "G3.1",
-    "description": "Enter gate G3 and author preregistration/G3.yaml (write-once, Write tool) before any G3 artifact exists, hash-locking the six items of docs/decisions/G2_VERDICT.md section 12",
+    "id": "G3.2",
+    "description": "World-model interface (src/arc_plasticity/hypotheses/interface.py), sandboxed program execution and the full-history exact backtester (src/arc_plasticity/hypotheses/backtest.py) with unit tests, including a regression test that a windowed backtester fails the single_cell_flip-at-index-1 case",
     "attempt": 1,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T16:33:19Z"
+    "started_utc": "2026-09-04T16:50:07Z"
   },
   "blocked_on": null,
   "remote_push": {
@@ -22,7 +22,7 @@
     "authorised_by": "state/escalations/20260904T152234Z.md item 3",
     "policy": "push after every gate verdict from here on (constitution section 11); the G2.13 record commit and later commits are not yet pushed"
   },
-  "next_action": "G3.1 (one step, planning effort max): enter G3 and author the pre-registration. First read PROPOSAL_v2.md section 9 row G3 (and the G3 cost pre-flight it references), the g3_preflight block of state/BUDGET.json, docs/decisions/G2_VERDICT.md section 12 items 1-6, and the G2 pre-registration via load_preregistration('G2') from scripts/verify_run.py (never name the pre-registration directory in a Bash command; the hook denies it). Then set current_gate G3, gate_status in_progress, gate_entered_utc from 'date -u', append G3 to route_history, and write preregistration/G3.yaml with the Write tool in one shot (write-once; nothing may amend it afterwards). It must hash-lock: hypothesis, primary metric, every numeric threshold with the reasoning that fixed it (verify_run.py reads thresholds from here, never from prose), kill rule, mandated baselines, revision limit, and the six G2 verdict section 12 items: official metadata.json h from the cache pinned by experiments/environment_cache_manifest.json 02372647...; human_baselines.json 1e841bf5... cited by digest with the lp85/vc33 caveat (derived values are the project's own reference, official values are h); per-level budget 5x official read from g1_termination_vs_budget.json 82c592f0...; cached versions named and the 15-game client-side game-id discrepancy recorded (docs/EVIDENCE_ARC.md 3.3); per-session not per-participant claims; step-only versus all-in throughput; every evidence number backed by an artifacts/ SHA256SUMS entry. Record authored_utc from 'date -u' read immediately before writing. Stage it with 'git add -A && git reset -q -- state/' (any Bash command naming the pre-registration directory is denied), commit it alone, then compute its sha256 in a /tmp python script written with the Write tool (hashlib over the file bytes; the path may appear inside the script, not on the command line) and record the digest in the ledger and in preregistrations.G3 with committed_at. The verifier that will grade G3 is scripts/verify_run.py at sha256 de5fc873619c11e06f19def16d6aa138910e84e6de90cba0fcb4dde0ad4b416b unless G3 extends it with evaluate_g3 (expected; extension is authoring, not goalpost movement, because thresholds live in the YAML); record whichever digest applies in the G3 verdict. G3.2 onward: the G3 cost pre-flight (3 games measured, projected_fraction_of_weekly_allowance written to state/BUDGET.json; above 0.35 escalate under section 6 item 10 before the full run).",
+  "next_action": "G3.2 (one step, implementation effort high): read preregistration/G3.yaml via load_preregistration('G3') from scripts/verify_run.py (sections reference_architecture, backtest_rejection_experiment, thresholds; never name the pre-registration directory in a Bash command). Write src/arc_plasticity/hypotheses/interface.py (the candidate-program contract: predict(history, action) -> {frame, state, levels_completed, available_actions}, or stateful reset/step; fix the signature there, it is hashed into every E300 and E310 manifest), src/arc_plasticity/hypotheses/sandbox.py (separate Python subprocess, NetworkGuard(allowed_calls=0), resource.RLIMIT_AS 2147483648, per-backtest 120 s and per-prediction 5 s limits from the thresholds, no repository writes) and src/arc_plasticity/hypotheses/backtest.py (replay the COMPLETE history, exact comparison of every grid of every frame plus state and levels_completed, available_actions compared and recorded but not a certification field; record history_length, history_length_checked, mismatches, first_mismatch_index, wallclock; certified only at zero mismatches). Tests under tests/unit/: the true simulator wrapper is certified on a short offline history (use environment_files, offline, seed 12345); each of the eight mutation classes named in backtest_rejection_experiment.wrong_models is rejected; a regression test pins that a windowed backtester (last-N transitions) would certify a single_cell_flip at index 1 while the real one rejects it; sandbox timeout and memory violations yield not-certified with a recorded reason. Run 'uv run pytest -q', 'uv run ruff check .', 'uv run ruff format --check .', 'uv run mypy'. Ledger success entry with the module sha256s and the test count; commit 'G3.2: ...'. Then G3.3: E310_ref_backtest_rejection runner and config (histories = replay of artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8 action logs; 250 wrong-model trials + 25 controls; mutation applied on the model side only), its graded runs (two at seed 12345, one at 12346 via --seed), and evaluate_g3's E310 checks in scripts/verify_run.py. Do not make any model call before G3.5; do not create anything under artifacts/E300_ref before the pre-flight order in cost_preflight is satisfiable.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -55,7 +55,8 @@
     "G2.7 (2026-09-04): replay_ingestion_log.jsonl now carries completion_counts, dataset_completion_counts, dataset_actions_total, dataset_agreement and dataset_agreement_all per file, and input_manifest.json carries dataset_agreement_summary; a file with no completion in either path counts as agreeing on all levels (vacuous) and is separately counted under files_no_completion_either_path. Neither file is a determinism compared_file.",
     "G2.8 (2026-09-04): both graded E020 runs record git_dirty true because state/PROJECT_STATE.json carried the supervisor's trailing-newline rewrite at run time (git_state.txt in each run shows only that file). No G2 check reads the manifest's git_dirty; check_git_clean runs at verification time. Note for the referee. The 13 levels where the derived baseline differs from the official one all lie in lp85 (7 levels) and vc33 (6 levels); the other 23 games agree on every level (human_baselines.json in either run, sha256 1e841bf53ba5450d506e8605cf168e6e4894520953171ae552e115a03b181185).",
     "G2.9 C5 review (2026-09-04, ledger decision entry): argument A (opening-frame accounting) refuted by an independent hand recount of lp85 level 1 over all 40 files (multiset equals per_participant_best_counts_sorted, 40/40 equal to the toolkit card); argument B (version mismatch hidden by stem matching) refuted for all 25 games (replay game ids equal cached metadata game_id including version hash); argument C: real P1/P2 agreement is 300 of 318 files with a completion, the 2 disagreements are a P2 nesting-depth read of the ragged cards, diagnostic only. Open for the referee: the official baselines for lp85 (7 levels) and vc33 (6 levels) differ from the derived ones for a reason outside the dataset; default is that RHAE keeps the official metadata.json values (toolkit path) and the derived numbers are the project's own reference. Referee correction (docs/decisions/G2_VERDICT.md section 10 item 1, accepted at G2.10): argument B is refuted only for the frame-side data.game_id; the client-side action_input.data.game_id names a different version for 15 games.",
-    "G2 verdict findings (2026-09-04, docs/decisions/G2_VERDICT.md sha256 8f4e980c..., GO at 9e66b0d): every recording's client-side action_input.data.game_id names, for 15 games (ar25, cn04, dc22, ka59, m0r0, r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36, tu93, vc33), exactly the Hugging Face (2026-04-02) version while the frame-side data.game_id names the cached version; whether frames were regenerated on the newer versions or only relabelled cannot be decided from the files. 13 of those 15 games reproduce the official baselines exactly; vc33 does not, and lp85 (both ids 305b61c3, NOT among the 15, correcting ledger G2.8 decision (c)) does not either. lp85 has 54 released sessions over two months against 10-15 sessions in 1-5 days for every other game. Verdict section 12 carries six items the G3 pre-registration must hash-lock. The EVIDENCE_ARC additions are G2.11; recorded_commit for verdicts.G2 is filled by that turn."
+    "G2 verdict findings (2026-09-04, docs/decisions/G2_VERDICT.md sha256 8f4e980c..., GO at 9e66b0d): every recording's client-side action_input.data.game_id names, for 15 games (ar25, cn04, dc22, ka59, m0r0, r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36, tu93, vc33), exactly the Hugging Face (2026-04-02) version while the frame-side data.game_id names the cached version; whether frames were regenerated on the newer versions or only relabelled cannot be decided from the files. 13 of those 15 games reproduce the official baselines exactly; vc33 does not, and lp85 (both ids 305b61c3, NOT among the 15, correcting ledger G2.8 decision (c)) does not either. lp85 has 54 released sessions over two months against 10-15 sessions in 1-5 days for every other game. Verdict section 12 carries six items the G3 pre-registration must hash-lock. The EVIDENCE_ARC additions are G2.11; recorded_commit for verdicts.G2 is filled by that turn.",
+    "G3.1 (2026-09-04): inside a headless turn 'claude auth status' reports loggedIn false and the env carries no CLAUDE_CODE_OAUTH_TOKEN, so runner-spawned 'claude -p' calls are expected to fail authentication; the section 6 item 1 escalation is scheduled as G3.5 (after the model-free components) and also asks for the weekly-allowance denominator the pre-flight needs (gauge silent headless, no CLI usage query) and, optionally, a cheaper model identifier. Whether a background process survives the end of a supervisor turn is unknown; record at G3.4. PROPOSAL_v2 section 14 item 5 (60 percent) versus section 9 row G3 (55 percent): 55.0 locked, noted for the referee."
   ],
   "mechanisms": {
     "M1": {
@@ -123,12 +124,19 @@
       "file": "preregistration/G2.yaml",
       "sha256": "f6539aa1a1ddfad220651050d88f7d73e8a7fe3d0455318f65266117720b7344",
       "committed_at": "3fe3298"
+    },
+    "G3": {
+      "file": "preregistration/G3.yaml",
+      "sha256": "5f1ca112b8e6d8d5234cb724780411ddf9d19016096441ae924dac1652d8ff60",
+      "committed_at": "295962b",
+      "authored_utc": "2026-09-04T16:43:50Z"
     }
   },
   "route_history": [
     "G0",
     "G1",
-    "G2"
+    "G2",
+    "G3"
   ],
   "verifier_reports": {
     "G1": {
