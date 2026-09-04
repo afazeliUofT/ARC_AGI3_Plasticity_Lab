@@ -1,0 +1,751 @@
+{
+  "gate": "G1",
+  "preregistration_path": "preregistration/G1.yaml",
+  "preregistration_sha256": "abaa4e99a1caad630d19f77e9804939a008d8748e4425ef7d4897c670f1d59ca",
+  "passed": false,
+  "skipped": [],
+  "checks": [
+    {
+      "name": "arc_agi_version_pinned",
+      "passed": true,
+      "observed": {
+        "uv_lock": {
+          "arc-agi": "0.9.9",
+          "arcengine": "0.9.3"
+        },
+        "installed": {
+          "arc-agi": "0.9.9",
+          "arcengine": "0.9.3"
+        },
+        "problems": []
+      },
+      "threshold": {
+        "arc_agi_locked_version": "0.9.9"
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "uv.lock"
+      ]
+    },
+    {
+      "name": "environment_cache_manifest",
+      "passed": true,
+      "observed": {
+        "manifest": "experiments/environment_cache_manifest.json",
+        "expected_stems": 25,
+        "listed_stems": 25,
+        "drift": {
+          "missing": [],
+          "mismatched": [],
+          "unlisted": []
+        },
+        "drift_files": 0,
+        "committed": true,
+        "baseline_actions_count": {
+          "ar25": 8,
+          "bp35": 9,
+          "cd82": 6,
+          "cn04": 6,
+          "dc22": 6,
+          "ft09": 6,
+          "g50t": 7,
+          "ka59": 7,
+          "lf52": 10,
+          "lp85": 8,
+          "ls20": 7,
+          "m0r0": 6,
+          "r11l": 6,
+          "re86": 8,
+          "s5i5": 8,
+          "sb26": 8,
+          "sc25": 6,
+          "sk48": 8,
+          "sp80": 6,
+          "su15": 9,
+          "tn36": 7,
+          "tr87": 6,
+          "tu93": 9,
+          "vc33": 7,
+          "wa30": 9
+        },
+        "files_on_disk": 50,
+        "files_listed": 50,
+        "problems": []
+      },
+      "threshold": {
+        "cached_games_required": 25,
+        "drift_files_max": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "experiments/environment_cache_manifest.json",
+        "environment_files"
+      ]
+    },
+    {
+      "name": "run_artifact_completeness",
+      "passed": true,
+      "observed": {
+        "runs": 3,
+        "problems": []
+      },
+      "threshold": {
+        "files": [
+          "manifest.json",
+          "resolved_config.yaml",
+          "results.json",
+          "metrics.csv",
+          "environment_results.csv",
+          "transitions.jsonl",
+          "hypotheses.jsonl",
+          "memory_operations.jsonl",
+          "stdout.log",
+          "stderr.log",
+          "git_state.txt",
+          "environment_info.json",
+          "SHA256SUMS",
+          "throughput.json"
+        ],
+        "manifest_keys": [
+          "experiment_id",
+          "run_id",
+          "timestamp_utc",
+          "git_commit",
+          "git_dirty",
+          "python_version",
+          "dependency_lock_hash",
+          "config_hash",
+          "environment_generator_version",
+          "seed",
+          "model_identifier",
+          "prompt_hash",
+          "action_budget",
+          "simulation_budget",
+          "token_budget",
+          "persistent_state_size_cap",
+          "hardware",
+          "wallclock_limit_seconds",
+          "completion_status"
+        ]
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b"
+      ]
+    },
+    {
+      "name": "sha256sums_verify",
+      "passed": true,
+      "observed": {
+        "listed": 39,
+        "verified": 39,
+        "fraction": 1.0,
+        "problems": []
+      },
+      "threshold": {
+        "fraction_min": 1.0,
+        "must_list_every_file": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/SHA256SUMS",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/SHA256SUMS",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/SHA256SUMS"
+      ]
+    },
+    {
+      "name": "offline_run",
+      "passed": true,
+      "observed": {
+        "runs": {
+          "20260904T074939Z_seed12345_8383cad8": {
+            "network_calls_allowed": 0,
+            "network_attempts": 0,
+            "model_calls_allowed": 0,
+            "model_calls": 0,
+            "operation_mode": "OFFLINE",
+            "network_guard": "NetworkGuard"
+          },
+          "20260904T074956Z_seed12345_9e2317b0": {
+            "network_calls_allowed": 0,
+            "network_attempts": 0,
+            "model_calls_allowed": 0,
+            "model_calls": 0,
+            "operation_mode": "OFFLINE",
+            "network_guard": "NetworkGuard"
+          },
+          "20260904T075000Z_seed12346_b801dd9b": {
+            "network_calls_allowed": 0,
+            "network_attempts": 0,
+            "model_calls_allowed": 0,
+            "model_calls": 0,
+            "operation_mode": "OFFLINE",
+            "network_guard": "NetworkGuard"
+          }
+        },
+        "problems": []
+      },
+      "threshold": {
+        "network_calls_allowed": 0,
+        "network_attempts_max": 0,
+        "model_calls_allowed": 0,
+        "operation_mode": "OFFLINE",
+        "network_guard": "NetworkGuard"
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/manifest.json",
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/results.json",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/manifest.json",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/results.json",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/manifest.json",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/results.json"
+      ]
+    },
+    {
+      "name": "games_attempted_and_terminal",
+      "passed": true,
+      "observed": {
+        "runs": {
+          "20260904T074939Z_seed12345_8383cad8": {
+            "attempted": 25,
+            "terminal": [
+              "ar25-0c556536",
+              "bp35-0a0ad940",
+              "cd82-fb555c5d",
+              "cn04-2fe56bfb",
+              "dc22-fdcac232",
+              "ft09-0d8bbf25",
+              "g50t-5849a774",
+              "ka59-38d34dbb",
+              "lf52-271a04aa",
+              "lp85-305b61c3",
+              "ls20-9607627b",
+              "m0r0-492f87ba",
+              "r11l-495a7899",
+              "re86-8af5384d",
+              "s5i5-18d95033",
+              "sb26-7fbdac44",
+              "sc25-635fd71a",
+              "sk48-d8078629",
+              "sp80-589a99af",
+              "su15-1944f8ab",
+              "tn36-ef4dde99",
+              "tr87-cd924810",
+              "tu93-0768757b",
+              "vc33-5430563c",
+              "wa30-ee6fef47"
+            ],
+            "step_failed": [],
+            "stems": [
+              "ar25",
+              "bp35",
+              "cd82",
+              "cn04",
+              "dc22",
+              "ft09",
+              "g50t",
+              "ka59",
+              "lf52",
+              "lp85",
+              "ls20",
+              "m0r0",
+              "r11l",
+              "re86",
+              "s5i5",
+              "sb26",
+              "sc25",
+              "sk48",
+              "sp80",
+              "su15",
+              "tn36",
+              "tr87",
+              "tu93",
+              "vc33",
+              "wa30"
+            ]
+          },
+          "20260904T074956Z_seed12345_9e2317b0": {
+            "attempted": 25,
+            "terminal": [
+              "ar25-0c556536",
+              "bp35-0a0ad940",
+              "cd82-fb555c5d",
+              "cn04-2fe56bfb",
+              "dc22-fdcac232",
+              "ft09-0d8bbf25",
+              "g50t-5849a774",
+              "ka59-38d34dbb",
+              "lf52-271a04aa",
+              "lp85-305b61c3",
+              "ls20-9607627b",
+              "m0r0-492f87ba",
+              "r11l-495a7899",
+              "re86-8af5384d",
+              "s5i5-18d95033",
+              "sb26-7fbdac44",
+              "sc25-635fd71a",
+              "sk48-d8078629",
+              "sp80-589a99af",
+              "su15-1944f8ab",
+              "tn36-ef4dde99",
+              "tr87-cd924810",
+              "tu93-0768757b",
+              "vc33-5430563c",
+              "wa30-ee6fef47"
+            ],
+            "step_failed": [],
+            "stems": [
+              "ar25",
+              "bp35",
+              "cd82",
+              "cn04",
+              "dc22",
+              "ft09",
+              "g50t",
+              "ka59",
+              "lf52",
+              "lp85",
+              "ls20",
+              "m0r0",
+              "r11l",
+              "re86",
+              "s5i5",
+              "sb26",
+              "sc25",
+              "sk48",
+              "sp80",
+              "su15",
+              "tn36",
+              "tr87",
+              "tu93",
+              "vc33",
+              "wa30"
+            ]
+          },
+          "20260904T075000Z_seed12346_b801dd9b": {
+            "attempted": 25,
+            "terminal": [
+              "ar25-0c556536",
+              "bp35-0a0ad940",
+              "cd82-fb555c5d",
+              "cn04-2fe56bfb",
+              "dc22-fdcac232",
+              "ft09-0d8bbf25",
+              "g50t-5849a774",
+              "ka59-38d34dbb",
+              "lf52-271a04aa",
+              "lp85-305b61c3",
+              "ls20-9607627b",
+              "m0r0-492f87ba",
+              "r11l-495a7899",
+              "re86-8af5384d",
+              "s5i5-18d95033",
+              "sb26-7fbdac44",
+              "sc25-635fd71a",
+              "sk48-d8078629",
+              "sp80-589a99af",
+              "su15-1944f8ab",
+              "tn36-ef4dde99",
+              "tr87-cd924810",
+              "tu93-0768757b",
+              "vc33-5430563c",
+              "wa30-ee6fef47"
+            ],
+            "step_failed": [],
+            "stems": [
+              "ar25",
+              "bp35",
+              "cd82",
+              "cn04",
+              "dc22",
+              "ft09",
+              "g50t",
+              "ka59",
+              "lf52",
+              "lp85",
+              "ls20",
+              "m0r0",
+              "r11l",
+              "re86",
+              "s5i5",
+              "sb26",
+              "sc25",
+              "sk48",
+              "sp80",
+              "su15",
+              "tn36",
+              "tr87",
+              "tu93",
+              "vc33",
+              "wa30"
+            ]
+          }
+        },
+        "problems": []
+      },
+      "threshold": {
+        "games_attempted_min": 25,
+        "terminal_games_min": 1,
+        "step_failures_max": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/results.json",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/results.json",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/results.json"
+      ]
+    },
+    {
+      "name": "exclusion_nesting",
+      "passed": true,
+      "observed": {
+        "hits": {
+          "20260904T074939Z_seed12345_8383cad8": [
+            {
+              "key": "created_utc",
+              "depth": 1,
+              "container": false
+            },
+            {
+              "key": "run_id",
+              "depth": 1,
+              "container": false
+            },
+            {
+              "key": "wallclock_seconds",
+              "depth": 1,
+              "container": false
+            }
+          ],
+          "20260904T074956Z_seed12345_9e2317b0": [
+            {
+              "key": "created_utc",
+              "depth": 1,
+              "container": false
+            },
+            {
+              "key": "run_id",
+              "depth": 1,
+              "container": false
+            },
+            {
+              "key": "wallclock_seconds",
+              "depth": 1,
+              "container": false
+            }
+          ],
+          "20260904T075000Z_seed12346_b801dd9b": [
+            {
+              "key": "created_utc",
+              "depth": 1,
+              "container": false
+            },
+            {
+              "key": "run_id",
+              "depth": 1,
+              "container": false
+            },
+            {
+              "key": "wallclock_seconds",
+              "depth": 1,
+              "container": false
+            }
+          ]
+        },
+        "excluded_fields": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "excluded_key_max_depth": 1,
+        "excluded_key_container_values_allowed": false
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/results.json",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/results.json",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/results.json"
+      ]
+    },
+    {
+      "name": "nondeterministic_fields_within_bounds",
+      "passed": true,
+      "observed": {
+        "excluded_names": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "allowed_categories": [
+          "run identifiers (run_id, guid)",
+          "timestamps (created_utc, started_utc, finished_utc, updated_utc)",
+          "durations (wallclock_seconds, elapsed_seconds)",
+          "host and hardware descriptors (hostname, hardware, python_executable_path)"
+        ],
+        "forbidden": [
+          "action",
+          "action,_transition,_hypothesis_or_memory_operation_records",
+          "any_metric_or_result_value",
+          "config_hash",
+          "dependency_lock_hash",
+          "git_commit",
+          "hypothesis_or_memory_operation_records",
+          "prompt_hash",
+          "seed",
+          "transition"
+        ]
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "configs/nondeterministic_fields.yaml",
+        "preregistration"
+      ]
+    },
+    {
+      "name": "determinism_identity",
+      "passed": true,
+      "observed": {
+        "identity": 1.0,
+        "contrast_differs": true,
+        "fixed_seed_runs": [
+          "20260904T074939Z_seed12345_8383cad8",
+          "20260904T074956Z_seed12345_9e2317b0"
+        ],
+        "contrast_seed_runs": [
+          "20260904T075000Z_seed12346_b801dd9b"
+        ],
+        "excluded_fields": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "identity_min": 1.0,
+        "contrast_must_differ": true,
+        "fixed_seed": 12345,
+        "identical_invocations": 2,
+        "contrast_seed": 12346,
+        "contrast_invocations": 1
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/results.json",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/metrics.csv",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/results.json",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/metrics.csv",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/results.json",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/metrics.csv"
+      ]
+    },
+    {
+      "name": "replay_final_frame_identity",
+      "passed": true,
+      "observed": {
+        "games_attempted": 75,
+        "divergent": [],
+        "identity": 1.0,
+        "network_attempts": 0,
+        "runs": {
+          "20260904T074939Z_seed12345_8383cad8": {
+            "games": 25,
+            "divergent": [],
+            "replayed_steps": 3306
+          },
+          "20260904T074956Z_seed12345_9e2317b0": {
+            "games": 25,
+            "divergent": [],
+            "replayed_steps": 3306
+          },
+          "20260904T075000Z_seed12346_b801dd9b": {
+            "games": 25,
+            "divergent": [],
+            "replayed_steps": 3820
+          }
+        },
+        "problems": []
+      },
+      "threshold": {
+        "replay_final_frame_identity_min": 1.0,
+        "replay_divergent_games_max": 0,
+        "environments_dir": "environment_files"
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/results.json",
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/transitions.jsonl",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/results.json",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/transitions.jsonl",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/results.json",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/transitions.jsonl"
+      ]
+    },
+    {
+      "name": "throughput",
+      "passed": true,
+      "observed": {
+        "runs": {
+          "20260904T074939Z_seed12345_8383cad8": {
+            "steps": 3306,
+            "step_seconds": 2.079750810167752,
+            "fps": 1589.6135170796442,
+            "stated_fps": 1589.6135170796442
+          },
+          "20260904T074956Z_seed12345_9e2317b0": {
+            "steps": 3306,
+            "step_seconds": 2.0965466564521194,
+            "fps": 1576.8788115569905,
+            "stated_fps": 1576.8788115569905
+          },
+          "20260904T075000Z_seed12346_b801dd9b": {
+            "steps": 3820,
+            "step_seconds": 2.3293477369006723,
+            "fps": 1639.944066523414,
+            "stated_fps": 1639.944066523414
+          }
+        },
+        "problems": []
+      },
+      "threshold": {
+        "throughput_fps_min": 500.0,
+        "throughput_min_steps_measured": 1000
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/throughput.json",
+        "artifacts/E100_arc_interface/20260904T074956Z_seed12345_9e2317b0/throughput.json",
+        "artifacts/E100_arc_interface/20260904T075000Z_seed12346_b801dd9b/throughput.json"
+      ]
+    },
+    {
+      "name": "git_status_clean",
+      "passed": false,
+      "observed": {
+        "lines": 1,
+        "sample": [
+          " M state/LEDGER.jsonl"
+        ],
+        "exit": 0
+      },
+      "threshold": {
+        "lines_max": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "licence_text",
+      "passed": true,
+      "observed": "MIT No Attribution",
+      "threshold": "MIT No Attribution",
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "uv_sync_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "Checked 43 packages in 0.23ms\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "pytest_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "........................................................................ [ 44%]\n........................................................................ [ 89%]\n.................                                                        [100%]\n161 passed in 10.27s\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "pytest_min_tests_collected",
+      "passed": true,
+      "observed": 161,
+      "threshold": 1,
+      "detail": "",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "ruff_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "All checks passed!\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "mypy_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "Success: no issues found in 19 source files\n",
+      "skipped": false,
+      "evidence": []
+    }
+  ]
+}
