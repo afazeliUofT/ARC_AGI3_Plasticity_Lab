@@ -1,0 +1,23 @@
+budgets:
+  action_budget: 125000
+  persistent_state_size_cap_bytes: 0
+  simulation_budget: 0
+  token_budget: 0
+description: Seeded uniform-random walk over all 25 cached ARC-AGI-3 games through
+  the offline toolkit; interface test only.
+experiment_id: E100_arc_interface
+language_model:
+  identifier: null
+  prompt: null
+model_calls_allowed: 0
+network_calls_allowed: 0
+runner: arc_random_walk
+runner_params:
+  action_budget_per_game: 5000
+  environments_dir: environment_files
+  extra_artifacts:
+  - throughput.json
+  games: all
+schema_version: 1
+seed: 12346
+wallclock_limit_seconds: 1800

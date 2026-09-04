@@ -1,0 +1,5 @@
+commit 802369e86f8c1ae09a94b75d7ec72c8c9d3c66cc
+dirty true
+status --porcelain:
+ M state/BUDGET.json
+ M state/LEDGER.jsonl

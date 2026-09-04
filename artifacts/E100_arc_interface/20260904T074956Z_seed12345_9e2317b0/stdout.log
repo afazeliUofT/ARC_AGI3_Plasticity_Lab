@@ -1,0 +1,29 @@
+run_id=20260904T074956Z_seed12345_9e2317b0 experiment=E100_arc_interface runner=arc_random_walk seed=12345 config_hash=0df628104b905eb58b63c2b898c0c30f2194336416915140df8753b9a798abcd git=802369e86f8c1ae09a94b75d7ec72c8c9d3c66cc dirty=True wallclock_limit=1800s network_allowed=0
+arc_random_walk seed=12345 games=25 action_budget_per_game=5000 environments_dir=/home/afazeli2006/ARC_AGI3_Plasticity_Lab/environment_files operation_mode=OFFLINE
+game 0 ar25-0c556536: steps=85 final_state=GAME_OVER levels=0/8 stop=terminal step_seconds=0.0346
+game 1 bp35-0a0ad940: steps=42 final_state=GAME_OVER levels=0/9 stop=terminal step_seconds=0.0527
+game 2 cd82-fb555c5d: steps=100 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0638
+game 3 cn04-2fe56bfb: steps=75 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0234
+game 4 dc22-fdcac232: steps=128 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0538
+game 5 ft09-0d8bbf25: steps=390 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.3578
+game 6 g50t-5849a774: steps=130 final_state=GAME_OVER levels=0/7 stop=terminal step_seconds=0.1510
+game 7 ka59-38d34dbb: steps=100 final_state=GAME_OVER levels=0/7 stop=terminal step_seconds=0.0349
+game 8 lf52-271a04aa: steps=88 final_state=GAME_OVER levels=0/10 stop=terminal step_seconds=0.0741
+game 9 lp85-305b61c3: steps=526 final_state=GAME_OVER levels=0/8 stop=terminal step_seconds=0.1577
+game 10 ls20-9607627b: steps=129 final_state=GAME_OVER levels=0/7 stop=terminal step_seconds=0.0936
+game 11 m0r0-492f87ba: steps=151 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0504
+game 12 r11l-495a7899: steps=60 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0321
+game 13 re86-8af5384d: steps=100 final_state=GAME_OVER levels=0/8 stop=terminal step_seconds=0.0332
+game 14 s5i5-18d95033: steps=50 final_state=GAME_OVER levels=0/8 stop=terminal step_seconds=0.0141
+game 15 sb26-7fbdac44: steps=179 final_state=GAME_OVER levels=0/8 stop=terminal step_seconds=0.4383
+game 16 sc25-635fd71a: steps=64 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0584
+game 17 sk48-d8078629: steps=300 final_state=GAME_OVER levels=0/8 stop=terminal step_seconds=0.1282
+game 18 sp80-589a99af: steps=30 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0160
+game 19 su15-1944f8ab: steps=90 final_state=GAME_OVER levels=0/9 stop=terminal step_seconds=0.0471
+game 20 tn36-ef4dde99: steps=61 final_state=GAME_OVER levels=0/7 stop=terminal step_seconds=0.0207
+game 21 tr87-cd924810: steps=128 final_state=GAME_OVER levels=0/6 stop=terminal step_seconds=0.0585
+game 22 tu93-0768757b: steps=50 final_state=GAME_OVER levels=0/9 stop=terminal step_seconds=0.0277
+game 23 vc33-5430563c: steps=50 final_state=GAME_OVER levels=0/7 stop=terminal step_seconds=0.0192
+game 24 wa30-ee6fef47: steps=200 final_state=GAME_OVER levels=0/9 stop=terminal step_seconds=0.0552
+finished games=25 terminal=25 step_failures=0 total_steps=3306 fps=1576.8788115569905
+completion_status=completed wallclock_seconds=4.254

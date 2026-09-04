@@ -1,0 +1,210 @@
+{
+  "aggregate": {
+    "definition": "one step() call is one frame; fps = steps / summed step() perf_counter seconds; reset() and digest time excluded",
+    "fps": 1639.944066523414,
+    "step_seconds": 2.3293477369006723,
+    "steps": 3820
+  },
+  "per_game": [
+    {
+      "fps": 2620.3742953262213,
+      "game_id": "ar25-0c556536",
+      "reset_seconds": 0.0007310279761441052,
+      "step_seconds": 0.032056489086244255,
+      "step_seconds_max": 0.0011377910268492997,
+      "steps": 84
+    },
+    {
+      "fps": 703.1618034647487,
+      "game_id": "bp35-0a0ad940",
+      "reset_seconds": 0.0024388780002482235,
+      "step_seconds": 0.09101745812222362,
+      "step_seconds_max": 0.008080222003627568,
+      "steps": 64
+    },
+    {
+      "fps": 1516.8655042762455,
+      "game_id": "cd82-fb555c5d",
+      "reset_seconds": 0.0005154150421731174,
+      "step_seconds": 0.06592542299767956,
+      "step_seconds_max": 0.0023415290052071214,
+      "steps": 100
+    },
+    {
+      "fps": 3369.229983805294,
+      "game_id": "cn04-2fe56bfb",
+      "reset_seconds": 0.0004323309985920787,
+      "step_seconds": 0.02226027916185558,
+      "step_seconds_max": 0.0005293300491757691,
+      "steps": 75
+    },
+    {
+      "fps": 2297.9899091366424,
+      "game_id": "dc22-fdcac232",
+      "reset_seconds": 0.0011810720316134393,
+      "step_seconds": 0.055700853816233575,
+      "step_seconds_max": 0.0008303959621116519,
+      "steps": 128
+    },
+    {
+      "fps": 1468.487825464066,
+      "game_id": "ft09-0d8bbf25",
+      "reset_seconds": 0.0005478379898704588,
+      "step_seconds": 0.5052816830575466,
+      "step_seconds_max": 0.0012798180105164647,
+      "steps": 742
+    },
+    {
+      "fps": 887.7490716890821,
+      "game_id": "g50t-5849a774",
+      "reset_seconds": 0.0017798349726945162,
+      "step_seconds": 0.14643777633318678,
+      "step_seconds_max": 0.008569745987188071,
+      "steps": 130
+    },
+    {
+      "fps": 2893.2105032512077,
+      "game_id": "ka59-38d34dbb",
+      "reset_seconds": 0.0011578479898162186,
+      "step_seconds": 0.03456367930630222,
+      "step_seconds_max": 0.0006376539822667837,
+      "steps": 100
+    },
+    {
+      "fps": 1053.395272612775,
+      "game_id": "lf52-271a04aa",
+      "reset_seconds": 0.0011539779952727258,
+      "step_seconds": 0.0930325040826574,
+      "step_seconds_max": 0.002983145008329302,
+      "steps": 98
+    },
+    {
+      "fps": 3323.1207470840363,
+      "game_id": "lp85-305b61c3",
+      "reset_seconds": 0.0011742560309357941,
+      "step_seconds": 0.20252047735266387,
+      "step_seconds_max": 0.0008189100190065801,
+      "steps": 673
+    },
+    {
+      "fps": 1594.1412343335633,
+      "game_id": "ls20-9607627b",
+      "reset_seconds": 0.02482842601602897,
+      "step_seconds": 0.08531239081639796,
+      "step_seconds_max": 0.0025171259767375886,
+      "steps": 136
+    },
+    {
+      "fps": 2996.5639087094773,
+      "game_id": "m0r0-492f87ba",
+      "reset_seconds": 0.0004821780021302402,
+      "step_seconds": 0.050391049415338784,
+      "step_seconds_max": 0.0005788260023109615,
+      "steps": 151
+    },
+    {
+      "fps": 1905.8262881503642,
+      "game_id": "r11l-495a7899",
+      "reset_seconds": 0.0011366859544068575,
+      "step_seconds": 0.03148240759037435,
+      "step_seconds_max": 0.0007943369564600289,
+      "steps": 60
+    },
+    {
+      "fps": 3030.4321246370414,
+      "game_id": "re86-8af5384d",
+      "reset_seconds": 0.0011017610086128116,
+      "step_seconds": 0.03299859422259033,
+      "step_seconds_max": 0.0005357580375857651,
+      "steps": 100
+    },
+    {
+      "fps": 3632.615770665156,
+      "game_id": "s5i5-18d95033",
+      "reset_seconds": 0.0010363910114392638,
+      "step_seconds": 0.013764186238404363,
+      "step_seconds_max": 0.0005343329976312816,
+      "steps": 50
+    },
+    {
+      "fps": 404.69659519385766,
+      "game_id": "sb26-7fbdac44",
+      "reset_seconds": 0.0013360410230234265,
+      "step_seconds": 0.4324227139004506,
+      "step_seconds_max": 0.006659494014456868,
+      "steps": 175
+    },
+    {
+      "fps": 1415.9173798216125,
+      "game_id": "sc25-635fd71a",
+      "reset_seconds": 0.001304438046645373,
+      "step_seconds": 0.040962842060253024,
+      "step_seconds_max": 0.003735317033715546,
+      "steps": 58
+    },
+    {
+      "fps": 2380.30972211346,
+      "game_id": "sk48-d8078629",
+      "reset_seconds": 0.0009378539980389178,
+      "step_seconds": 0.1218328847317025,
+      "step_seconds_max": 0.0008121500140987337,
+      "steps": 290
+    },
+    {
+      "fps": 1052.9659421992837,
+      "game_id": "sp80-589a99af",
+      "reset_seconds": 0.0003795649972744286,
+      "step_seconds": 0.022792759991716594,
+      "step_seconds_max": 0.005509906972292811,
+      "steps": 24
+    },
+    {
+      "fps": 2008.071101294973,
+      "game_id": "su15-1944f8ab",
+      "reset_seconds": 0.0008721639751456678,
+      "step_seconds": 0.04631310113472864,
+      "step_seconds_max": 0.0011693069827742875,
+      "steps": 93
+    },
+    {
+      "fps": 3055.442318467156,
+      "game_id": "tn36-ef4dde99",
+      "reset_seconds": 0.0033760409569367766,
+      "step_seconds": 0.01996437623165548,
+      "step_seconds_max": 0.001474436023272574,
+      "steps": 61
+    },
+    {
+      "fps": 2284.8486317109955,
+      "game_id": "tr87-cd924810",
+      "reset_seconds": 0.0018536190036684275,
+      "step_seconds": 0.05602121655829251,
+      "step_seconds_max": 0.0006390209891833365,
+      "steps": 128
+    },
+    {
+      "fps": 1881.086649182574,
+      "game_id": "tu93-0768757b",
+      "reset_seconds": 0.0005273839924484491,
+      "step_seconds": 0.02658038109075278,
+      "step_seconds_max": 0.0013249270268715918,
+      "steps": 50
+    },
+    {
+      "fps": 1228.1363408540597,
+      "game_id": "vc33-5430563c",
+      "reset_seconds": 0.000701910990756005,
+      "step_seconds": 0.040712092246394604,
+      "step_seconds_max": 0.022669342055451125,
+      "steps": 50
+    },
+    {
+      "fps": 3389.823765883776,
+      "game_id": "wa30-ee6fef47",
+      "reset_seconds": 0.0008765410166233778,
+      "step_seconds": 0.059000117355026305,
+      "step_seconds_max": 0.0007540610386058688,
+      "steps": 200
+    }
+  ]
+}
