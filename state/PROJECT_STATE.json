@@ -1,31 +1,54 @@
 {
   "schema_version": 1,
-  "updated_utc": null,
+  "updated_utc": "2026-09-04T05:41:10Z",
   "current_gate": "G0",
-  "gate_status": "in_progress",
-  "gate_entered_utc": null,
+  "gate_status": "blocked",
+  "gate_entered_utc": "2026-09-04T05:39:13Z",
   "last_verified_gate": null,
   "last_verified_commit": null,
   "active_task": {
     "id": "G0.1",
     "description": "Complete the G0 exit predicate: lint, type check, tests, determinism, licence, tooling verification",
-    "attempt": 0,
-    "escalation_level": 0,
-    "started_utc": null
+    "attempt": 1,
+    "escalation_level": 7,
+    "started_utc": "2026-09-04T05:39:13Z"
   },
-  "blocked_on": null,
-  "next_action": "Read AGENT_CONSTITUTION.md and PROPOSAL_v2.md section 9. Write preregistration/G0.yaml, then satisfy the G0 exit predicate one item at a time.",
+  "blocked_on": "state/ESCALATION.md: (1) permission config auto-denies every python/uv/pytest/ruff invocation AND every git add/commit in headless mode, so nothing in G0 can be verified or committed; (2) protect_control_surface.sh does not match absolute paths; (3) CLAUDE.md/hook forbid writing preregistration/** while constitution C1 requires the agent to author it. Human must append '## ANSWER' to state/ESCALATION.md.",
+  "next_action": "After the block clears: read state/escalations/<latest>.md for the answers. If 'git status --porcelain' still shows turn-1 state files uncommitted, commit them first (message: 'G0.1: turn 1 state, escalation, supervisor-pinned hashes'). Run 'python3 scripts/verify_state.py' and 'uv run pytest -q' to confirm execution is now permitted; record both outputs in the ledger. Then, per answer 3, write preregistration/G0.yaml (or docs/prereg_drafts/G0.yaml) listing every G0 threshold from PROPOSAL_v2 section 9 with its reasoning, commit, and record its SHA-256 in the ledger. Set gate_status back to in_progress.",
   "open_questions": [
-    "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0",
-    "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11"
+    "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 01:27; hashes not yet recorded)",
+    "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11",
+    "Supervisor pins only six CONTROL_SURFACE files; preregistration/** and docs/EVIDENCE_*.md have no layer-2 hash protection (raised in state/ESCALATION.md item 2)"
   ],
   "mechanisms": {
-    "M1": {"status": "not_started", "verdict": null, "revisions_used": 0},
-    "M2": {"status": "not_started", "verdict": null, "revisions_used": 0},
-    "M3": {"status": "not_started", "verdict": null, "revisions_used": 0},
-    "M4": {"status": "blocked_on_M1", "verdict": null, "revisions_used": 0},
-    "M5": {"status": "reserve", "verdict": null, "revisions_used": 0}
+    "M1": {
+      "status": "not_started",
+      "verdict": null,
+      "revisions_used": 0
+    },
+    "M2": {
+      "status": "not_started",
+      "verdict": null,
+      "revisions_used": 0
+    },
+    "M3": {
+      "status": "not_started",
+      "verdict": null,
+      "revisions_used": 0
+    },
+    "M4": {
+      "status": "blocked_on_M1",
+      "verdict": null,
+      "revisions_used": 0
+    },
+    "M5": {
+      "status": "reserve",
+      "verdict": null,
+      "revisions_used": 0
+    }
   },
-  "consecutive_no_progress_turns": 0,
-  "route_history": ["G0"]
+  "consecutive_no_progress_turns": 1,
+  "route_history": [
+    "G0"
+  ]
 }

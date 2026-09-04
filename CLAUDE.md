@@ -24,6 +24,16 @@ so a session with no memory could continue.
 
 ## Never
 
-Edit `preregistration/**`, `scripts/verify_run.py`, `scripts/supervisor.py`,
-`state/PINNED_HASHES.json`, `.claude/**`, or `docs/EVIDENCE_*.md`. Those are the control
-surface. If one needs to change, escalate (constitution §6 item 13).
+Edit `scripts/verify_run.py`, `scripts/supervisor.py`, `state/PINNED_HASHES.json`,
+`.claude/**`, or `docs/EVIDENCE_*.md`. Those are frozen. If one needs to change, escalate
+(constitution section 6 item 13).
+
+## Pre-registration is write-once, not forbidden
+
+Constitution C1 **requires** you to author `preregistration/<gate>.yaml` before the first
+treatment run of a gate. Creating one is allowed and expected. Amending one that already
+exists is denied by the hook, permanently. If you believe a pre-registration is wrong,
+record the objection in the ledger and proceed, or kill the gate. Do not work around it.
+
+Write pre-registrations with the Write tool, not with shell redirection, so the write-once
+rule can be enforced.

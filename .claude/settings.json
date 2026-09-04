@@ -3,18 +3,19 @@
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
-      "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch",
-      "Bash(uv:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(pytest:*)",
-      "Bash(ruff:*)", "Bash(mypy:*)", "Bash(git:*)", "Bash(ls:*)",
-      "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(grep:*)",
-      "Bash(rg:*)", "Bash(find:*)", "Bash(mkdir:*)", "Bash(cp:*)",
-      "Bash(mv:*)", "Bash(sha256sum:*)", "Bash(wc:*)", "Bash(sort:*)",
-      "Bash(jq:*)", "Bash(df:*)", "Bash(nvidia-smi:*)", "Bash(date:*)",
-      "Bash(echo:*)", "Bash(sed:*)", "Bash(awk:*)", "Bash(diff:*)"
+      "Bash",
+      "Read", "Grep", "Glob", "Edit", "Write", "MultiEdit",
+      "WebSearch", "WebFetch",
+      "Task", "TodoWrite", "NotebookEdit"
     ],
     "deny": [
-      "Bash(sudo:*)", "Bash(rm -rf /:*)", "Bash(curl:*)", "Bash(wget:*)",
-      "Bash(git push --force:*)", "Bash(git reset --hard:*)",
+      "Bash(sudo:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git filter-branch:*)",
       "Read(../**)", "Edit(../**)", "Write(../**)"
     ],
     "blockReadsOutsideWorkingDirectories": true
@@ -27,7 +28,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|Bash",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
         "hooks": [{ "type": "command", "command": ".claude/hooks/protect_control_surface.sh" }]
       }
     ]

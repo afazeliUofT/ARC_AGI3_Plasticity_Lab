@@ -1,8 +1,0 @@
-{
-  "pinned_utc": "2026-09-04T05:19:56Z",
-  "hashes": {
-    "scripts/supervisor.py": "74e0fd77ea2182d38098a18fb7602bb47585f660d97f58e8dc86245c3965047d",
-    ".claude/settings.json": "7bfe1ab106d2b54798e542f20df08dbeb6f1ef3fc775c448b18faa0d6b63d1ad",
-    ".claude/hooks/protect_control_surface.sh": "e9087cbf1345278757ee34b68c2dba972df7dd7fe41c58f30e7300f6562bb676"
-  }
-}
