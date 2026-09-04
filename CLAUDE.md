@@ -52,3 +52,11 @@ Your subscription allowance is shared with the user's other Claude usage and is 
 constraint on this programme. Do not re-read a large document you have already read this
 session. Do not open `docs/EVIDENCE_NEURO.md` before Gate 6. Use scripts, not the model, for
 log parsing, metric aggregation and artifact hashing.
+
+## Thresholds over append-only documents
+
+A gate threshold that counts items in an evidence document is expressed as a **minimum**,
+never an equality, and gate verification is evaluated at the **graded commit**, not at HEAD.
+The evidence base only ever grows, so an equality predicate breaks the first time it does.
+Never reshape an evidence document so a check passes: record the discrepancy, escalate, and
+leave the document alone.

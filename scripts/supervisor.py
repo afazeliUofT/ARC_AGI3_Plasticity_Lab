@@ -473,6 +473,16 @@ class Supervisor:
         env = dict(os.environ)
         env.setdefault("CLAUDE_PROJECT_DIR", str(ROOT))
 
+        # Claude Code strips CLAUDE_CODE_OAUTH_TOKEN from its own tool subprocesses, so a
+        # runner started from inside a turn cannot authenticate. Measured 2026-09-04 by
+        # comparing environment key names across the three processes: supervisor yes,
+        # the turn's `claude -p` yes, the turn's Bash shell no - the only key missing.
+        # This carries the same value under a name the CLI does not strip. The experiment
+        # adapter maps it back to CLAUDE_CODE_OAUTH_TOKEN in its own child only.
+        _tok = env.get("CLAUDE_CODE_OAUTH_TOKEN")
+        if _tok:
+            env["PLASTICITY_LAB_OAUTH_TOKEN"] = _tok
+
         try:
             # start_new_session detaches the child into its own session, so a
             # SIGHUP aimed at the launching terminal cannot reach it. Without
