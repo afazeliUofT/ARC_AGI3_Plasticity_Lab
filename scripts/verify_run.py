@@ -33,6 +33,25 @@ Conventions this verifier defines (so that producers can be written against them
   when the text of that numbered item contains ``Resolved YYYY-MM-DD`` or
   ``Not observable YYYY-MM-DD`` (case-insensitive, optional colon). Anything else, including
   a hypothesis, is unresolved.
+
+G1 conventions (``preregistration/G1.yaml`` ``replay_protocol``, ``cache_warming``,
+``determinism_protocol``), which the E100 runner must produce and this verifier consumes:
+
+* ``results.json["results"]`` (the runner's own mapping) carries ``operation_mode``,
+  ``network_guard`` and ``games``: one record per attempted game with ``game_id``, ``seed``,
+  ``steps_taken``, ``final_state``, ``levels_completed``, ``win_levels``, ``terminal``,
+  ``final_frame_sha256`` and ``step_failed``.
+* ``transitions.jsonl`` holds one record per action with ``game_index``, ``game_id``,
+  ``step_index`` (1-based), ``action`` (0-7), ``data`` and ``frame_sha256``; replay groups by
+  ``game_id`` and orders by ``step_index``.
+* ``throughput.json["aggregate"]`` carries ``steps``, ``step_seconds`` and ``fps``; the
+  verifier recomputes ``fps = steps / step_seconds`` and grades the recomputed value.
+* ``experiments/environment_cache_manifest.json`` carries ``games``: one record per stem with
+  ``stem``, ``game_id``, ``local_dir``, ``date_downloaded``, ``baseline_actions_count`` and
+  ``files`` (``{relative path: sha256}``, paths relative to ``environments_dir``). Derived
+  bytecode (``__pycache__``, ``*.pyc``) is never listed and never counted as drift.
+* The canonical frame digest and the replay live in
+  ``arc_plasticity.environments.arc_interface`` so runner and verifier share one definition.
 """
 
 from __future__ import annotations
@@ -40,10 +59,12 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import importlib.metadata
 import json
 import re
 import subprocess
 import sys
+import tomllib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -51,6 +72,32 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from arc_plasticity.core.guards import NetworkGuard
+from arc_plasticity.environments import arc_interface
+
+G1_GAME_RECORD_KEYS: tuple[str, ...] = (
+    "game_id",
+    "seed",
+    "steps_taken",
+    "final_state",
+    "levels_completed",
+    "win_levels",
+    "terminal",
+    "final_frame_sha256",
+    "step_failed",
+)
+
+G1_CACHE_GAME_KEYS: tuple[str, ...] = (
+    "stem",
+    "game_id",
+    "local_dir",
+    "date_downloaded",
+    "baseline_actions_count",
+    "files",
+)
 
 REQUIRED_RUN_FILES: tuple[str, ...] = (
     "manifest.json",
@@ -296,12 +343,17 @@ def _load_manifest(run_dir: Path) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
-def check_run_completeness(artifacts_root: Path) -> CheckResult:
-    """Every run has every contract file and every manifest key (constitution section 11)."""
+def check_run_completeness(
+    artifacts_root: Path, extra_files: tuple[str, ...] = ()
+) -> CheckResult:
+    """Every run has every contract file and every manifest key (constitution section 11).
+
+    ``extra_files`` are the gate's ``verification.additional_run_artifacts``.
+    """
     problems: list[str] = []
     runs = _run_dirs(artifacts_root)
     for run in runs:
-        for name in REQUIRED_RUN_FILES:
+        for name in REQUIRED_RUN_FILES + tuple(extra_files):
             if not (run / name).exists():
                 problems.append(f"{run.name}: missing {name}")
         manifest = _load_manifest(run)
@@ -315,7 +367,10 @@ def check_run_completeness(artifacts_root: Path) -> CheckResult:
         "run_artifact_completeness",
         passed=bool(runs) and not problems,
         observed={"runs": len(runs), "problems": problems},
-        threshold={"files": list(REQUIRED_RUN_FILES), "manifest_keys": list(REQUIRED_MANIFEST_KEYS)},
+        threshold={
+            "files": list(REQUIRED_RUN_FILES) + list(extra_files),
+            "manifest_keys": list(REQUIRED_MANIFEST_KEYS),
+        },
         evidence=[str(r.relative_to(ROOT)) if r.is_relative_to(ROOT) else str(r) for r in runs],
     )
 
@@ -621,7 +676,586 @@ def evaluate_g0(
     return checks
 
 
-GATE_EVALUATORS = {"G0": evaluate_g0}
+# --------------------------------------------------------------------------- G1 checks
+
+
+def _rel(path: Path) -> str:
+    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+
+
+def _load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _runner_results(doc: Any) -> dict[str, Any]:
+    """The runner's own mapping inside results.json (``results`` key), or an empty mapping."""
+    if isinstance(doc, dict) and isinstance(doc.get("results"), dict):
+        return dict(doc["results"])
+    return {}
+
+
+def _game_records(run: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    """Per-game records from a run's results.json plus any structural problems found."""
+    problems: list[str] = []
+    path = run / "results.json"
+    if not path.exists():
+        return [], [f"{run.name}: results.json missing"]
+    try:
+        doc = _load_json(path)
+    except ValueError as exc:
+        return [], [f"{run.name}: results.json unreadable: {exc}"]
+    games = _runner_results(doc).get("games")
+    if not isinstance(games, list):
+        return [], [f"{run.name}: results.json results.games is not a list"]
+    records: list[dict[str, Any]] = []
+    for i, rec in enumerate(games):
+        if not isinstance(rec, dict):
+            problems.append(f"{run.name}: game record {i} is not a mapping")
+            continue
+        missing = [k for k in G1_GAME_RECORD_KEYS if k not in rec]
+        if missing:
+            problems.append(f"{run.name}: game record {i} lacks {missing}")
+            continue
+        records.append(rec)
+    return records, problems
+
+
+def _completed_runs(artifacts_root: Path, problems: list[str]) -> list[Path]:
+    runs: list[Path] = []
+    for run in _run_dirs(artifacts_root):
+        manifest = _load_manifest(run)
+        if manifest is None:
+            problems.append(f"{run.name}: manifest.json missing or not a mapping")
+            continue
+        if manifest.get("completion_status") != COMPLETED_STATUS:
+            problems.append(f"{run.name}: completion_status != {COMPLETED_STATUS!r}")
+            continue
+        runs.append(run)
+    return runs
+
+
+def check_arc_agi_version_pinned(prereg: dict[str, Any], root: Path = ROOT) -> CheckResult:
+    """uv.lock pins arc-agi at the pre-registered version; arcengine is recorded as observed."""
+    locked = str(threshold(prereg, "arc_agi_locked_version"))
+    lock_path = root / "uv.lock"
+    versions: dict[str, str] = {}
+    problems: list[str] = []
+    if not lock_path.exists():
+        problems.append("uv.lock missing")
+    else:
+        try:
+            data = tomllib.loads(lock_path.read_text(encoding="utf-8"))
+        except tomllib.TOMLDecodeError as exc:
+            problems.append(f"uv.lock unparseable: {exc}")
+            data = {}
+        for pkg in data.get("package", []) or []:
+            if isinstance(pkg, dict) and pkg.get("name") in ("arc-agi", "arcengine"):
+                versions[str(pkg["name"])] = str(pkg.get("version"))
+    installed: dict[str, str | None] = {}
+    for name in ("arc-agi", "arcengine"):
+        try:
+            installed[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            installed[name] = None
+    if versions.get("arc-agi") != locked:
+        problems.append(f"uv.lock arc-agi version {versions.get('arc-agi')!r} != {locked!r}")
+    if installed.get("arc-agi") != locked:
+        problems.append(f"installed arc-agi {installed.get('arc-agi')!r} != {locked!r}")
+    return CheckResult(
+        "arc_agi_version_pinned",
+        passed=not problems,
+        observed={"uv_lock": versions, "installed": installed, "problems": problems},
+        threshold={"arc_agi_locked_version": locked},
+        evidence=["uv.lock"],
+    )
+
+
+def check_environment_cache_manifest(prereg: dict[str, Any], root: Path = ROOT) -> CheckResult:
+    """The committed cache manifest describes environment_files/ exactly (no drift either way)."""
+    games_required = int(threshold(prereg, "cached_games_required"))
+    drift_max = int(threshold(prereg, "cache_manifest_drift_files_max"))
+    warming = section(prereg, "cache_warming")
+    manifest_rel = str(warming.get("manifest_path") or "")
+    env_rel = str(section(prereg, "experiment").get("environments_dir") or "")
+    if not manifest_rel or not env_rel:
+        raise PreregistrationError("cache_warming.manifest_path or experiment.environments_dir missing")
+    manifest_path = root / manifest_rel
+    env_dir = root / env_rel
+    expected_stems = arc_interface.public_game_stems(root)
+
+    problems: list[str] = []
+    observed: dict[str, Any] = {
+        "manifest": manifest_rel,
+        "expected_stems": len(expected_stems),
+        "listed_stems": 0,
+        "drift": {"missing": [], "mismatched": [], "unlisted": []},
+        "drift_files": 0,
+        "committed": False,
+        "baseline_actions_count": {},
+    }
+    if len(expected_stems) != games_required:
+        problems.append(
+            f"evidence base lists {len(expected_stems)} public stems, pre-registration "
+            f"requires {games_required}"
+        )
+    if not manifest_path.exists():
+        problems.append(f"{manifest_rel} missing")
+        observed["problems"] = problems
+        return CheckResult(
+            "environment_cache_manifest",
+            passed=False,
+            observed=observed,
+            threshold={"cached_games_required": games_required, "drift_files_max": drift_max},
+            evidence=[manifest_rel, env_rel],
+        )
+    proc = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", manifest_rel],
+        cwd=root, capture_output=True, text=True, check=False,
+    )
+    observed["committed"] = proc.returncode == 0
+    if proc.returncode != 0:
+        problems.append(f"{manifest_rel} is not tracked by git")
+
+    try:
+        manifest = _load_json(manifest_path)
+    except ValueError as exc:
+        problems.append(f"{manifest_rel} unreadable: {exc}")
+        manifest = {}
+    games = manifest.get("games") if isinstance(manifest, dict) else None
+    if not isinstance(games, list):
+        problems.append(f"{manifest_rel} has no 'games' list")
+        games = []
+    if manifest.get("environments_dir") != env_rel:
+        problems.append(
+            f"manifest environments_dir {manifest.get('environments_dir')!r} != {env_rel!r}"
+        )
+
+    listed_files: dict[str, str] = {}
+    stems: list[str] = []
+    for i, game in enumerate(games):
+        if not isinstance(game, dict):
+            problems.append(f"game entry {i} is not a mapping")
+            continue
+        missing = [k for k in G1_CACHE_GAME_KEYS if k not in game]
+        if missing:
+            problems.append(f"game entry {i} lacks {missing}")
+            continue
+        stem = str(game["stem"])
+        stems.append(stem)
+        if arc_interface.game_stem(str(game["game_id"])) != stem:
+            problems.append(f"{stem}: game_id {game['game_id']!r} does not start with the stem")
+        game_dir = root / str(game["local_dir"])
+        if not game_dir.is_dir():
+            problems.append(f"{stem}: local_dir {game['local_dir']} is not a directory")
+        else:
+            if not (game_dir / "metadata.json").is_file():
+                problems.append(f"{stem}: metadata.json missing")
+            else:
+                try:
+                    meta = _load_json(game_dir / "metadata.json")
+                    if meta.get("game_id") != game["game_id"]:
+                        problems.append(
+                            f"{stem}: metadata game_id {meta.get('game_id')!r} != manifest "
+                            f"{game['game_id']!r}"
+                        )
+                except ValueError as exc:
+                    problems.append(f"{stem}: metadata.json unreadable: {exc}")
+            py_files = [p for p in game_dir.iterdir() if p.is_file() and p.suffix == ".py"]
+            if len(py_files) != 1:
+                problems.append(f"{stem}: expected exactly one .py file, found {len(py_files)}")
+        observed["baseline_actions_count"][stem] = game["baseline_actions_count"]
+        files = game["files"]
+        if not isinstance(files, dict) or not files:
+            problems.append(f"{stem}: files is not a non-empty mapping")
+            continue
+        for rel, digest in files.items():
+            listed_files[str(rel)] = str(digest).lower()
+
+    observed["listed_stems"] = len(stems)
+    if len(stems) != len(set(stems)):
+        problems.append("duplicate stems in manifest")
+    if set(stems) != set(expected_stems):
+        problems.append(
+            f"manifest stems differ from the evidence base: missing "
+            f"{sorted(set(expected_stems) - set(stems))}, extra {sorted(set(stems) - set(expected_stems))}"
+        )
+    if len(set(stems)) != games_required:
+        problems.append(f"manifest lists {len(set(stems))} stems, required {games_required}")
+
+    actual = arc_interface.hash_environment_files(env_dir)
+    missing_files = sorted(set(listed_files) - set(actual))
+    unlisted = sorted(set(actual) - set(listed_files))
+    mismatched = sorted(r for r in set(listed_files) & set(actual) if listed_files[r] != actual[r])
+    observed["drift"] = {"missing": missing_files, "mismatched": mismatched, "unlisted": unlisted}
+    drift = len(missing_files) + len(unlisted) + len(mismatched)
+    observed["drift_files"] = drift
+    observed["files_on_disk"] = len(actual)
+    observed["files_listed"] = len(listed_files)
+    if drift > drift_max:
+        problems.append(f"{drift} files drifted from the manifest (max {drift_max})")
+    observed["problems"] = problems
+    return CheckResult(
+        "environment_cache_manifest",
+        passed=not problems,
+        observed=observed,
+        threshold={"cached_games_required": games_required, "drift_files_max": drift_max},
+        evidence=[manifest_rel, env_rel],
+    )
+
+
+def check_offline_run(prereg: dict[str, Any], artifacts_root: Path) -> CheckResult:
+    """Every run declared zero network and zero model calls, attempted none, ran OFFLINE."""
+    net_allowed = int(threshold(prereg, "network_calls_allowed"))
+    attempts_max = int(threshold(prereg, "network_attempts_max"))
+    model_allowed = int(threshold(prereg, "model_calls_allowed"))
+    expected_mode = str(section(prereg, "experiment").get("operation_mode") or "")
+    if not expected_mode:
+        raise PreregistrationError("experiment.operation_mode missing")
+    expected_guard = NetworkGuard.__name__
+    problems: list[str] = []
+    per_run: dict[str, dict[str, Any]] = {}
+    runs = _run_dirs(artifacts_root)
+    for run in runs:
+        manifest = _load_manifest(run) or {}
+        try:
+            results = _runner_results(_load_json(run / "results.json"))
+        except (OSError, ValueError) as exc:
+            problems.append(f"{run.name}: results.json unreadable: {exc}")
+            results = {}
+        row = {
+            "network_calls_allowed": manifest.get("network_calls_allowed"),
+            "network_attempts": manifest.get("network_attempts"),
+            "model_calls_allowed": manifest.get("model_calls_allowed"),
+            "model_calls": manifest.get("model_calls"),
+            "operation_mode": results.get("operation_mode"),
+            "network_guard": results.get("network_guard"),
+        }
+        per_run[run.name] = row
+        if row["network_calls_allowed"] != net_allowed:
+            problems.append(f"{run.name}: network_calls_allowed {row['network_calls_allowed']!r}")
+        if not isinstance(row["network_attempts"], int) or row["network_attempts"] > attempts_max:
+            problems.append(f"{run.name}: network_attempts {row['network_attempts']!r}")
+        if row["model_calls_allowed"] != model_allowed:
+            problems.append(f"{run.name}: model_calls_allowed {row['model_calls_allowed']!r}")
+        if not isinstance(row["model_calls"], int) or row["model_calls"] > model_allowed:
+            problems.append(f"{run.name}: model_calls {row['model_calls']!r}")
+        if row["operation_mode"] != expected_mode:
+            problems.append(f"{run.name}: operation_mode {row['operation_mode']!r}")
+        if row["network_guard"] != expected_guard:
+            problems.append(f"{run.name}: network_guard {row['network_guard']!r}")
+    return CheckResult(
+        "offline_run",
+        passed=bool(runs) and not problems,
+        observed={"runs": per_run, "problems": problems},
+        threshold={
+            "network_calls_allowed": net_allowed,
+            "network_attempts_max": attempts_max,
+            "model_calls_allowed": model_allowed,
+            "operation_mode": expected_mode,
+            "network_guard": expected_guard,
+        },
+        evidence=[_rel(r / f) for r in runs for f in ("manifest.json", "results.json")],
+    )
+
+
+def check_games_attempted_and_terminal(prereg: dict[str, Any], artifacts_root: Path) -> CheckResult:
+    """Per run: enough games attempted, at least one terminal, no swallowed step failures."""
+    attempted_min = int(threshold(prereg, "games_attempted_min"))
+    terminal_min = int(threshold(prereg, "terminal_games_min"))
+    failures_max = int(threshold(prereg, "step_failures_max"))
+    problems: list[str] = []
+    per_run: dict[str, dict[str, Any]] = {}
+    runs = _run_dirs(artifacts_root)
+    for run in runs:
+        records, rec_problems = _game_records(run)
+        problems.extend(rec_problems)
+        ids = [str(r["game_id"]) for r in records]
+        terminal = [str(r["game_id"]) for r in records if bool(r["terminal"])]
+        failed = [str(r["game_id"]) for r in records if bool(r["step_failed"])]
+        for r in records:
+            state_terminal = str(r["final_state"]) in arc_interface.TERMINAL_STATES
+            if bool(r["terminal"]) != state_terminal:
+                problems.append(
+                    f"{run.name}: {r['game_id']} terminal flag {r['terminal']!r} disagrees with "
+                    f"final_state {r['final_state']!r}"
+                )
+        if len(set(ids)) != len(ids):
+            problems.append(f"{run.name}: duplicate game_id in results")
+        per_run[run.name] = {
+            "attempted": len(set(ids)),
+            "terminal": terminal,
+            "step_failed": failed,
+            "stems": sorted(arc_interface.game_stem(g) for g in set(ids)),
+        }
+        if len(set(ids)) < attempted_min:
+            problems.append(f"{run.name}: {len(set(ids))} games attempted, min {attempted_min}")
+        if len(terminal) < terminal_min:
+            problems.append(f"{run.name}: {len(terminal)} terminal games, min {terminal_min}")
+        if len(failed) > failures_max:
+            problems.append(f"{run.name}: {len(failed)} step failures, max {failures_max}")
+    return CheckResult(
+        "games_attempted_and_terminal",
+        passed=bool(runs) and not problems,
+        observed={"runs": per_run, "problems": problems},
+        threshold={
+            "games_attempted_min": attempted_min,
+            "terminal_games_min": terminal_min,
+            "step_failures_max": failures_max,
+        },
+        evidence=[_rel(r / "results.json") for r in runs],
+    )
+
+
+def excluded_key_hits(obj: Any, excluded: frozenset[str], depth: int = 1) -> list[dict[str, Any]]:
+    """Every occurrence of an excluded name: its depth (top level is 1) and whether its value is a container."""
+    hits: list[dict[str, Any]] = []
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key in excluded:
+                hits.append(
+                    {"key": key, "depth": depth, "container": isinstance(value, (dict, list))}
+                )
+            hits.extend(excluded_key_hits(value, excluded, depth + 1))
+    elif isinstance(obj, list):
+        for value in obj:
+            hits.extend(excluded_key_hits(value, excluded, depth + 1))
+    return hits
+
+
+def check_exclusion_nesting(
+    prereg: dict[str, Any], artifacts_root: Path, excluded: frozenset[str]
+) -> CheckResult:
+    """G1 exclusion_nesting_rule: excluded names only at top level and only with scalar values."""
+    max_depth = int(threshold(prereg, "excluded_key_max_depth"))
+    containers_ok = bool(threshold(prereg, "excluded_key_container_values_allowed"))
+    problems: list[str] = []
+    per_run: dict[str, list[dict[str, Any]]] = {}
+    runs = _run_dirs(artifacts_root)
+    for run in runs:
+        path = run / "results.json"
+        if not path.exists():
+            problems.append(f"{run.name}: results.json missing")
+            continue
+        try:
+            hits = excluded_key_hits(_load_json(path), excluded)
+        except ValueError as exc:
+            problems.append(f"{run.name}: results.json unreadable: {exc}")
+            continue
+        per_run[run.name] = hits
+        for hit in hits:
+            if hit["depth"] > max_depth:
+                problems.append(
+                    f"{run.name}: excluded key {hit['key']!r} at depth {hit['depth']} > {max_depth}"
+                )
+            if hit["container"] and not containers_ok:
+                problems.append(f"{run.name}: excluded key {hit['key']!r} has a container value")
+    return CheckResult(
+        "exclusion_nesting",
+        passed=bool(runs) and not problems,
+        observed={"hits": per_run, "excluded_fields": sorted(excluded), "problems": problems},
+        threshold={
+            "excluded_key_max_depth": max_depth,
+            "excluded_key_container_values_allowed": containers_ok,
+        },
+        evidence=[_rel(r / "results.json") for r in runs],
+    )
+
+
+def _transitions_by_game(run: Path) -> tuple[dict[str, list[dict[str, Any]]], list[str]]:
+    problems: list[str] = []
+    by_game: dict[str, list[dict[str, Any]]] = {}
+    path = run / "transitions.jsonl"
+    if not path.exists():
+        return {}, [f"{run.name}: transitions.jsonl missing"]
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except ValueError as exc:
+            problems.append(f"{run.name}: transitions.jsonl line {lineno}: {exc}")
+            continue
+        if not isinstance(rec, dict) or "game_id" not in rec or "step_index" not in rec:
+            problems.append(f"{run.name}: transitions.jsonl line {lineno} lacks game_id/step_index")
+            continue
+        by_game.setdefault(str(rec["game_id"]), []).append(rec)
+    for game_id, recs in by_game.items():
+        recs.sort(key=lambda r: int(r["step_index"]))
+        indices = [int(r["step_index"]) for r in recs]
+        if indices != list(range(1, len(recs) + 1)):
+            problems.append(f"{run.name}: {game_id} step_index sequence is not 1..n")
+    return by_game, problems
+
+
+def check_replay_final_frame_identity(
+    prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT
+) -> CheckResult:
+    """Re-execute every recorded game in this process and compare the final frame digest."""
+    identity_min = float(threshold(prereg, "replay_final_frame_identity_min"))
+    divergent_max = int(threshold(prereg, "replay_divergent_games_max"))
+    net_allowed = int(threshold(prereg, "network_calls_allowed"))
+    env_rel = str(section(prereg, "experiment").get("environments_dir") or "")
+    if not env_rel:
+        raise PreregistrationError("experiment.environments_dir missing")
+    env_dir = root / env_rel
+    problems: list[str] = []
+    runs = _completed_runs(artifacts_root, problems)
+    attempted = 0
+    divergent: list[str] = []
+    per_run: dict[str, dict[str, Any]] = {}
+    with NetworkGuard(net_allowed) as guard:
+        for run in runs:
+            records, rec_problems = _game_records(run)
+            problems.extend(rec_problems)
+            by_game, tr_problems = _transitions_by_game(run)
+            problems.extend(tr_problems)
+            row: dict[str, Any] = {"games": 0, "divergent": [], "replayed_steps": 0}
+            for rec in records:
+                game_id = str(rec["game_id"])
+                attempted += 1
+                row["games"] += 1
+                recs = by_game.get(game_id, [])
+                if len(recs) != int(rec["steps_taken"]):
+                    problems.append(
+                        f"{run.name}: {game_id} has {len(recs)} transitions but steps_taken "
+                        f"{rec['steps_taken']}"
+                    )
+                try:
+                    actions = [arc_interface.ActionRecord.from_mapping(r) for r in recs]
+                    result = arc_interface.replay_actions(env_dir, game_id, int(rec["seed"]), actions)
+                except (arc_interface.EnvironmentLoadError, arc_interface.ReplayError) as exc:
+                    divergent.append(f"{run.name}/{game_id}")
+                    row["divergent"].append({"game_id": game_id, "reason": str(exc)})
+                    continue
+                row["replayed_steps"] += result.steps_applied
+                if not result.succeeded or result.final_digest != rec["final_frame_sha256"]:
+                    divergent.append(f"{run.name}/{game_id}")
+                    row["divergent"].append(
+                        {
+                            "game_id": game_id,
+                            "recorded": rec["final_frame_sha256"],
+                            "replayed": result.final_digest,
+                            "failed_at_step": result.failed_at_step,
+                        }
+                    )
+            per_run[run.name] = row
+        attempts = guard.attempts
+    fraction = ((attempted - len(divergent)) / attempted) if attempted else 0.0
+    if attempts > net_allowed:
+        problems.append(f"replay made {attempts} network attempts")
+    passed = (
+        bool(runs)
+        and attempted > 0
+        and fraction >= identity_min
+        and len(divergent) <= divergent_max
+        and not problems
+    )
+    return CheckResult(
+        "replay_final_frame_identity",
+        passed=passed,
+        observed={
+            "games_attempted": attempted,
+            "divergent": divergent,
+            "identity": fraction,
+            "network_attempts": attempts,
+            "runs": per_run,
+            "problems": problems,
+        },
+        threshold={
+            "replay_final_frame_identity_min": identity_min,
+            "replay_divergent_games_max": divergent_max,
+            "environments_dir": env_rel,
+        },
+        evidence=[_rel(r / f) for r in runs for f in ("results.json", "transitions.jsonl")],
+    )
+
+
+def check_throughput(prereg: dict[str, Any], artifacts_root: Path) -> CheckResult:
+    """Aggregate steps / summed step() seconds, recomputed from throughput.json, per run."""
+    fps_min = float(threshold(prereg, "throughput_fps_min"))
+    steps_min = int(threshold(prereg, "throughput_min_steps_measured"))
+    problems: list[str] = []
+    per_run: dict[str, dict[str, Any]] = {}
+    runs = _run_dirs(artifacts_root)
+    for run in runs:
+        path = run / "throughput.json"
+        if not path.exists():
+            problems.append(f"{run.name}: throughput.json missing")
+            continue
+        try:
+            agg = _load_json(path).get("aggregate")
+        except (ValueError, AttributeError) as exc:
+            problems.append(f"{run.name}: throughput.json unreadable: {exc}")
+            continue
+        if not isinstance(agg, dict):
+            problems.append(f"{run.name}: throughput.json has no 'aggregate' mapping")
+            continue
+        steps = agg.get("steps")
+        seconds = agg.get("step_seconds")
+        stated = agg.get("fps")
+        if not isinstance(steps, int) or not isinstance(seconds, (int, float)) or seconds <= 0:
+            problems.append(f"{run.name}: aggregate steps/step_seconds invalid: {agg!r}")
+            continue
+        fps = steps / float(seconds)
+        per_run[run.name] = {"steps": steps, "step_seconds": seconds, "fps": fps, "stated_fps": stated}
+        if not isinstance(stated, (int, float)) or abs(float(stated) - fps) > 1e-6 * max(1.0, fps):
+            problems.append(f"{run.name}: stated fps {stated!r} != recomputed {fps:.3f}")
+        if steps < steps_min:
+            problems.append(f"{run.name}: {steps} steps measured, min {steps_min}")
+        if fps < fps_min:
+            problems.append(f"{run.name}: {fps:.1f} fps below {fps_min}")
+    return CheckResult(
+        "throughput",
+        passed=bool(runs) and not problems,
+        observed={"runs": per_run, "problems": problems},
+        threshold={"throughput_fps_min": fps_min, "throughput_min_steps_measured": steps_min},
+        evidence=[_rel(r / "throughput.json") for r in runs],
+    )
+
+
+def _tooling_checks(
+    prereg: dict[str, Any], root: Path, skip_tooling: bool
+) -> list[CheckResult]:
+    if not skip_tooling:
+        return check_tooling(prereg, root)
+    return [
+        CheckResult(name, passed=False, observed=None, threshold=threshold(prereg, name),
+                    skipped=True, detail="skipped by --skip-tooling")
+        for name in (
+            "uv_sync_exit_code",
+            "pytest_exit_code",
+            "pytest_min_tests_collected",
+            "ruff_exit_code",
+            "mypy_exit_code",
+        )
+    ]
+
+
+def evaluate_g1(
+    prereg: dict[str, Any], artifacts_root: Path, root: Path = ROOT, skip_tooling: bool = False
+) -> list[CheckResult]:
+    """G1 checks in the order ``verification.checks_in_order`` lists them."""
+    extra = tuple(str(f) for f in section(prereg, "verification").get("additional_run_artifacts", []))
+    checks: list[CheckResult] = []
+    checks.append(check_arc_agi_version_pinned(prereg, root))
+    checks.append(check_environment_cache_manifest(prereg, root))
+    checks.append(check_run_completeness(artifacts_root, extra))
+    checks.append(check_sha256sums(prereg, artifacts_root))
+    checks.append(check_offline_run(prereg, artifacts_root))
+    checks.append(check_games_attempted_and_terminal(prereg, artifacts_root))
+    nd_check, excluded = check_nondeterministic_fields(prereg, root)
+    checks.append(check_exclusion_nesting(prereg, artifacts_root, excluded))
+    checks.append(nd_check)
+    checks.append(check_determinism(prereg, artifacts_root, excluded))
+    checks.append(check_replay_final_frame_identity(prereg, artifacts_root, root))
+    checks.append(check_throughput(prereg, artifacts_root))
+    checks.append(check_git_clean(prereg, root))
+    checks.append(check_licence(prereg, root))
+    checks.extend(_tooling_checks(prereg, root, skip_tooling))
+    return checks
+
+
+GATE_EVALUATORS = {"G0": evaluate_g0, "G1": evaluate_g1}
 
 
 def evaluate(
