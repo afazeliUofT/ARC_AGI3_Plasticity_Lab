@@ -7,6 +7,9 @@ __pycache__/
 .pytest_cache/
 environment_files/
 recordings/
+# Raw human replays are gitignored like environment_files/; their integrity record is
+# experiments/human_replays_manifest.json (G2 pre-registration, dataset_acquisition step 3).
+data/human_replays/raw/
 state/usage.json
 state/tool_errors.jsonl
 .claude/settings.local.json
