@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch",
+      "Bash(uv:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(pytest:*)",
+      "Bash(ruff:*)", "Bash(mypy:*)", "Bash(git:*)", "Bash(ls:*)",
+      "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(grep:*)",
+      "Bash(rg:*)", "Bash(find:*)", "Bash(mkdir:*)", "Bash(cp:*)",
+      "Bash(mv:*)", "Bash(sha256sum:*)", "Bash(wc:*)", "Bash(sort:*)",
+      "Bash(jq:*)", "Bash(df:*)", "Bash(nvidia-smi:*)", "Bash(date:*)",
+      "Bash(echo:*)", "Bash(sed:*)", "Bash(awk:*)", "Bash(diff:*)"
+    ],
+    "deny": [
+      "Bash(sudo:*)", "Bash(rm -rf /:*)", "Bash(curl:*)", "Bash(wget:*)",
+      "Bash(git push --force:*)", "Bash(git reset --hard:*)",
+      "Read(../**)", "Edit(../**)", "Write(../**)"
+    ],
+    "blockReadsOutsideWorkingDirectories": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/hooks/statusline_probe.sh",
+    "refreshInterval": 10
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/protect_control_surface.sh" }]
+      }
+    ]
+  }
+}

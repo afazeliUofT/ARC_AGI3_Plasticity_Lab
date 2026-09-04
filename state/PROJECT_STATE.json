@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "updated_utc": null,
+  "current_gate": "G0",
+  "gate_status": "in_progress",
+  "gate_entered_utc": null,
+  "last_verified_gate": null,
+  "last_verified_commit": null,
+  "active_task": {
+    "id": "G0.1",
+    "description": "Complete the G0 exit predicate: lint, type check, tests, determinism, licence, tooling verification",
+    "attempt": 0,
+    "escalation_level": 0,
+    "started_utc": null
+  },
+  "blocked_on": null,
+  "next_action": "Read AGENT_CONSTITUTION.md and PROPOSAL_v2.md section 9. Write preregistration/G0.yaml, then satisfy the G0 exit predicate one item at a time.",
+  "open_questions": [
+    "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0",
+    "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11"
+  ],
+  "mechanisms": {
+    "M1": {"status": "not_started", "verdict": null, "revisions_used": 0},
+    "M2": {"status": "not_started", "verdict": null, "revisions_used": 0},
+    "M3": {"status": "not_started", "verdict": null, "revisions_used": 0},
+    "M4": {"status": "blocked_on_M1", "verdict": null, "revisions_used": 0},
+    "M5": {"status": "reserve", "verdict": null, "revisions_used": 0}
+  },
+  "consecutive_no_progress_turns": 0,
+  "route_history": ["G0"]
+}

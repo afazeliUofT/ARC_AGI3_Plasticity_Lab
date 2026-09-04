@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "programme_end_date": "2027-03-31",
+  "max_turns_total": 4000,
+  "turns_used": 0,
+  "max_turns_per_gate": 400,
+  "turns_this_gate": 0,
+  "max_attempts_per_task": 6,
+  "default_experiment_wallclock_seconds": 7200,
+  "g3_preflight": {
+    "games_measured": 0,
+    "projected_fraction_of_weekly_allowance": null,
+    "escalate_above_fraction": 0.35
+  },
+  "effort_policy": {
+    "planning": "max", "verdict": "max", "novelty_audit": "max",
+    "retrospective": "max", "implementation": "high", "debugging": "high",
+    "mechanical": "none"
+  }
+}
