@@ -12,3 +12,4 @@ state/tool_errors.jsonl
 .claude/settings.local.json
 .env
 *.log
+state/PINNED_HASHES.json

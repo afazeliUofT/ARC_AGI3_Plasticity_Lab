@@ -349,9 +349,11 @@ class Supervisor:
                "--effort", effort,
                "--permission-mode", "acceptEdits",
                "--permission-prompts", "none",
+               "--add-dir", str(Path.home()),
+               "--add-dir", "/usr",
                "--output-format", "json"]
-        if head_commit():
-            cmd.insert(2, "--continue")
+        # Deliberately NO --continue: state lives on disk, the conversation is
+        # disposable, a fresh session re-reads settings, and context stays flat.
 
         env = dict(os.environ)
         env.setdefault("CLAUDE_PROJECT_DIR", str(ROOT))

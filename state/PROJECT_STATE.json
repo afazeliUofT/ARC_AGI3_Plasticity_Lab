@@ -2,7 +2,7 @@
   "schema_version": 1,
   "updated_utc": "2026-09-04T06:07:20Z",
   "current_gate": "G0",
-  "gate_status": "blocked",
+  "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T05:39:13Z",
   "last_verified_gate": null,
   "last_verified_commit": null,
@@ -48,7 +48,7 @@
       "revisions_used": 0
     }
   },
-  "consecutive_no_progress_turns": 2,
+  "consecutive_no_progress_turns": 0,
   "route_history": [
     "G0"
   ]
