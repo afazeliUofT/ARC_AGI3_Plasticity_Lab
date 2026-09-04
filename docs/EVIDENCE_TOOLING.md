@@ -302,12 +302,66 @@ model at all.
 Each is [VERIFY-ON-MACHINE]. Bootstrap records the observed value and the date here.
 
 1. The accepted `--effort` value set, from `claude --help`.
+   **Resolved 2026-09-04:** `claude --help` on Claude Code 2.1.260 prints
+   `--effort <level>  Effort level for the current session (low, medium, high, xhigh, max)`.
+   `ultracode` is **not** an accepted `--effort` value on this build; the section 2 row above
+   that lists it is left as written and this line corrects it. Evidence: the ledger entry
+   dated 2026-09-04 for task G0.1 (VERIFY-ON-MACHINE) in `state/LEDGER.jsonl`, which records
+   the `claude --help | grep -A1 effort` output verbatim.
 2. Whether the status line fires in headless `-p` and `state/usage.json` appears.
+   **Resolved 2026-09-04:** No. Across 8 completed headless `-p` turns (`state/supervisor.jsonl`,
+   event `turn`) `state/usage.json` never appeared, and every turn banner in
+   `state/supervisor.out` reads `[gauge: none]` (6 of 6 banners). `.claude/hooks/statusline_probe.sh`
+   is installed and `.claude/settings.json` points `statusLine` at it, so the hook is present and
+   simply does not fire under `-p`. The backstop in section 7 carries the load. An interactive
+   session was not tested and may still populate the file.
 3. The exact rate-limit failure signature: exit code, stderr text, whether a reset timestamp
    is carried.
+   **Not observable 2026-09-04:** no genuine usage-limit failure has occurred yet. The single
+   `rate_limit` event in `state/supervisor.jsonl` (2026-09-04T06:08:38Z, `returncode 0`) was a
+   false positive: the supervisor of that time matched the documented limit strings in the
+   agent's own stdout at roughly 21% real usage, and the current `scripts/supervisor.py`
+   classifies from stderr only (`RATE_LIMIT_PAT`). `state/tool_errors.jsonl` holds two entries,
+   both `returncode 129` from signal 15, neither a limit. The first real limit will be logged
+   verbatim there; resolve this item from that record.
 4. Whether `CLAUDE_CODE_OAUTH_TOKEN` sustains a headless turn with no interactive login.
+   **Resolved 2026-09-04:** Yes. `scripts/supervisor.py` prints a WARNING at start-up when
+   `CLAUDE_CODE_OAUTH_TOKEN` is unset; `state/supervisor.out` carries no such warning across
+   three supervisor starts, so the variable was set. From inside a headless turn's shell `env`
+   shows no `CLAUDE_CODE_OAUTH_TOKEN` (it is stripped from child processes) and
+   `claude auth status` reports `"loggedIn": false, "authMethod": "none"`, so no interactive
+   login is stored for this user, yet 6 turns completed with `returncode 0`
+   (`state/supervisor.jsonl`). The token alone sustains headless turns. Token lifetime has not
+   yet been observed; the section 8 rows stand.
 5. Whether a `PreToolUse` hook matching `Bash` reliably blocks `sed -i` and shell redirection
    against a protected path.
+   **Resolved 2026-09-04:** Yes, for anything visible in the command string.
+   `tests/integration/test_control_surface_hook.py` (SHA-256
+   `bac67b22831eb32fa2731c23dc1612885f205e3ef65353ccb4b2378e1bc7d7a0`) feeds 29 synthetic
+   payloads to `.claude/hooks/protect_control_surface.sh` exactly as Claude Code does: `sed -i`,
+   `>`, `>>`, `tee -a`, `cp`, `git checkout --` and `python -c` against `preregistration/G0.yaml`,
+   `scripts/supervisor.py` (relative and absolute path), `state/PINNED_HASHES.json`,
+   `.claude/settings.json`, `AGENT_CONSTITUTION.md` and `PROPOSAL_v2.md` are all denied with
+   exit 2 and `permissionDecision: deny`; reads, `sha256sum`, `pytest`, `git commit`, and writes
+   to `/tmp` and to `docs/EVIDENCE_*.md` are allowed. Result: 29 passed. Observed live: a
+   heredoc that merely named a frozen file was denied (ledger 2026-09-04T06:46:07Z), and
+   `ls -la .claude/hooks 2>&1` was denied because `2>&1` matches the redirect pattern, so the
+   hook errs over-inclusive, never under-inclusive. Known gap, pinned by the same test: a
+   script invoked by name (`python scripts/x.py`) that writes to a frozen path is invisible to
+   the hook; the supervisor's pinned-hash check (section 5, layer 2) is what holds against it.
 6. Headless behaviour at context exhaustion.
+   **Not observable 2026-09-04:** no headless turn has reached context exhaustion. The longest
+   turn ran 500 s (`state/supervisor.jsonl`); the supervisor starts a fresh session per turn
+   without `--continue`, so context stays flat by design and the condition may never arise.
+   `claude --help` on 2.1.260 exposes `--autocompact <auto|tokens>` (auto, or 100k-1M tokens),
+   which is the documented lever if it ever does.
 7. Whether Fable 5.1 has a separate allowance from other models on this plan.
+   **Not observable 2026-09-04:** the gauge never fires in headless mode (item 2), so no
+   per-model `rate_limits` fields have been seen, and the CLI exposes no non-interactive usage
+   query (`claude --help`, 2.1.260). Re-check if `state/usage.json` ever appears or from an
+   interactive `/usage` view.
 8. Installed Claude Code version, and whether it is native Windows or WSL.
+   **Resolved 2026-09-04:** Claude Code 2.1.260 (`claude --version`), a native Linux install at
+   `/home/afazeli2006/.local/bin/claude` linking to `~/.local/share/claude/versions/2.1.260`,
+   running inside WSL2 (Ubuntu 24.04.4 LTS, kernel `6.18.33.2-microsoft-standard-WSL2` from
+   `uname -a`); Python 3.12.3, uv 0.12.7. Not native Windows.

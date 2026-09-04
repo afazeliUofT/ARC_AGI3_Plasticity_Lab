@@ -184,13 +184,12 @@
       "name": "git_status_clean",
       "passed": false,
       "observed": {
-        "lines": 5,
+        "lines": 4,
         "sample": [
-          " M .gitignore",
+          " M docs/EVIDENCE_TOOLING.md",
           " M state/BUDGET.json",
           " M state/PROJECT_STATE.json",
-          "?? artifacts/E000_bootstrap/",
-          "?? status.sh"
+          "?? tests/integration/test_control_surface_hook.py"
         ],
         "exit": 0
       },
@@ -214,20 +213,11 @@
     },
     {
       "name": "verify_on_machine_resolved",
-      "passed": false,
+      "passed": true,
       "observed": {
         "items_total": 8,
-        "items_resolved": 0,
-        "unresolved": [
-          "1. The accepted `--effort` value set, from `claude --help`.",
-          "2. Whether the status line fires in headless `-p` and `state/usage.json` appears.",
-          "3. The exact rate-limit failure signature: exit code, stderr text, whether a reset timestamp",
-          "4. Whether `CLAUDE_CODE_OAUTH_TOKEN` sustains a headless turn with no interactive login.",
-          "5. Whether a `PreToolUse` hook matching `Bash` reliably blocks `sed -i` and shell redirection",
-          "6. Headless behaviour at context exhaustion.",
-          "7. Whether Fable 5.1 has a separate allowance from other models on this plan.",
-          "8. Installed Claude Code version, and whether it is native Windows or WSL."
-        ]
+        "items_resolved": 8,
+        "unresolved": []
       },
       "threshold": {
         "items_total": 8,
@@ -244,7 +234,7 @@
       "passed": true,
       "observed": 0,
       "threshold": 0,
-      "detail": "Checked 43 packages in 0.25ms\n",
+      "detail": "Checked 43 packages in 0.30ms\n",
       "skipped": false,
       "evidence": []
     },
@@ -253,14 +243,14 @@
       "passed": true,
       "observed": 0,
       "threshold": 0,
-      "detail": "............................................................             [100%]\n60 passed in 1.04s\n",
+      "detail": "........................................................................ [ 80%]\n.................                                                        [100%]\n89 passed in 1.51s\n",
       "skipped": false,
       "evidence": []
     },
     {
       "name": "pytest_min_tests_collected",
       "passed": true,
-      "observed": 60,
+      "observed": 89,
       "threshold": 1,
       "detail": "",
       "skipped": false,
