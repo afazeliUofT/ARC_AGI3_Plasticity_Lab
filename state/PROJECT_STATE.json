@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T07:47:57Z",
+  "updated_utc": "2026-09-04T07:53:02Z",
   "current_gate": "G1",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T07:28:55Z",
   "last_verified_gate": "G0",
   "last_verified_commit": "abad388",
   "active_task": {
-    "id": "G1.4",
-    "description": "Produce the three graded E100 runs under artifacts/E100_arc_interface/ (seed 12345 twice, seed 12346 once) through the canonical entry point, then run the full G1 verifier",
+    "id": "G1.5",
+    "description": "C5 adversarial self-review of the G1 result (three strongest artifact arguments, test the strongest), append the all-GAME_OVER substrate observation to docs/EVIDENCE_ARC.md with artifact citations, then set gate_status awaiting_verdict and dispatch the referee",
     "attempt": 0,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T07:47:57Z"
+    "started_utc": "2026-09-04T07:53:02Z"
   },
   "blocked_on": null,
-  "next_action": "G1.4: (1) Confirm 'test ! -e artifacts/E100_arc_interface' before the first run (C1: no G1 artifact may predate this point; the pre-registration is 773f1a2 and the verifier is unchanged at SHA-256 7877341122122a821aaf13d3e474ca3d950c2fa756fc6035e4f5bbdba8b5aad1). (2) Run, sequentially and each in its own process: 'uv run python scripts/run_experiment.py --config configs/experiments/E100_arc_interface.yaml' twice (seed 12345 from the config), then once with '--seed 12346'. Each run is projected at about 2 minutes (smoke: 1524 fps at 50 actions per game; 125000 steps plus per-step digesting) against the 1800 s limit; run them in the foreground with a generous Bash timeout (600000 ms each) and do not run them in parallel (timing is measured). Each prints {run_dir, completion_status}; require 'completed' for all three and stop to diagnose (L0 retry once, then L1) if not. (3) Run 'uv run python scripts/verify_run.py --gate G1 --report state/verify_G1.json' with the tooling checks ON (it shells out to uv sync, pytest, ruff, mypy; allow 600000 ms). Expect: 12 non-tooling checks plus 5 tooling checks; git_status_clean will FAIL until the artifacts and state are committed, so commit the three run directories (they are evidence; 'git add artifacts/E100_arc_interface') and re-run the verifier if that is the only failure. (4) If replay_final_frame_identity, games_attempted_and_terminal or throughput fail on the real runs, that is a substrate finding under preregistration G1 kill_rule: record it in the ledger with the raw evidence paths, add a dated entry to docs/EVIDENCE_ARC.md (append-only), and do not touch any threshold. (5) On a full PASS: record run digests (SHA256SUMS of each run) and the report digest in the ledger, then the next turn is G1.5 (C5 adversarial self-review: the three strongest artifact arguments, e.g. the environment seed not affecting the games so replay identity is trivially true; the policy seed being the only randomness; digesting cost hiding in throughput), followed by the referee dispatch. Reminders: read 'date -u' immediately before every timestamped write; never name the pre-registration directory in a shell command; use 'git add -A && git reset -q -- state/' only when staging must exclude state; artifacts under artifacts/ are committed including their .log files.",
+  "next_action": "G1.5, in this order, one turn. (1) Read the G1.4 decision entry in state/LEDGER.jsonl (2026-09-04T07:5xZ) for the three pre-listed C5 arguments A1 (replay identity trivially 1.0 if environments are pure functions of the action sequence, independent of the make() seed), A2 (pre-registered fps excludes reset() and digest time; all-in fps is lower), A3 (determinism identity rests on exclusions and same-machine timing). Rank them, then TEST the strongest with a throwaway script in /tmp (not artifacts/): for A1, replay one game's action list from artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/transitions.jsonl via arc_interface.replay_actions under two different make() seeds (12345 and 7) and report whether the final canonical digests agree; for A2, compute all-in fps as total_steps / manifest wallclock_seconds for each graded run; for A3, byte-compare transitions.jsonl and results.json (minus excluded keys) across the two seed-12345 runs with cmp/sha256sum. Record all three arguments and the test outcome in the ledger as a 'decision' entry with kind c5_self_review (C5 requires this BEFORE the verdict request). (2) Append to docs/EVIDENCE_ARC.md (Edit tool, additions only, never touching an existing line) a dated entry under the most relevant existing section recording the all-GAME_OVER observation with the three run directories, their SHA256SUMS digests (state/PROJECT_STATE.json verifier_reports.G1.runs) and the report digest 19870d345c1ae2296eaf64c34b01035d1f173af411d684ff7d256b811a0a57c1; the hook denies Bash commands naming docs/EVIDENCE_*.md with a redirect, so use Read then Edit. Re-run 'uv run python scripts/verify_run.py --gate G1 --skip-tooling' afterwards to confirm the evidence-doc edit did not disturb the public-stem parse (environment_cache_manifest must still PASS with 25 stems). (3) Set gate_status to awaiting_verdict, commit (message naming G1.5), then dispatch the referee subagent (Agent tool, subagent_type referee, effort max) with: gate G1, pre-registration hash abaa4e99, the three run directories, state/verify_G1.json and its digest, the clean-tree commit e589b96, the C5 ledger entry, and the instruction to re-run 'python scripts/verify_run.py --gate G1' itself and write docs/decisions/G1_VERDICT.md citing paths and SHA-256 digests. Record the verdict file's digest in the ledger (event verdict) and in state/PROJECT_STATE.json verdicts.G1 the next turn. Reminders: read 'date -u' immediately before every timestamped write; never name the pre-registration directory in a shell command; the ledger-append helper pattern is a python script written to /tmp with the Write tool.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -31,7 +31,8 @@
     "G1 risk noted at pre-registration: a seeded random policy may reach no terminal state in 5000 actions on any of the 25 games, or a game may not replay identically from its action log. Both are pre-registered as substrate findings handled under G1.yaml kill_rule (ledger objection, EVIDENCE_ARC entry, escalation or route change), never by lowering a threshold",
     "Supervisor sets state/BUDGET.json turns_this_gate from its own count (10 at turn 11) and ignores the reset to 0 recorded at G1 entry; G1's per-gate count therefore includes the 9 G0 turns. Frozen file, harmless against max_turns_per_gate 400; noted 2026-09-04, not fought",
     "ls20's reset frame is identical for make() seeds 12345 and 7 (observed 2026-09-04 in G1.2); the toolkit seed may not influence the public games at all. Replay identity is still meaningful (same actions, same frames) but the contrast-seed check in G1 relies on the POLICY seed, not the environment seed",
-    "G1.3 smoke observation (2026-09-04, 50 random actions per game, /tmp only): five games (bp35, s5i5, sp80, tu93, vc33) reach GAME_OVER within 50 uniform-random actions and none reaches WIN or completes a level; the random policy is a pure interface probe, and the G2 human baselines will be the first real performance reference"
+    "G1.3 smoke observation (2026-09-04, 50 random actions per game, /tmp only): five games (bp35, s5i5, sp80, tu93, vc33) reach GAME_OVER within 50 uniform-random actions and none reaches WIN or completes a level; the random policy is a pure interface probe, and the G2 human baselines will be the first real performance reference",
+    "G1.4 substrate observation (2026-09-04, artifacts/E100_arc_interface/, three runs): every one of the 25 public games ends in GAME_OVER under a uniform-random policy, none reaches WIN or completes a level, and the longest game lasts 742 actions of the 5000 allowed; many stop at round counts (30, 42, 50, 100, 200, 300), consistent with per-game action caps. Random play therefore says nothing about difficulty; G2 human baselines are the first real reference. To be appended to docs/EVIDENCE_ARC.md with artifact digests in G1.5"
   ],
   "mechanisms": {
     "M1": {
@@ -84,5 +85,19 @@
   "route_history": [
     "G0",
     "G1"
-  ]
+  ],
+  "verifier_reports": {
+    "G1": {
+      "file": "state/verify_G1.json",
+      "sha256": "19870d345c1ae2296eaf64c34b01035d1f173af411d684ff7d256b811a0a57c1",
+      "result": "PASS 18/18",
+      "clean_tree_commit": "e589b96",
+      "runs_committed_at": "621983e",
+      "runs": {
+        "20260904T074939Z_seed12345_8383cad8": "6db258830174e76b032943689552631a7b458ffe0f3fad97429af8e1b75e5190",
+        "20260904T074956Z_seed12345_9e2317b0": "1cdca620dfd0fd26553233a206ea50609cd2d122251d59bf92bbaa89614849dd",
+        "20260904T075000Z_seed12346_b801dd9b": "c8503416d8fd7e8103862a0a68e1299530991cbbab7d09459506cfc396c3d928"
+      }
+    }
+  }
 }

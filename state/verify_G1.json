@@ -2,7 +2,7 @@
   "gate": "G1",
   "preregistration_path": "preregistration/G1.yaml",
   "preregistration_sha256": "abaa4e99a1caad630d19f77e9804939a008d8748e4425ef7d4897c670f1d59ca",
-  "passed": false,
+  "passed": true,
   "skipped": [],
   "checks": [
     {
@@ -676,12 +676,10 @@
     },
     {
       "name": "git_status_clean",
-      "passed": false,
+      "passed": true,
       "observed": {
-        "lines": 1,
-        "sample": [
-          " M state/LEDGER.jsonl"
-        ],
+        "lines": 0,
+        "sample": [],
         "exit": 0
       },
       "threshold": {
@@ -716,7 +714,7 @@
       "passed": true,
       "observed": 0,
       "threshold": 0,
-      "detail": "........................................................................ [ 44%]\n........................................................................ [ 89%]\n.................                                                        [100%]\n161 passed in 10.27s\n",
+      "detail": "........................................................................ [ 44%]\n........................................................................ [ 89%]\n.................                                                        [100%]\n161 passed in 10.01s\n",
       "skipped": false,
       "evidence": []
     },
