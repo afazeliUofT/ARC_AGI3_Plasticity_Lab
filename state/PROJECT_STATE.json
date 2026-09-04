@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T16:50:07Z",
+  "updated_utc": "2026-09-04T17:03:28Z",
   "current_gate": "G3",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T16:50:07Z",
   "last_verified_gate": "G2",
   "last_verified_commit": "9e66b0d",
   "active_task": {
-    "id": "G3.2",
-    "description": "World-model interface (src/arc_plasticity/hypotheses/interface.py), sandboxed program execution and the full-history exact backtester (src/arc_plasticity/hypotheses/backtest.py) with unit tests, including a regression test that a windowed backtester fails the single_cell_flip-at-index-1 case",
+    "id": "G3.3",
+    "description": "E310_ref_backtest_rejection: config configs/experiments/E310_ref_backtest_rejection.yaml, runner (histories replayed from the G1 run 8383cad8 action log, 250 wrong-model trials + 25 controls, seeded mutation draw with the discrimination re-draw and vacuous accounting, results.json/metrics.csv per contract), its three graded runs (12345 x2, 12346) and evaluate_g3's E310 checks in scripts/verify_run.py",
     "attempt": 1,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T16:50:07Z"
+    "started_utc": "2026-09-04T17:03:28Z"
   },
   "blocked_on": null,
   "remote_push": {
@@ -22,7 +22,7 @@
     "authorised_by": "state/escalations/20260904T152234Z.md item 3",
     "policy": "push after every gate verdict from here on (constitution section 11); the G2.13 record commit and later commits are not yet pushed"
   },
-  "next_action": "G3.2 (one step, implementation effort high): read preregistration/G3.yaml via load_preregistration('G3') from scripts/verify_run.py (sections reference_architecture, backtest_rejection_experiment, thresholds; never name the pre-registration directory in a Bash command). Write src/arc_plasticity/hypotheses/interface.py (the candidate-program contract: predict(history, action) -> {frame, state, levels_completed, available_actions}, or stateful reset/step; fix the signature there, it is hashed into every E300 and E310 manifest), src/arc_plasticity/hypotheses/sandbox.py (separate Python subprocess, NetworkGuard(allowed_calls=0), resource.RLIMIT_AS 2147483648, per-backtest 120 s and per-prediction 5 s limits from the thresholds, no repository writes) and src/arc_plasticity/hypotheses/backtest.py (replay the COMPLETE history, exact comparison of every grid of every frame plus state and levels_completed, available_actions compared and recorded but not a certification field; record history_length, history_length_checked, mismatches, first_mismatch_index, wallclock; certified only at zero mismatches). Tests under tests/unit/: the true simulator wrapper is certified on a short offline history (use environment_files, offline, seed 12345); each of the eight mutation classes named in backtest_rejection_experiment.wrong_models is rejected; a regression test pins that a windowed backtester (last-N transitions) would certify a single_cell_flip at index 1 while the real one rejects it; sandbox timeout and memory violations yield not-certified with a recorded reason. Run 'uv run pytest -q', 'uv run ruff check .', 'uv run ruff format --check .', 'uv run mypy'. Ledger success entry with the module sha256s and the test count; commit 'G3.2: ...'. Then G3.3: E310_ref_backtest_rejection runner and config (histories = replay of artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8 action logs; 250 wrong-model trials + 25 controls; mutation applied on the model side only), its graded runs (two at seed 12345, one at 12346 via --seed), and evaluate_g3's E310 checks in scripts/verify_run.py. Do not make any model call before G3.5; do not create anything under artifacts/E300_ref before the pre-flight order in cost_preflight is satisfiable.",
+  "next_action": "G3.3 (one step, implementation effort high): read the E310 contract via load_preregistration('G3') from scripts/verify_run.py (sections backtest_rejection_experiment, thresholds, verification; never name the pre-registration directory in a Bash command). Write configs/experiments/E310_ref_backtest_rejection.yaml (experiment_id E310_ref_backtest_rejection, runner backtest_rejection, seed 12345, network_calls_allowed 0, model_calls_allowed 0, wallclock 3600, history source artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8/transitions.jsonl with its SHA256SUMS digest 6db25883..., environments_dir environment_files, trial_seeds_per_game 10, control_trials 1 per game, redraw_max 20) following the existing config schema in src/arc_plasticity/core/config.py and the E100/E020 runners' registration in scripts/run_experiment.py. Write src/arc_plasticity/evaluation/backtest_rejection.py: for each of the 25 games in the log, record_history through the offline toolkit (assert the replayed final frame digest equals the G1 results.json final_frame_sha256 for that game); for each trial seed derive an rng from (experiment seed, game index, trial index), draw the class uniformly over MUTATION_CLASSES, draw_mutation with up to 20 re-draws inside the class until the mutated predictions differ from the history on a certification field (check by predicting at the mutation site(s) with the mutated vs the true model, never by running the backtester), record redraws and vacuous trials; run backtest(MutatedModel(TrueModel...), history, limits from the thresholds) and the control backtest(TrueModel) once per game; write results.json (rejection_fraction over non-vacuous trials, per-class counts/fractions, vacuous count, correct_model_acceptance_fraction, backtest_module_sha256, interface_sha256, every trial's history_length_checked == history_length, history digests), metrics.csv, environment_results.csv, transitions.jsonl (one row per trial with the spec), hypotheses.jsonl (the BacktestRecord per trial), plus the standard manifest/SHA256SUMS via the core artifacts helpers. Unit-test the generator on the synthetic world (tests/g3_synthetic.py) with a fake history source. Then run the three graded invocations (seed 12345 twice, 12346 once via --seed) with 'uv run python scripts/run_experiment.py --config configs/experiments/E310_ref_backtest_rejection.yaml' (expect minutes, not hours: TrueModel is O(n) per backtest), and add evaluate_g3's E310 checks to scripts/verify_run.py reading every number from the G3 thresholds. Split into two turns if the runner alone fills the turn: runner + config + tests first, graded runs + verifier checks second. Do not make any model call before G3.5; do not create anything under artifacts/E300_ref before the pre-flight order in cost_preflight is satisfiable.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -190,5 +190,15 @@
         }
       }
     }
+  },
+  "g3_components": {
+    "recorded_utc": "2026-09-04T17:03:28Z",
+    "interface_sha256": "97624aa135788f61d25a9ac2bb8442ccfbe317c7152abaea58de48af6b252164",
+    "backtest_module_sha256": "7e09fefd8b61e31c5a18eaf0035d5b7ca8309b58f59ef22908a21158b71e5784",
+    "sandbox_sha256": "9e53bb3de06f2b8f251ea4bbe3f3604b4bab387c8d2e9aca07af2b2ab1fb7c5f",
+    "sandbox_worker_sha256": "169acd139566d3d0114038af0c3446dd13f01706979e02d57daae8f41e9929ce",
+    "true_model_sha256": "33fff33df81cb0944036e0497a18fd0760d8918f8803819bee583a4b9e8084aa",
+    "mutations_sha256": "bf8b6e06367fa6b2d50335ba067c5cfe6758381d37f44882d6013e5d7f24aaea",
+    "note": "interface_sha256 and backtest_module_sha256 must appear in every E300 and E310 manifest; any later edit to either file before the first graded run changes these values and must be re-recorded here"
   }
 }
