@@ -12,6 +12,8 @@ state/tool_errors.jsonl
 .claude/settings.local.json
 .env
 *.log
+# Run artifacts are evidence: re-include their logs (ledger decision 2026-09-04T06:58:24Z).
+!artifacts/**/*.log
 state/PINNED_HASHES.json
 state/supervisor.out
 state/supervisor.jsonl

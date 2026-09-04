@@ -1,0 +1,4 @@
+run_id=20260904T065956Z_seed12345_60af959c experiment=E000_bootstrap runner=smoke_toy_grid seed=12345 config_hash=6f700dc8dc427ad73a70fae39e964fcbe619bae5f3cdc6d6b518d912058eb30a git=ab89404fd32e79cd96b6831a3be8bff4bb46b117 dirty=True wallclock_limit=600s network_allowed=0
+toy grid size=8 seed=12345 start=(5, 4) goal=(1, 6) action_budget=64
+finished after 12 steps solved=True reward=1.0
+completion_status=completed wallclock_seconds=0.022

@@ -1,0 +1,19 @@
+budgets:
+  action_budget: 64
+  persistent_state_size_cap_bytes: 0
+  simulation_budget: 0
+  token_budget: 0
+description: Seeded toy grid walk through the canonical entry point; laboratory smoke
+  test only.
+experiment_id: E000_bootstrap
+language_model:
+  identifier: null
+  prompt: null
+model_calls_allowed: 0
+network_calls_allowed: 0
+runner: smoke_toy_grid
+runner_params:
+  grid_size: 8
+schema_version: 1
+seed: 12346
+wallclock_limit_seconds: 600

@@ -1,0 +1,27 @@
+{
+  "completion_status": "completed",
+  "config_hash": "6bd7ce9e351f1c953ae47681c2fa90475f5307ac5a375163bd325c1005787603",
+  "created_utc": "2026-09-04T06:59:57Z",
+  "experiment_id": "E000_bootstrap",
+  "extra": {},
+  "results": {
+    "cells_visited": 5,
+    "environment_generator_version": "toy-grid-1.0.0",
+    "goal": [
+      3,
+      6
+    ],
+    "grid_size": 8,
+    "optimal_steps": 4,
+    "solved": true,
+    "start": [
+      4,
+      3
+    ],
+    "steps": 4,
+    "total_reward": 1.0
+  },
+  "run_id": "20260904T065957Z_seed12346_ba50299f",
+  "seed": 12346,
+  "wallclock_seconds": 0.019098407006822526
+}

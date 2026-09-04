@@ -1,0 +1,288 @@
+{
+  "gate": "G0",
+  "preregistration_path": "preregistration/G0.yaml",
+  "preregistration_sha256": "c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620",
+  "passed": false,
+  "skipped": [],
+  "checks": [
+    {
+      "name": "nondeterministic_fields_within_bounds",
+      "passed": true,
+      "observed": {
+        "excluded_names": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "allowed_categories": [
+          "run identifiers (run_id, guid)",
+          "timestamps (created_utc, started_utc, finished_utc, updated_utc)",
+          "durations (wallclock_seconds, elapsed_seconds)",
+          "host and hardware descriptors (hostname, hardware, python_executable_path)"
+        ],
+        "forbidden": [
+          "action",
+          "action,_transition,_hypothesis_or_memory_operation_records",
+          "any_metric_or_result_value",
+          "config_hash",
+          "dependency_lock_hash",
+          "git_commit",
+          "hypothesis_or_memory_operation_records",
+          "prompt_hash",
+          "seed",
+          "transition"
+        ]
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "configs/nondeterministic_fields.yaml",
+        "preregistration"
+      ]
+    },
+    {
+      "name": "run_artifact_completeness",
+      "passed": true,
+      "observed": {
+        "runs": 3,
+        "problems": []
+      },
+      "threshold": {
+        "files": [
+          "manifest.json",
+          "resolved_config.yaml",
+          "results.json",
+          "metrics.csv",
+          "environment_results.csv",
+          "transitions.jsonl",
+          "hypotheses.jsonl",
+          "memory_operations.jsonl",
+          "stdout.log",
+          "stderr.log",
+          "git_state.txt",
+          "environment_info.json",
+          "SHA256SUMS"
+        ],
+        "manifest_keys": [
+          "experiment_id",
+          "run_id",
+          "timestamp_utc",
+          "git_commit",
+          "git_dirty",
+          "python_version",
+          "dependency_lock_hash",
+          "config_hash",
+          "environment_generator_version",
+          "seed",
+          "model_identifier",
+          "prompt_hash",
+          "action_budget",
+          "simulation_budget",
+          "token_budget",
+          "persistent_state_size_cap",
+          "hardware",
+          "wallclock_limit_seconds",
+          "completion_status"
+        ]
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "artifacts/E000_bootstrap/20260904T065956Z_seed12345_60af959c",
+        "artifacts/E000_bootstrap/20260904T065957Z_seed12345_47bf07b9",
+        "artifacts/E000_bootstrap/20260904T065957Z_seed12346_ba50299f"
+      ]
+    },
+    {
+      "name": "sha256sums_verify",
+      "passed": true,
+      "observed": {
+        "listed": 36,
+        "verified": 36,
+        "fraction": 1.0,
+        "problems": []
+      },
+      "threshold": {
+        "fraction_min": 1.0,
+        "must_list_every_file": true
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065956Z_seed12345_60af959c/SHA256SUMS",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065957Z_seed12345_47bf07b9/SHA256SUMS",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065957Z_seed12346_ba50299f/SHA256SUMS"
+      ]
+    },
+    {
+      "name": "determinism_identity",
+      "passed": true,
+      "observed": {
+        "identity": 1.0,
+        "contrast_differs": true,
+        "fixed_seed_runs": [
+          "20260904T065956Z_seed12345_60af959c",
+          "20260904T065957Z_seed12345_47bf07b9"
+        ],
+        "contrast_seed_runs": [
+          "20260904T065957Z_seed12346_ba50299f"
+        ],
+        "excluded_fields": [
+          "created_utc",
+          "duration_seconds",
+          "elapsed_seconds",
+          "finished_utc",
+          "guid",
+          "hardware",
+          "hostname",
+          "pid",
+          "python_executable_path",
+          "run_id",
+          "session_id",
+          "started_utc",
+          "timestamp_utc",
+          "updated_utc",
+          "wallclock_seconds"
+        ],
+        "problems": []
+      },
+      "threshold": {
+        "identity_min": 1.0,
+        "contrast_must_differ": true,
+        "fixed_seed": 12345,
+        "identical_invocations": 2,
+        "contrast_seed": 12346,
+        "contrast_invocations": 1
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065956Z_seed12345_60af959c/results.json",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065956Z_seed12345_60af959c/metrics.csv",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065957Z_seed12345_47bf07b9/results.json",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065957Z_seed12345_47bf07b9/metrics.csv",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065957Z_seed12346_ba50299f/results.json",
+        "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/artifacts/E000_bootstrap/20260904T065957Z_seed12346_ba50299f/metrics.csv"
+      ]
+    },
+    {
+      "name": "git_status_clean",
+      "passed": false,
+      "observed": {
+        "lines": 5,
+        "sample": [
+          " M .gitignore",
+          " M state/BUDGET.json",
+          " M state/PROJECT_STATE.json",
+          "?? artifacts/E000_bootstrap/",
+          "?? status.sh"
+        ],
+        "exit": 0
+      },
+      "threshold": {
+        "lines_max": 0
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "licence_text",
+      "passed": true,
+      "observed": "MIT No Attribution",
+      "threshold": "MIT No Attribution",
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "verify_on_machine_resolved",
+      "passed": false,
+      "observed": {
+        "items_total": 8,
+        "items_resolved": 0,
+        "unresolved": [
+          "1. The accepted `--effort` value set, from `claude --help`.",
+          "2. Whether the status line fires in headless `-p` and `state/usage.json` appears.",
+          "3. The exact rate-limit failure signature: exit code, stderr text, whether a reset timestamp",
+          "4. Whether `CLAUDE_CODE_OAUTH_TOKEN` sustains a headless turn with no interactive login.",
+          "5. Whether a `PreToolUse` hook matching `Bash` reliably blocks `sed -i` and shell redirection",
+          "6. Headless behaviour at context exhaustion.",
+          "7. Whether Fable 5.1 has a separate allowance from other models on this plan.",
+          "8. Installed Claude Code version, and whether it is native Windows or WSL."
+        ]
+      },
+      "threshold": {
+        "items_total": 8,
+        "items_resolved_min": 8
+      },
+      "detail": "",
+      "skipped": false,
+      "evidence": [
+        "docs/EVIDENCE_TOOLING.md"
+      ]
+    },
+    {
+      "name": "uv_sync_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "Checked 43 packages in 0.25ms\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "pytest_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "............................................................             [100%]\n60 passed in 1.04s\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "pytest_min_tests_collected",
+      "passed": true,
+      "observed": 60,
+      "threshold": 1,
+      "detail": "",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "ruff_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "All checks passed!\n",
+      "skipped": false,
+      "evidence": []
+    },
+    {
+      "name": "mypy_exit_code",
+      "passed": true,
+      "observed": 0,
+      "threshold": 0,
+      "detail": "Success: no issues found in 17 source files\n",
+      "skipped": false,
+      "evidence": []
+    }
+  ]
+}

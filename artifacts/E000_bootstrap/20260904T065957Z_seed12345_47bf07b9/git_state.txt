@@ -1,0 +1,8 @@
+commit ab89404fd32e79cd96b6831a3be8bff4bb46b117
+dirty true
+status --porcelain:
+ M .gitignore
+ M state/BUDGET.json
+ M state/PROJECT_STATE.json
+?? artifacts/E000_bootstrap/
+?? status.sh

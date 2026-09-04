@@ -1,0 +1,6 @@
+metric,value
+steps,4
+solved,1
+total_reward,1.0
+cells_visited,5
+optimal_steps,4
