@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T07:56:51Z",
-  "current_gate": "G1",
-  "gate_status": "awaiting_verdict",
-  "gate_entered_utc": "2026-09-04T07:28:55Z",
-  "last_verified_gate": "G0",
-  "last_verified_commit": "abad388",
+  "updated_utc": "2026-09-04T08:05:09Z",
+  "current_gate": "G2",
+  "gate_status": "not_started",
+  "gate_entered_utc": "2026-09-04T08:05:09Z",
+  "last_verified_gate": "G1",
+  "last_verified_commit": "1435f81",
   "active_task": {
-    "id": "G1.5",
-    "description": "G1 verdict request: C5 self-review recorded, EVIDENCE_ARC extended, referee dispatched; record the verdict file digest",
-    "attempt": 1,
+    "id": "G2.1",
+    "description": "Read PROPOSAL_v2.md section 9 row G2 (and any G2-relevant sections it points to) and docs/EVIDENCE_ARC.md 1.4 on human replays; author preregistration/G2.yaml with the Write tool before any G2 artifact exists; hash-lock the three carry-forward items from docs/decisions/G1_VERDICT.md section 11",
+    "attempt": 0,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T07:53:02Z"
+    "started_utc": "2026-09-04T08:05:09Z"
   },
   "blocked_on": null,
-  "next_action": "If docs/decisions/G1_VERDICT.md exists: read it, compute 'sha256sum docs/decisions/G1_VERDICT.md', check it cites the three run directories, their SHA256SUMS digests and the pre-registration hash abaa4e99, append a ledger entry with event 'verdict' carrying the verdict word and the file digest, write it into state/PROJECT_STATE.json verdicts.G1 (verdict, file, sha256, graded_commit = the commit the referee named), and on GO set gate_status 'passed', last_verified_gate 'G1', last_verified_commit to that commit, current_gate 'G2', gate_status 'not_started', append 'G2' to route_history, active_task G2.1 'read PROPOSAL_v2.md section 9 G2 predicate and plan the G2 pre-registration' and commit. On REVISE_ONCE or KILL follow the verdict's stated reason through the escalation ladder from L1. If the verdict file does not exist: re-dispatch the referee (Agent tool, subagent_type referee) with the same brief recorded in the G1.5 'attempt' ledger entry (pre-registration hash abaa4e99, runs 20260904T074939Z_seed12345_8383cad8 / 20260904T074956Z_seed12345_9e2317b0 / 20260904T075000Z_seed12346_b801dd9b, report state/verify_G1.json digest 19870d34, clean-tree commit e589b96, and the C5 ledger entry) and wait for it in the foreground. Reminders: read 'date -u' immediately before every timestamped write; never name the pre-registration directory in a shell command; ledger-append scripts go to /tmp via the Write tool.",
+  "next_action": "G2.1 pre-registration. First fill verdicts.G1.recorded_commit in state/PROJECT_STATE.json with the hash of the commit that recorded the verdict (git log --format=%h -1 -- docs/decisions/G1_VERDICT.md). Then read PROPOSAL_v2.md section 9 row G2 and the sections it references for the G2 hypothesis, primary metric, thresholds, kill rule, baselines and revision limit; read docs/EVIDENCE_ARC.md 1.4 (human replays) and section 6 item 6 since G2 depends on the 342 human replays, whose download location is UNCONFIRMED (constitution section 6 item 11: if the dataset cannot be obtained, escalate directly, do not climb the ladder). Read preregistration/G1.yaml with the Read tool as the structural template (never name that directory in a shell command). Author preregistration/G2.yaml with the Write tool: every numeric threshold with the reasoning that fixed it, and hash-lock the three carry-forward items from docs/decisions/G1_VERDICT.md section 11: (1) Arcade.make(seed) is inert on the public games, so the determinism contrast must name the policy seed or the game set as the source of variation; (2) every project-produced number cited in an evidence document must cite a preserved artifact under artifacts/ with a SHA256SUMS entry, never a /tmp script; (3) any throughput threshold states step-only or all-in (they differ by about 2x on this machine). Read 'date -u' immediately before writing authored_utc. Commit the pre-registration alone (git add -A && git reset -q -- state/ then commit), record its SHA-256 in the ledger (event decision, kind preregistration) and in state preregistrations.G2 with committed_at, set gate_status in_progress, commit state. If G2 cannot be pre-registered without the human replays' location, write state/ESCALATION.md per section 6 item 11 and set blocked_on.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -69,6 +69,13 @@
       "sha256": "37ffb13b00f691febebd1ba0aba035de4f62810333ed6dbedc1c81f6e97d3ede",
       "graded_commit": "72edbae",
       "recorded_commit": "abad388"
+    },
+    "G1": {
+      "verdict": "GO",
+      "file": "docs/decisions/G1_VERDICT.md",
+      "sha256": "9ba6a1cf139515550dfa8b3f4564297a609e73099afee6aa0a38a8db52884c45",
+      "graded_commit": "1435f81",
+      "recorded_commit": null
     }
   },
   "preregistrations": {
@@ -84,7 +91,8 @@
   },
   "route_history": [
     "G0",
-    "G1"
+    "G1",
+    "G2"
   ],
   "verifier_reports": {
     "G1": {
