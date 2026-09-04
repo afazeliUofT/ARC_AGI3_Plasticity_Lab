@@ -1,33 +1,34 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T07:23:35Z",
-  "current_gate": "G0",
-  "gate_status": "passed",
-  "gate_entered_utc": "2026-09-04T05:39:13Z",
+  "updated_utc": "2026-09-04T07:29:41Z",
+  "current_gate": "G1",
+  "gate_status": "in_progress",
+  "gate_entered_utc": "2026-09-04T07:28:55Z",
   "last_verified_gate": "G0",
   "last_verified_commit": "abad388",
   "active_task": {
-    "id": "G0.1",
-    "description": "Complete the G0 exit predicate: lint, type check, tests, determinism, licence, tooling verification. DONE: referee GO at abad388 (docs/decisions/G0_VERDICT.md)",
-    "attempt": 3,
+    "id": "G1.2",
+    "description": "Extend scripts/verify_run.py with the G1 evaluator that reads every threshold from preregistration/G1.yaml (SHA-256 abaa4e99a1caad630d19f77e9804939a008d8748e4425ef7d4897c670f1d59ca, commit 773f1a2); unit-test it against synthetic artifacts before any E100 run exists",
+    "attempt": 0,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T05:39:13Z"
+    "started_utc": "2026-09-04T07:29:41Z"
   },
   "blocked_on": null,
-  "next_action": "G0 is PASSED: referee GO in docs/decisions/G0_VERDICT.md (SHA-256 37ffb13b00f691febebd1ba0aba035de4f62810333ed6dbedc1c81f6e97d3ede, commit abad388, ledger 'verdict' entry 2026-09-04T07:22:08Z). The verdict's single permitted next action is to open G1 by authoring preregistration/G1.yaml before any G1 treatment run. This turn: (1) set current_gate G1, gate_status in_progress, gate_entered_utc from 'date -u', active_task G1.1 'Author the G1 pre-registration', append 'G1' to route_history; (2) read PROPOSAL_v2.md section 9 row G1 (and only the parts of the proposal that row references) and docs/EVIDENCE_ARC.md; (3) write preregistration/G1.yaml with the Write tool, following the structure of preregistration/G0.yaml: hypothesis, primary metric, every numeric threshold with the reasoning that fixed it, kill rule, mandated baselines, revision limit, and the three items the G0 verdict section 11 requires to be hash-locked: (a) a rule that an excluded field may be stripped only when its value is a top-level scalar, and that a container-valued or nested excluded key fails the gate; (b) an explicit statement that model-call nondeterminism is out of scope for G1 and is owed by the first gate that makes a model call (or, if G1 makes model calls, the protocol for it); (c) the three 'Not observable' tooling items (rate-limit signature, context exhaustion, per-model allowance) listed as open with the log each will be resolved from (state/tool_errors.jsonl, state/supervisor.jsonl, state/usage.json); (4) commit, record the file's SHA-256 in a ledger entry (C1), and set next_action to extend scripts/verify_run.py with the G1 evaluator that reads its thresholds from the new file. Reminders: take every ts/updated_utc from 'date -u' immediately before writing (referee defect 1); never put a frozen path in a shell command that also contains a redirect or heredoc; keep OperationMode.OFFLINE (environment_files/ already holds 25 games) and assert Arcade.make() is not None at every call site.",
+  "next_action": "G1.2: extend scripts/verify_run.py (writable and unpinned per the human's answer in state/escalations/20260904T060506Z.md item 2; the hook only blocks it once a G1 result exists, and none does) with evaluate_g1 registered in GATE_EVALUATORS, reading EVERY threshold from the G1 pre-registration via threshold()/section() and never hard-coding a number. Read the file's 'verification.checks_in_order' list and implement the checks in that order: arc_agi_version_pinned (parse uv.lock for the arc-agi package version == thresholds.arc_agi_locked_version, record arcengine version as observed); environment_cache_manifest (experiments/environment_cache_manifest.json exists, lists exactly cached_games_required stems equal to the 25 in docs/EVIDENCE_ARC.md section 1.1, each game dir has metadata.json and exactly one .py, every file under environment_files/ matches its recorded sha256 and no file is unlisted; drift count <= cache_manifest_drift_files_max); run_artifact_completeness reusing check_run_completeness plus throughput.json; sha256sums_verify reusing check_sha256sums; offline_run (each manifest network_calls_allowed == 0 and network_attempts <= network_attempts_max, model_calls_allowed == 0, results.json operation_mode == 'OFFLINE' and network_guard == 'NetworkGuard'); games_attempted_and_terminal (results.json per-game records: count >= games_attempted_min, terminal count >= terminal_games_min, step_failed count <= step_failures_max); exclusion_nesting (walk each compared results.json: any excluded name at depth > excluded_key_max_depth, or with a dict/list value when excluded_key_container_values_allowed is false, FAILS); determinism_identity reusing check_determinism with the G0 exclusions; replay_final_frame_identity (for every game in each run's results.json: fresh Arcade(OperationMode.OFFLINE, environments_dir='environment_files') under NetworkGuard(0), env = make(game_id, seed=recorded seed), assert env is not None, env.reset(), apply transitions.jsonl actions in order, compute the canonical frame digest defined in primary_metric.canonical_frame_digest, compare to final_frame_sha256; divergent count <= replay_divergent_games_max and fraction >= replay_final_frame_identity_min); throughput (throughput.json aggregate fps >= throughput_fps_min and steps >= throughput_min_steps_measured); then the G0 tooling checks unchanged. Put the frame-digest function in src/arc_plasticity/environments/arc_interface.py (new module, typed, also to be used by the E100 runner next turn) so the runner and the verifier share one definition. Add tests/unit/test_verify_run_g1.py driving the evaluator with synthetic run directories in tmp_path (one passing set, one failing each of: nested excluded key, container-valued excluded key, replay divergence, fps below threshold, cache drift); the replay check may be exercised in the unit test on a single small cached game (ls20) with a 5-action trajectory. Do NOT run E100 or create artifacts/E100_arc_interface/ this turn; the runner, its config and the cache manifest script are G1.3. Verify with 'uv run pytest -q', ruff, mypy; commit as 'G1.2: ...'. Reminders: read 'date -u' immediately before every timestamped write; never put a frozen path (the pre-registration directory, docs/EVIDENCE_*, .claude/) in a shell command, use the Read tool or the verifier's load_preregistration('G1'); 'git add -A && git reset -q -- state/' when a commit must exclude the supervisor's counter edits; keep OperationMode.OFFLINE and assert Arcade.make() is not None at every call site.",
   "open_questions": [
-    "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 01:27; hashes not yet recorded)",
-    "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11",
+    "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ already holds 25 game directories dated 2026-09-04 05:28Z; hashes to be recorded in experiments/environment_cache_manifest.json under G1.3)",
+    "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
     "Supervisor pins only five CONTROL_SURFACE files; preregistration/** has no layer-2 hash protection beyond the write-once hook (raised in turn-1 escalation item 2, not yet addressed)",
     "preregistration/G0.yaml authored_utc reads 06:05:00Z but was written at 05:54:21Z; file is write-once, ledger timestamp is authoritative",
-    "The three E000 manifests record git_dirty true because the supervisor's turn-counter edits to state/*.json are always uncommitted when a run starts inside a turn; every in-turn run will show this. Not a defect of the runner; note for the referee and consider whether the supervisor should commit its counter edits (frozen file, would need escalation)",
+    "The three E000 manifests record git_dirty true because the supervisor's turn-counter edits to state/*.json are always uncommitted when a run starts inside a turn; every in-turn run will show this. Not a defect of the runner; note for the referee and consider whether the supervisor should commit its counter edits (frozen file, would need escalation). Recorded in G1.yaml known_conflicts_at_authoring",
     "state/PINNED_HASHES.json is listed in .gitignore, so the pin file is untracked; the supervisor still verifies against it locally, but a fresh clone has no pins (observed 2026-09-04, not changed, .gitignore rule predates the agent)",
     "docs/EVIDENCE_TOOLING.md section 2 lists 'ultracode' as an --effort value; 'claude --help' on 2.1.260 accepts only low|medium|high|xhigh|max. Row left as written (additions only); correction recorded in section 11 item 1 on 2026-09-04",
-    "The control-surface hook is over-inclusive: any Bash command containing a frozen path plus '2>&1' or another '>' is denied even when read-only (two read-only commands denied on 2026-09-04). Workaround: never redirect stderr in a command that names a frozen path; use the Read tool for those files. Not a defect to fix (hook is frozen), just a working rule. Extended 2026-09-04: a heredoc whose BODY names a frozen path is also denied, and the agent memory directory under ~/.claude/projects/ is frozen too (contains '.claude/'); write ledger-append scripts to /tmp with the Write tool and run them with python3",
-    "Process defect recorded by the G0 referee (docs/decisions/G0_VERDICT.md section 9 item 1): ledger 'ts', state 'updated_utc' and the G0 pre-registration 'authored_utc' were typed as estimates and post-date their own git commit times. Rule from 2026-09-04T07:22:08Z onward: read 'date -u' immediately before every timestamped write. Git commit times and state/supervisor.jsonl are the reliable clock for anything earlier",
+    "The control-surface hook is over-inclusive: any Bash command containing a frozen path plus '2>&1' or another '>' is denied even when read-only (two read-only commands denied on 2026-09-04). Workaround: never redirect stderr in a command that names a frozen path; use the Read tool for those files. Not a defect to fix (hook is frozen), just a working rule. Extended 2026-09-04: a heredoc whose BODY names a frozen path is also denied, and the agent memory directory under ~/.claude/projects/ is frozen too (contains '.claude/'); write ledger-append scripts to /tmp with the Write tool and run them with python3. Extended 2026-09-04T07:28Z: ANY Bash mention of the pre-registration directory is denied, including 'ls' and 'git add <path>'; use load_preregistration('G1') from scripts/verify_run.py for reads and 'git add -A && git reset -q -- state/' for staging",
+    "Process defect recorded by the G0 referee (docs/decisions/G0_VERDICT.md section 9 item 1): ledger 'ts', state 'updated_utc' and the G0 pre-registration 'authored_utc' were typed as estimates and post-date their own git commit times. Rule from 2026-09-04T07:22:08Z onward: read 'date -u' immediately before every timestamped write. Git commit times and state/supervisor.jsonl are the reliable clock for anything earlier. G1.yaml authored_utc 07:26:29Z precedes its commit 773f1a2 at 07:28:55Z, as it should",
     "G0 verdict section 9 items 4 and 5: evidence for EVIDENCE_TOOLING section 11 items 2-4 lives in gitignored files (state/supervisor.jsonl, state/supervisor.out, state/tool_errors.jsonl) so a fresh clone cannot re-derive it; the verdict records their digests at verdict time. scripts/verify_run.py is not among the five pinned files and state/PINNED_HASHES.json is gitignored, a weaker layer-2 guarantee than the constitution describes; raise with the human at the next escalation, not now",
-    "Known hole in scripts/verify_run.py strip_keys (C5 argument A, pinned by tests/regression/test_c5_g0_exclusion_nesting.py): an excluded key is removed with its whole value at any depth. Unexploited in G0. The G1 pre-registration must hash-lock a rule that a container-valued or nested excluded key fails the gate; the G1 evaluator reads that rule from the pre-registration",
-    "Push after G0 deferred (ledger decision 2026-09-04T07:23:35Z): the remote's visibility could not be confirmed private from inside a turn (no gh, API probe denied). main is 16+ commits ahead of origin/main. Push once visibility is confirmed; do not treat as blocking"
+    "Known hole in scripts/verify_run.py strip_keys (C5 argument A, pinned by tests/regression/test_c5_g0_exclusion_nesting.py): an excluded key is removed with its whole value at any depth. Unexploited in G0. G1.yaml exclusion_nesting_rule hash-locks the narrower rule (excluded_key_max_depth 1, no container values); the G1 evaluator must enforce it before the identity check (G1.2)",
+    "Push after G0 deferred (ledger decision 2026-09-04T07:23:35Z): the remote's visibility could not be confirmed private from inside a turn (no gh, API probe denied). main is 18+ commits ahead of origin/main. Push once visibility is confirmed; do not treat as blocking",
+    "G1 risk noted at pre-registration: a seeded random policy may reach no terminal state in 5000 actions on any of the 25 games, or a game may not replay identically from its action log. Both are pre-registered as substrate findings handled under G1.yaml kill_rule (ledger objection, EVIDENCE_ARC entry, escalation or route change), never by lowering a threshold"
   ],
   "mechanisms": {
     "M1": {
@@ -66,7 +67,19 @@
       "recorded_commit": "abad388"
     }
   },
+  "preregistrations": {
+    "G0": {
+      "file": "preregistration/G0.yaml",
+      "sha256": "c91c197a0eab9764a67a2fbeeb0771825c95d8d294388c3eb6fe166f4f1f4620"
+    },
+    "G1": {
+      "file": "preregistration/G1.yaml",
+      "sha256": "abaa4e99a1caad630d19f77e9804939a008d8748e4425ef7d4897c670f1d59ca",
+      "committed_at": "773f1a2"
+    }
+  },
   "route_history": [
-    "G0"
+    "G0",
+    "G1"
   ]
 }
