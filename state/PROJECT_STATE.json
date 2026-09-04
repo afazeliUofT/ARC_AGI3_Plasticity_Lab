@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-04T17:13:14Z",
+  "updated_utc": "2026-09-04T20:18:16Z",
   "current_gate": "G3",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T16:50:07Z",
   "last_verified_gate": "G2",
   "last_verified_commit": "9e66b0d",
   "active_task": {
-    "id": "G3.3",
-    "description": "E310_ref_backtest_rejection: config, runner and unit tests DONE 2026-09-04T17:13:14Z (dry run in /tmp: 250/250 rejected, 0 vacuous, 25/25 controls, 43 s); remaining: the three graded runs (12345 x2, 12346 via --seed) under artifacts/E310_ref_backtest_rejection/ and evaluate_g3's E310 checks in scripts/verify_run.py reading every number from the G3 thresholds",
+    "id": "G3.4",
+    "description": "Level accounting, per-game stop rule, planner and exploration fallback exercised on the true simulator with zero model calls; E300 runner with a recorded-response stub; run set manifest tooling (G3 pre-registration verification.task_plan item G3.4). G3.3 closed 2026-09-04T20:18:16Z (three graded E310 runs verified, evaluate_g3 E310 checks PASS 8/8, E300 checks not-yet-evaluable)",
     "attempt": 1,
     "escalation_level": 0,
-    "started_utc": "2026-09-04T17:03:28Z"
+    "started_utc": "2026-09-04T20:18:16Z"
   },
   "blocked_on": null,
   "remote_push": {
@@ -22,7 +22,7 @@
     "authorised_by": "state/escalations/20260904T152234Z.md item 3",
     "policy": "push after every gate verdict from here on (constitution section 11); the G2.13 record commit and later commits are not yet pushed"
   },
-  "next_action": "G3.3 second half (one step, implementation effort high): (1) run the three graded E310 invocations from a tree whose only uncommitted change is the supervisor's state rewrite: 'uv run python scripts/run_experiment.py --config configs/experiments/E310_ref_backtest_rejection.yaml' twice, then once more with '--seed 12346' (each takes about 45 s and 470 MB; expect completion_status completed, 250 wrong-model trials, 0 vacuous, rejection_fraction 1.0, 25/25 controls, results.json sha256 496cd7084337bdb6... and metrics.csv 9ef5e457... for both seed-12345 runs before the G0 exclusions strip run_id/created_utc/wallclock_seconds; the seed-12346 run must differ). Record every run's SHA256SUMS digest in experiment_runs.E310_ref_backtest_rejection. (2) Add evaluate_g3 to scripts/verify_run.py (the file is editable; every number read via threshold(prereg, ...) from the G3 file, never hard-coded) with at least the E310 checks named in verification.checks_in_order: run_artifact_completeness and sha256sums_verify over artifacts/E310_ref_backtest_rejection/, offline_run (manifest network_calls_allowed 0, network_attempts 0, model_calls 0, results operation_mode OFFLINE and network_guard), backtest_rejection (wrong_model_trials >= backtest_wrong_model_trials_min, control_trials >= backtest_control_trials_min, len(per_class) >= backtest_mutation_classes_min with every class trials >= backtest_trials_per_class_min, vacuous_trials <= backtest_vacuous_trials_max, rejection_fraction >= backtest_rejection_fraction_min, correct_model_acceptance_fraction == backtest_correct_model_acceptance_min, every game history_length >= backtest_history_min_length, results history_source.sha256sums_sha256 == g1_history_run_sha256sums_sha256, replay_identity_games/25 >= replay_final_frame_identity_min and replay_divergent_games <= replay_divergent_games_max against the G1 results.json digests re-read by the verifier, backtest_limits equal to the three sandbox_* thresholds, backtest_module_sha256 in results equal to the live module digest and equal across all E310 runs, and every hypotheses.jsonl record's certified consistent with mismatches == 0 and history_length_checked == history_length), exclusion_nesting then determinism_identity for E310 (reuse check_exclusion_nesting and check_determinism_fixed_seed as G2 did: two seed-12345 runs identical on results.json and metrics.csv after the G0 exclusions, the 12346 run differs). E300 checks (cache_manifest_locked, run_set_manifest, official_baselines_used, action_budget_enforced, rhae_recomputed, model_call_accounting, verification_active, preflight_recorded) are added in G3.4-G3.8 as their artifacts exist; until then evaluate_g3 must report them as not-yet-evaluable failures, never as passes. Unit-test evaluate_g3's E310 checks in tests/unit/test_verify_run_g3.py on a synthetic run directory (pass case, and one failing case per threshold), run 'uv run python scripts/verify_run.py --gate G3' and expect the E310 checks to pass and the E300 checks to fail, then commit runs + verifier + tests. Do not make any model call before G3.5; do not create anything under artifacts/E300_ref.",
+  "next_action": "G3.4 (one step, implementation effort high, zero model calls, no credential): read the G3 pre-registration sections reference_architecture, experiment (budgets_per_game_run, extra_artifacts, results_json_contract, run_set_manifest, one_game_per_run), thresholds and carry_forward_from_g2_verdict via load_preregistration('G3') from scripts/verify_run.py (never mention the pre-registration directory in a Bash command). Then implement, with unit tests: (1) level accounting (src/arc_plasticity/evaluation/level_accounting.py or as the pre-registration names it): per-level h from the cached metadata.json baseline_actions through the existing rhae.py adapter, actions_attributed per level, the action_budget_multiplier x h per-level cap and the per_game_stop_rule with a recorded stop_reason, producing level_accounting.json in the contract shape; (2) planner over a certified WorldModel (search inside the model to the next level completion within the simulation budget, predict-before-act, abandon the plan on a mismatch) and the seeded exploration fallback, both exercised on TrueModel from src/arc_plasticity/hypotheses/true_model.py on two or three cached games in tests only; (3) the E300_ref runner registered in scripts/run_experiment.py with a recorded-response model stub (a model client interface whose stub returns canned responses from a file, so the runner is deterministic given the responses; the real adapter is G3.5), writing every contract artifact plus the seven extra artifacts (level_accounting.json, model_calls.jsonl and model_calls/, plans.jsonl, backtests.jsonl, rhae.json or as named, run set role) and refusing to start if any model call would be needed without a client; (4) run set manifest tooling (experiments/E300_ref_run_set.json builder listing every directory under artifacts/E300_ref/ with set number, stem, role and completion status). Do NOT create anything under artifacts/E300_ref (the first E300 runs are the G3.6 pre-flight on cd82, s5i5, wa30 after the G3.5 authentication probe); exercise the runner end to end only into a temporary artifacts root in tests. Keep hypotheses/backtest.py and interface.py byte-identical (digests in g3_components). Run pytest, ruff, mypy; append the ledger entry and update the state file BEFORE or IN the commit (see open_questions turn-order lesson); commit naming G3.4.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -57,7 +57,8 @@
     "G2.9 C5 review (2026-09-04, ledger decision entry): argument A (opening-frame accounting) refuted by an independent hand recount of lp85 level 1 over all 40 files (multiset equals per_participant_best_counts_sorted, 40/40 equal to the toolkit card); argument B (version mismatch hidden by stem matching) refuted for all 25 games (replay game ids equal cached metadata game_id including version hash); argument C: real P1/P2 agreement is 300 of 318 files with a completion, the 2 disagreements are a P2 nesting-depth read of the ragged cards, diagnostic only. Open for the referee: the official baselines for lp85 (7 levels) and vc33 (6 levels) differ from the derived ones for a reason outside the dataset; default is that RHAE keeps the official metadata.json values (toolkit path) and the derived numbers are the project's own reference. Referee correction (docs/decisions/G2_VERDICT.md section 10 item 1, accepted at G2.10): argument B is refuted only for the frame-side data.game_id; the client-side action_input.data.game_id names a different version for 15 games.",
     "G2 verdict findings (2026-09-04, docs/decisions/G2_VERDICT.md sha256 8f4e980c..., GO at 9e66b0d): every recording's client-side action_input.data.game_id names, for 15 games (ar25, cn04, dc22, ka59, m0r0, r11l, re86, s5i5, sc25, sk48, sp80, su15, tn36, tu93, vc33), exactly the Hugging Face (2026-04-02) version while the frame-side data.game_id names the cached version; whether frames were regenerated on the newer versions or only relabelled cannot be decided from the files. 13 of those 15 games reproduce the official baselines exactly; vc33 does not, and lp85 (both ids 305b61c3, NOT among the 15, correcting ledger G2.8 decision (c)) does not either. lp85 has 54 released sessions over two months against 10-15 sessions in 1-5 days for every other game. Verdict section 12 carries six items the G3 pre-registration must hash-lock. The EVIDENCE_ARC additions are G2.11; recorded_commit for verdicts.G2 is filled by that turn.",
     "G3.1 (2026-09-04): inside a headless turn 'claude auth status' reports loggedIn false and the env carries no CLAUDE_CODE_OAUTH_TOKEN, so runner-spawned 'claude -p' calls are expected to fail authentication; the section 6 item 1 escalation is scheduled as G3.5 (after the model-free components) and also asks for the weekly-allowance denominator the pre-flight needs (gauge silent headless, no CLI usage query) and, optionally, a cheaper model identifier. Whether a background process survives the end of a supervisor turn is unknown; record at G3.4. PROPOSAL_v2 section 14 item 5 (60 percent) versus section 9 row G3 (55 percent): 55.0 locked, noted for the referee.",
-    "G3.3 (2026-09-04): E310 assigns mutation classes by balanced blocks per game (seeded permutation of the eight classes, repeated, cut to 10) rather than an independent uniform draw, so backtest_trials_per_class_min 20 cannot fail by chance at the locked seed; each trial's class is still marginally uniform. At seed 12345 exactly one of 250 wrong-model trials (cn04, action_semantics_swap swapping ACTION6 in with no coordinates) is rejected by failure_kind 'raised' (toolkit step returned None) instead of by a mismatch, so history_length_checked_equal_length_all is false for that run with the trial listed in results.json; mutations.py left unchanged. Note for the referee."
+    "G3.3 (2026-09-04): E310 assigns mutation classes by balanced blocks per game (seeded permutation of the eight classes, repeated, cut to 10) rather than an independent uniform draw, so backtest_trials_per_class_min 20 cannot fail by chance at the locked seed; each trial's class is still marginally uniform. At seed 12345 exactly one of 250 wrong-model trials (cn04, action_semantics_swap swapping ACTION6 in with no coordinates) is rejected by failure_kind 'raised' (toolkit step returned None) instead of by a mismatch, so history_length_checked_equal_length_all is false for that run with the trial listed in results.json; mutations.py left unchanged. Note for the referee.",
+    "Turn order lesson (2026-09-04, G3.3 reconciliation): the turn that committed e58bbe3 hit the subscription cap between the commit and the ledger/state record, so the next turn had to reconcile from the artifacts. When a turn's commit carries new artifacts, append the ledger entry and update the state file in the SAME commit (or before it), never in a follow-up write."
   ],
   "mechanisms": {
     "M1": {
@@ -170,6 +171,14 @@
         "result": "PASS 19/19",
         "clean_tree_commit": "040fc39"
       }
+    },
+    "G3_draft_after_G3_3": {
+      "file": "/tmp/verify_G3_recon.json (not committed; digest only)",
+      "sha256": "0096555080c44682868e985018321c2c00f5f5e6ced6b4768f28d63145bbd45e",
+      "verify_run_py_sha256": "f355ad9f3ac3dcc610aeb5a1cb4dd14ecfe54e0f18e05010e2caf4ef02d5bdce",
+      "result": "FAIL 14/23 as designed: E310 checks 8/8 PASS, eight E300 checks not_yet_evaluable, git_status_clean fails on the turn's own state edits",
+      "tree_commit": "284a788 (dirty: state files and the escalation artefact)",
+      "recorded_utc": "2026-09-04T20:18:16Z"
     }
   },
   "experiment_runs": {
@@ -190,6 +199,41 @@
           "sha256sums_sha256": "34c772691cfffa55dea675dc6b15c4c8b6f42a625fddbd14fa3533af6b75fb94"
         }
       }
+    },
+    "E310_ref_backtest_rejection": {
+      "status": "graded_runs_complete_verifier_e310_pass",
+      "graded_root": "artifacts/E310_ref_backtest_rejection/",
+      "superseded_root": "artifacts/E310_ref_backtest_rejection_superseded/ (three runs from before the history_run_id fix, never graded; README inside)",
+      "runs_committed_at": "e58bbe3",
+      "runner_commit": "31a5fdf",
+      "history_run": "artifacts/E100_arc_interface/20260904T074939Z_seed12345_8383cad8 (SHA256SUMS 6db25883...)",
+      "summary_all_runs": "25/25 replay identity, 250 wrong-model trials, 0 vacuous, rejection_fraction 1.0, 25/25 controls accepted, every class 28-35 trials, wall-clock 48-54 s",
+      "runs": {
+        "20260904T172409Z_seed12345_80f55ea5": {
+          "seed": 12345,
+          "sha256sums_sha256": "707f9f3095060a3180ee2f72c797bc6ca2623869425b543fda87aa18e3d63903",
+          "results_json_sha256": "7192b5ebb336abc19c2defb5b5bb8cf255e3880b7657ed647cc8aabd449fca9d",
+          "metrics_csv_sha256": "9ef5e4577310e5af600f69cf7c7268d07faa5112af8e64f524c7021c68d4571a",
+          "manifest_git_commit": "31a5fdf",
+          "manifest_git_dirty": false
+        },
+        "20260904T172500Z_seed12345_4553de06": {
+          "seed": 12345,
+          "sha256sums_sha256": "b28b975d34a5f5f02aedf1b557eaaf200a0e4ed662ac98742f77198b25ccec7d",
+          "results_json_sha256": "c5decc14b373774068d7e420e23ef1ee6cce4e8d7bb9d316f78de0575f2b797d",
+          "metrics_csv_sha256": "9ef5e4577310e5af600f69cf7c7268d07faa5112af8e64f524c7021c68d4571a",
+          "manifest_git_commit": "31a5fdf",
+          "manifest_git_dirty": true
+        },
+        "20260904T172556Z_seed12346_9f05e556": {
+          "seed": 12346,
+          "sha256sums_sha256": "737987134c26cc874c63e217805d58780bb9f628fdb6f2d4433655e518734f22",
+          "results_json_sha256": "3968f4e52052a8ec7eec1a3079129cafdab0e419d19c767da211589adcbd475a",
+          "metrics_csv_sha256": "00d6337e44ddf566104d5c3cfa42a9c99a278e6b6a04ab870a1980c7169784c4",
+          "manifest_git_commit": "31a5fdf",
+          "manifest_git_dirty": true
+        }
+      }
     }
   },
   "g3_components": {
@@ -200,7 +244,7 @@
     "sandbox_worker_sha256": "169acd139566d3d0114038af0c3446dd13f01706979e02d57daae8f41e9929ce",
     "true_model_sha256": "33fff33df81cb0944036e0497a18fd0760d8918f8803819bee583a4b9e8084aa",
     "mutations_sha256": "bf8b6e06367fa6b2d50335ba067c5cfe6758381d37f44882d6013e5d7f24aaea",
-    "e310_generator_sha256": "9a0ee6510e5d6377e021d33fb0949b3479a5090b339e432087b18d3139e53a52",
+    "e310_generator_sha256": "2c7347d32fa73a587c57a403560ab641c0540d2d3af352cffe82d74462584bff",
     "e310_config_sha256": "1703db4be8b40d66ba8ce975ecc3cde93f10b49a42809138462a00e572427af0",
     "e310_dry_run": {
       "recorded_utc": "2026-09-04T17:13:14Z",
@@ -209,6 +253,7 @@
       "metrics_csv_sha256_prefix": "9ef5e4577310e5af",
       "summary": "25/25 replay identity, 250 wrong-model trials, 0 vacuous, 250 rejected, 25/25 controls, per class 29-35, 1 trial (cn04 action_semantics_swap) rejected by failure_kind raised with history_length_checked 1/75, wall-clock 43 s"
     },
-    "note": "interface_sha256 and backtest_module_sha256 must appear in every E300 and E310 manifest; any later edit to either file before the first graded run changes these values and must be re-recorded here. Unchanged at G3.3 first half (verified by sha256sum 2026-09-04T17:11:52Z)"
+    "note": "interface_sha256 and backtest_module_sha256 must appear in every E300 and E310 manifest; any later edit to either file before the first graded run changes these values and must be re-recorded here. Unchanged at G3.3 close (verified by sha256sum 2026-09-04T20:18:16Z; all six hypotheses/ module digests equal the G3.2 values; backtest_module_sha256 7e09fefd appears in all three graded E310 results.json)",
+    "e310_generator_sha256_note": "2c7347d3... after the 31a5fdf history_run_id rename (pre-fix value 9a0ee651 recorded at G3.3 first half); recomputed by sha256sum at 2026-09-04T20:18:16Z"
   }
 }
