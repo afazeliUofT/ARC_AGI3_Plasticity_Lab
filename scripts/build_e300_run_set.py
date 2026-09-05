@@ -3,7 +3,12 @@
 
     uv run python scripts/build_e300_run_set.py [--artifacts-root artifacts/E300_ref]
                                                 [--output experiments/E300_ref_run_set.json]
-                                                [--print]
+                                                [--experiment-id E300_ref] [--print]
+
+For the successor's graded set (preregistration/G3b.yaml graded_experiment.run_set_manifest)
+point it at the E304 root: ``--artifacts-root artifacts/E304_ref --output
+experiments/E304_ref_run_set.json``; the experiment id defaults to the root's name and the
+``preflight_graded`` role applies only to the G3.yaml experiment.
 
 Lists EVERY directory under the E300 artifacts root with its run_id, stem, set_index, role
 and SHA256SUMS digest. The rules, applied mechanically so no run can be chosen or dropped by
@@ -163,13 +168,22 @@ def summarize_sets(runs: list[dict[str, Any]], stems_required: list[str]) -> dic
     return out
 
 
+def g3_experiment_id(root: Path = ROOT) -> str:
+    """The experiment id preregistration/G3.yaml names (E300_ref); the pre-flight roles apply
+    to that experiment only (preregistration/G3b.yaml graded_experiment.run_set_manifest)."""
+    prereg, _, _ = load_preregistration("G3", root)
+    return str(section(prereg, "experiment").get("experiment_id") or "")
+
+
 def build(
     artifacts_root: Path,
     *,
     stems_required: list[str],
     preflight: list[str],
     root: Path = ROOT,
+    experiment_id: str | None = None,
 ) -> dict[str, Any]:
+    """``experiment_id`` defaults to the artifacts root's directory name (artifacts/<id>/)."""
     run_dirs = (
         sorted(p for p in artifacts_root.iterdir() if p.is_dir()) if artifacts_root.is_dir() else []
     )
@@ -184,7 +198,7 @@ def build(
     return {
         "schema_version": 1,
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-        "experiment_id": "E300_ref",
+        "experiment_id": experiment_id if experiment_id is not None else artifacts_root.name,
         "artifacts_root": rel,
         "stems_required": list(stems_required),
         "preflight_games": list(preflight),
@@ -207,11 +221,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--artifacts-root", type=Path, default=DEFAULT_ARTIFACTS_ROOT)
     ap.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     ap.add_argument("--print", action="store_true", help="print the manifest to stdout too")
+    ap.add_argument(
+        "--experiment-id",
+        default=None,
+        help="experiment id recorded in the manifest (default: the artifacts root's name)",
+    )
     args = ap.parse_args(argv)
+    artifacts_root = args.artifacts_root.resolve()
+    experiment_id = args.experiment_id or artifacts_root.name
+    # preflight_graded is a role of the G3.yaml experiment only; a successor experiment
+    # (E304_ref) labels every completed run graded.
+    preflight = preflight_games() if experiment_id == g3_experiment_id() else []
     doc = build(
-        args.artifacts_root.resolve(),
+        artifacts_root,
         stems_required=stems_from_cache_manifest(),
-        preflight=preflight_games(),
+        preflight=preflight,
+        experiment_id=experiment_id,
     )
     text = json.dumps(doc, indent=2, sort_keys=True) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)

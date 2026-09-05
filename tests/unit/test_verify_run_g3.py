@@ -758,17 +758,24 @@ def test_evaluate_g3_orders_the_checks_and_fails_the_pending_e300_ones(
     view["verification"]["secondary_artifacts_root"] = str(world)
     checks = vr.evaluate_g3(view, tmp_path / "E300_ref", ROOT, skip_tooling=True)
     names = [c.name for c in checks]
-    assert names[:5] == [
+    # G3.6b step 15: the successor overlay leads when preregistration/G3b.yaml exists, and
+    # the graded-set checks run for real (over an empty root here) instead of the pending
+    # placeholders; the E310 checks keep their order.
+    overlay = ["successor_preregistration_overlay"] if vr.load_g3_successor(ROOT) else []
+    assert names[: len(overlay) + 5] == overlay + [
         "cache_manifest_locked",
         "run_set_manifest",
+        "run_artifact_completeness",
         "run_artifact_completeness_e310",
-        "sha256sums_verify_e310",
-        "offline_run_e310",
+        "sha256sums_verify",
     ]
+    assert names.index("sha256sums_verify_e310") < names.index("offline_run_e310")
     assert names.index("backtest_rejection") < names.index("preflight_recorded")
     assert names.index("exclusion_nesting_e310") < names.index("determinism_identity_e310")
     by_name = {c.name: c for c in checks}
     for name, _ in vr.G3_E300_PENDING_CHECKS:
+        if name == "preflight_recorded":
+            continue  # reads state/BUDGET.json and the preserved E300 runs, not the empty root
         assert not by_name[name].passed and not by_name[name].skipped
     for name in (
         "cache_manifest_locked",
