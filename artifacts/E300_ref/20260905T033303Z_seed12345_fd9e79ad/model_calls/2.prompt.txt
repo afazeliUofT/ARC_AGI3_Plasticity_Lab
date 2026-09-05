@@ -1,0 +1,164 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 1; actions remaining on this level: 350
+
+## Rejected programs (most recent last)
+
+### h001
+
+```python
+import copy
+
+def _find_player(frame):
+    rows = [r for r in range(63) for c in range(64) if frame[r][c] in (0, 14)]
+    cols = [c for r in range(63) for c in range(64) if frame[r][c] in (0, 14)]
+    if not rows:
+        return None
+    return min(rows), min(cols)
+
+def _facing(frame, r0, c0):
+    # returns action code of facing direction: 1 up, 2 down, 3 left, 4 right
+    if frame[r0][c0] == 0 and frame[r0][c0 + 3] == 0:
+        return 1
+    if frame[r0 + 3][c0] == 0 and frame[r0 + 3][c0 + 3] == 0:
+        return 2
+    if frame[r0][c0] == 0 and frame[r0 + 3][c0] == 0:
+        return 3
+    return 4
+
+def predict(history, action):
+    last = history[-1]
+    frame = copy.deepcopy(last["frame"])
+    g = frame[0]
+    a = action.get("action", 5)
+
+    pos = _find_player(g)
+    if pos is not None and a in (1, 2, 3, 4):
+        r0, c0 = pos
+        face = _facing(g, r0, c0)
+        for r in range(r0, r0 + 4):
+            for c in range(c0, c0 + 4):
+                g[r][c] = 1
+        dr, dc = {1: (-4, 0), 2: (4, 0), 3: (0, -4), 4: (0, 4)}[a]
+        nr, nc = r0 + dr, c0 + dc
+        ok = 0 <= nr and nr + 3 <= 62 and 0 <= nc and nc + 3 <= 63
+        if ok:
+            for r in range(nr, nr + 4):
+                for c in range(nc, nc + 4):
+                    if g[r][c] != 1:
+                        ok = False
+        if ok:
+            r0, c0 = nr, nc
+        face = a
+        for r in range(r0, r0 + 4):
+            for c in range(c0, c0 + 4):
+                g[r][c] = 14
+        if face == 1:
+            for c in range(c0, c0 + 4):
+                g[r0][c] = 0
+        elif face == 2:
+            for c in range(c0, c0 + 4):
+                g[r0 + 3][c] = 0
+        elif face == 3:
+            for r in range(r0, r0 + 4):
+                g[r][c0] = 0
+        else:
+            for r in range(r0, r0 + 4):
+                g[r][c0 + 3] = 0
+
+        # bottom bar: fills from the right, one cell per 4 moves
+        moves = sum(1 for h in history[1:] if h["action"] and h["action"]["action"] in (1, 2, 3, 4))
+        moves += 1
+        n = (moves + 3) // 4
+        n = min(n, 64)
+        for c in range(64 - n, 64):
+            g[63][c] = 4
+
+    return {
+        "frame": frame,
+        "state": last["state"],
+        "levels_completed": last["levels_completed"],
+        "available_actions": list(last["available_actions"]),
+    }
+```
+
+## Counterexamples
+
+{"action":3,"data":{},"hypothesis_id":"h001","kind":"prediction_mismatch","observation_sha256":"e084bc46017a66240d77a66574ccb5865d168daadf91b8e36651bff08d16a9f7","plan_index":null,"predicted_observation_sha256":"7b792132b3dd5a4f0161499c45cef465e3816f5be0630ad78c944fc04b8b24f8","step_index":5}
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r47: 1*64
+g0 r48: 1*32 0*4 1*28
+g0 r49-r51: 1*32 14*4 1*28
+g0 r52-r62: 1*64
+g0 r63: 7*64
+record 1: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 0
+record 2: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 1, 33 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1 (63,63)=4
+record 3: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 2, 32 cell(s)
+g0 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (48,32)=14 (48,33)=14 (48,34)=14 (48,35)=0 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=0 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=0 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=0
+record 4: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 3, 32 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1
+record 5: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 4, 33 cell(s)
+g0 (48,24)=0 (48,25)=14 (48,26)=14 (48,27)=14 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (49,24)=0 (49,25)=14 (49,26)=14 (49,27)=14 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (50,24)=0 (50,25)=14 (50,26)=14 (50,27)=14 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (51,24)=0 (51,25)=14 (51,26)=14 (51,27)=14 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (63,62)=4
+```
+
+Reply with one Python program in a ```python fenced block.

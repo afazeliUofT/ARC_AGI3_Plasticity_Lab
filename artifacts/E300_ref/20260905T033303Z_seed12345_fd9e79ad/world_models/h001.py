@@ -1,0 +1,73 @@
+import copy
+
+def _find_player(frame):
+    rows = [r for r in range(63) for c in range(64) if frame[r][c] in (0, 14)]
+    cols = [c for r in range(63) for c in range(64) if frame[r][c] in (0, 14)]
+    if not rows:
+        return None
+    return min(rows), min(cols)
+
+def _facing(frame, r0, c0):
+    # returns action code of facing direction: 1 up, 2 down, 3 left, 4 right
+    if frame[r0][c0] == 0 and frame[r0][c0 + 3] == 0:
+        return 1
+    if frame[r0 + 3][c0] == 0 and frame[r0 + 3][c0 + 3] == 0:
+        return 2
+    if frame[r0][c0] == 0 and frame[r0 + 3][c0] == 0:
+        return 3
+    return 4
+
+def predict(history, action):
+    last = history[-1]
+    frame = copy.deepcopy(last["frame"])
+    g = frame[0]
+    a = action.get("action", 5)
+
+    pos = _find_player(g)
+    if pos is not None and a in (1, 2, 3, 4):
+        r0, c0 = pos
+        face = _facing(g, r0, c0)
+        for r in range(r0, r0 + 4):
+            for c in range(c0, c0 + 4):
+                g[r][c] = 1
+        dr, dc = {1: (-4, 0), 2: (4, 0), 3: (0, -4), 4: (0, 4)}[a]
+        nr, nc = r0 + dr, c0 + dc
+        ok = 0 <= nr and nr + 3 <= 62 and 0 <= nc and nc + 3 <= 63
+        if ok:
+            for r in range(nr, nr + 4):
+                for c in range(nc, nc + 4):
+                    if g[r][c] != 1:
+                        ok = False
+        if ok:
+            r0, c0 = nr, nc
+        face = a
+        for r in range(r0, r0 + 4):
+            for c in range(c0, c0 + 4):
+                g[r][c] = 14
+        if face == 1:
+            for c in range(c0, c0 + 4):
+                g[r0][c] = 0
+        elif face == 2:
+            for c in range(c0, c0 + 4):
+                g[r0 + 3][c] = 0
+        elif face == 3:
+            for r in range(r0, r0 + 4):
+                g[r][c0] = 0
+        else:
+            for r in range(r0, r0 + 4):
+                g[r][c0 + 3] = 0
+
+        # bottom bar: fills from the right, one cell per 4 moves
+        moves = sum(1 for h in history[1:] if h["action"] and h["action"]["action"] in (1, 2, 3, 4))
+        moves += 1
+        n = (moves + 3) // 4
+        n = min(n, 64)
+        for c in range(64 - n, 64):
+            g[63][c] = 4
+
+    return {
+        "frame": frame,
+        "state": last["state"],
+        "levels_completed": last["levels_completed"],
+        "available_actions": list(last["available_actions"]),
+    }

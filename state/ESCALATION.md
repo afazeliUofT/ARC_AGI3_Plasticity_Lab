@@ -1,0 +1,122 @@
+# ESCALATION — G3.6 cost pre-flight complete: section 6 item 10 (budget ceiling, no denominator)
+
+**Written:** 2026-09-05T07:34:32Z, turn after the third pre-flight game-run finished.
+**Trigger:** `preregistration/G3.yaml` `cost_preflight.no_denominator_rule` (sha256 5f1ca112…):
+"If no denominator and no gauge readings are available when the three runs are complete, the
+fraction is undefined … the pre-flight then escalates unconditionally under section 6 item 10
+with the absolute numbers … there is no safe default for an unknown denominator."
+The denominator is still absent (your answer of 2026-09-04T21:17Z: none exists, none is to be
+fabricated; the gauge never fires headless). So this escalation is mandatory before any fourth
+game-run, even though your ledger decision of 2026-09-05T07:28:18Z already settles most of it.
+Everything below that you have already decided is marked **(decided 07:28Z)** and treated as the
+default; the open items are the ones the successor pre-registration cannot be written without.
+
+**How to reply:** append a section beginning `## ANSWER` to this file
+(`state/ESCALATION.md`). Nothing else clears the block: not a chat message, not a ledger entry,
+not an edit elsewhere. The supervisor checks for that line between turns; on seeing it the next
+turn archives this file to `state/escalations/<timestamp>.md`, clears `blocked_on`, records the
+answer as a `decision` ledger entry and resumes.
+
+## 1. The three runs (configuration 4624ea0d, model claude-fable-5-1, effort high, cap 40 calls / 1200 s)
+
+Source: `scripts/g36_preflight_totals.py` over the three run directories (JSON copy in
+`state/BUDGET.json` `g3_preflight.measured`). Prices are the pre-registration's
+(10 / 50 / 0.25 / 12.50 USD per million input / output / cache-read / cache-write, 5-minute
+tier); the CLI's own `total_cost_usd` (1-hour tier) is shown alongside.
+
+| run | game | stop reason | calls | model s | run wall s | engine s | tokens cc / cr / in / out | USD prereg | USD CLI | levels | RHAE |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 20260905T025114Z_seed12345_8fd63a5a | cd82 | model_budget_exhausted (1200 s cap) | 7 | 1200.1 | 1567.1 | 367.0 | 120185 / 0 / 12 / 91195 | 6.06 | 7.06 | 0/6 | 0.0 |
+| 20260905T032217Z_seed12345_ee3b847e | s5i5 | level_budget_exhausted (100 actions) | 6 | 281.8 | 426.9 | 145.2 | 57484 / 0 / 12 / 24758 | 1.96 | 2.42 | 0/8 | 0.0 |
+| 20260905T033303Z_seed12345_fd9e79ad | wa30 | wallclock (7200 s limit, 120 s reserve) | 11 | 621.1 | 7090.6 | 6469.4 | 333000 / 0 / 22 / 55236 | 6.92 | 9.70 | 0/9 | 0.0 |
+| **total** | | | **24** | **2103.0** | **9084.6** | **6981.6** | **510669 / 0 / 46 / 171189 = 681904** | **14.94** | **19.18** | 0/23 | 0.0 |
+
+SHA256SUMS digests: cd82 dfd5e2247ff1ffe13630efe05dcb14d046e78a8e6b9058b4eab5f45063fa40bf,
+s5i5 663d8b528a9e56d5377a35e55bbbf97565fbb31619aa174b81d0c8a418d4af98,
+wa30 b182fd67d87fee7820bc45022f0895be7e7bee4f1e2d34d92423306f69c59de2 (50/50 OK by `sha256sum -c`).
+`model_unavailable_reason` null on all three; `calls_without_program` 1 (cd82 call 7, timed out at the
+remaining-budget cap, 0 output tokens, CLI cost null) / 0 / 0; `cache_read` 0 on all 24 calls.
+
+## 2. Extrapolation to 25 games (`cost_preflight.extrapolation_rule`)
+
+| quantity | count-weighted (x 25/3) | budget-weighted (x 85675/13260) | cap-bound |
+|---|---|---|---|
+| USD equivalent, pre-registration prices | **124.53 = projected_usd_25** | 96.55 | — |
+| USD, CLI 1-hour-tier figure | 159.86 | 123.95 | — |
+| model wall-clock seconds | 17525 (3.5 five-hour windows at 5000 s) | 13588 (2.7) | 30000 at 1200 s (6.0); 60000 at 2400 s (12.0) |
+| run wall-clock seconds (concurrency 1) | 75705 (21.0 h) | 58697 (16.3 h) | — |
+
+`projected_fraction_of_weekly_allowance` stays **undefined** (no denominator). What the numbers
+say without one: a full 25-game set costs on the order of 125 to 160 USD list-equivalent, 3.5 to
+12 five-hour throttle windows of model time depending on how often the per-run cap binds, and
+about a day of wall-clock, most of it engine time that costs no allowance.
+
+## 3. Per-call wall-clock over all 24 calls (your 07:28Z request)
+
+min 21.3 / median 54.1 / mean 87.6 / max 392.4 s, stdev 89.4. Sorted: 21.3, 23.5, 23.7, 30.6,
+30.6, 33.1, 36.4, 42.3, 45.5, 46.6, 47.7, 53.3, 54.9, 58.6, 58.9, 69.4, 72.3, 110.0, 122.4,
+124.5, 128.1, 190.6, 286.2, 392.4. Only 3 of 24 calls reach 170 s and all three are cd82's
+(190.6, 286.2, 392.4 s); per-run means are cd82 171.4 s, s5i5 47.0 s, wa30 56.5 s. Output
+length explains it: cd82's completed calls average 13.0k output tokens (max 34.1k) against 4.1k
+on s5i5 and 5.0k on wa30 (all-call median 4481). **"~170 s per call" is a cd82 effect, not the
+rate.** At the median call, 2400 s buys about 44 calls, so `calls_per_run_max` 40 could become
+the binding limit on s5i5-like games under the raised cap.
+
+## 4. What wa30 adds
+
+- Stopped by the runner's own wall-clock (7200 s config limit minus 120 s reserve) at 7090.6 s
+  with only 621 s of model time: 6470 s went to the engine. Simulation used 578,508 steps of
+  5,000,000; 322 plan searches, all `not_found`; 11 hypotheses proposed, 10 certified; 9
+  prediction mismatches in 323 compared. Level 1 stood at 327 of its 355 budget actions.
+- The prompt grew from 19 KB at history 30 (call 7) to 89 KB at history 200 (call 8): 170
+  exploration actions passed between two induction calls. The last call sent 93.6 KB at history
+  206. With no cache reuse every call re-pays cache creation on the whole history (333k
+  cache-creation tokens on this run).
+- The job was charged 1200 s by the pre-fix default in `state/jobs/g36-wa30-1/result.json` and
+  re-charged 621 s in `state/supervisor.jsonl` line 209 after your 425f74d fix; the meter is right.
+- All three runs: the reference agent never left exploration and completed no level. That is a
+  pre-flight observation, not a grade; the graded set answers whether REF reaches 55.0.
+
+## 5. Decisions
+
+The pre-registration offers three options: proceed as pre-registered, stop G3, or a successor
+pre-registration with human-chosen ceilings or model (a route change; `G3.yaml` is not amended
+and its thresholds 55.0 and 0.95 are inherited unchanged). Your 07:28Z entry chose the successor.
+
+1. **Per-run model cap 1200 -> 2400 s, `calls_per_run_max` 40 unchanged (decided 07:28Z).**
+   Default: the agent edits the successor config to 2400. Note section 3: 40 calls may bind first.
+2. **Job `wallclock_limit_s` 10800 (decided 07:28Z).** Open: the config's own
+   `wallclock_limit_seconds` is 7200 and fired on wa30 with 621 s of model time; under a 2400 s
+   cap a wa30-like game needs more. Default: successor config `wallclock_limit_seconds` 10500
+   so the runner's limit (with its 120 s reserve) always fires before the supervisor's 10800 s
+   kill, which writes no manifest.
+3. **Successor identity.** Default: experiment id `E301_ref`, config
+   `configs/experiments/E301_ref.yaml` (copy of E300_ref with items 1-2 changed, everything else
+   byte-identical), pre-registration `preregistration/G3b.yaml` written before its first run,
+   inheriting every G3.yaml threshold and rule and recording the three E300_ref runs as preserved,
+   listed, never graded (`preflight_runs_are_graded`). `scripts/verify_run.py` gains the E301
+   root for `evaluate_g3`. The 25-game graded set then runs cd82, s5i5 and wa30 again under the
+   successor (they are not reused). Say so if you want a different id, name or gate label.
+4. **Proceed with the 25-game graded set at the numbers in section 2 (decided 07:28Z: "then run
+   the graded set").** Default: proceed, one supervisor job per game, in the pre-registered
+   `run_set_manifest` order, no game-run inside a turn.
+5. **History window / prefix truncation.** wa30 sent 93.6 KB prompts with zero cache reuse.
+   Default: **no change** in the successor (one variable at a time; a window is a REF design
+   change, not a spend control). If you want one, name the rule and it goes into E301_ref.yaml
+   and G3b.yaml before the first run.
+6. **Model identifier.** Default: claude-fable-5-1, effort high, unchanged.
+7. **Engine time.** 6470 s on wa30 is planner/simulation time under the pre-registered sandbox
+   limits (20000 nodes, depth 8, predict 5 s, backtest 120 s). Default: unchanged; it costs
+   wall-clock, not allowance. A 25-game set is about a day at concurrency 1.
+
+## 6. What happens with each answer
+
+- `## ANSWER` accepting the defaults: next turn archives this file, records the decision, writes
+  `E301_ref.yaml` and `G3b.yaml` (write-once, Write tool), extends the verifier, records the
+  hashes, and queues cd82 as the first graded job.
+- `## ANSWER` changing any item: the same, with your values.
+- `## ANSWER` stop G3: the three runs stay preserved, G3 is closed `failed` on the cost finding
+  with a ledger entry and `docs/DECISION_LOG.md` record, and the route question goes to
+  `retrospective`.
+
+Nothing runs until the `## ANSWER` line exists. No fourth game-run has been started.

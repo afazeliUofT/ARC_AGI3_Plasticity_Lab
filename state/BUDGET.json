@@ -20,8 +20,201 @@
       "calls_per_run_max": 40,
       "model_wallclock_per_run_seconds": 1200,
       "concurrency": 1,
-      "status": "provisional, derived from the throttle ceiling (four runs per window), not measured; set in configs/experiments/E300_ref.yaml spend_control and frozen within a graded set by the config hash; the human resets them from the observed distribution after the first complete E300_ref run"
-    }
+      "status": "measured over three runs (cd82 cap-bound at 1200 s after 7 calls; s5i5 level-budget-bound at 281.8 s; wa30 runner-wall-clock-bound at 621.1 s with 6470 s of engine time); human reset 2026-09-05T07:28:18Z: model_wallclock_per_run_seconds 1200 -> 2400 for the successor set, calls_per_run_max 40 unchanged, job wallclock_limit_s 10800; the E300_ref config (4624ea0d) is never edited, the successor config carries the new values"
+    },
+    "games_measured": 3,
+    "projected_usd_25": 124.53,
+    "count_weighted_usd": 124.53,
+    "budget_weighted_usd": 96.55,
+    "extrapolation_25_games": {
+      "count_weighted_usd": 124.53,
+      "budget_weighted_usd": 96.55,
+      "projected_usd_25": 124.53,
+      "count_weighted_model_seconds": 17525,
+      "budget_weighted_model_seconds": 13588,
+      "cap_bound_model_seconds_at_1200": 30000,
+      "cap_bound_model_seconds_at_2400": 60000,
+      "count_weighted_wallclock_seconds": 75705,
+      "budget_weighted_wallclock_seconds": 58697,
+      "five_hour_windows_at_5000s": {
+        "count_weighted": 3.5,
+        "cap_bound_1200": 6.0,
+        "cap_bound_2400": 12.0
+      }
+    },
+    "denominator_source": "none: human's answer 2026-09-04T21:17Z (state/escalations/20260904T211800Z.md item 2); no gauge readings either; fraction undefined; escalated unconditionally under no_denominator_rule at 2026-09-05T07:34:32Z (state/ESCALATION.md)",
+    "measured_runs": {
+      "20260905T025114Z_seed12345_8fd63a5a": {
+        "game": "cd82-fb555c5d",
+        "stop_reason": "model_budget_exhausted",
+        "model_calls": 7,
+        "model_wallclock_seconds_total": 1200.1,
+        "wallclock_seconds": 1567.1,
+        "tokens_by_kind": {
+          "cache_creation": 120185,
+          "cache_read": 0,
+          "input": 12,
+          "output": 91195
+        },
+        "usd_equivalent_prereg_prices": 6.0622,
+        "usd_cli_total_cost_sum": 7.0606,
+        "per_call_wallclock_seconds": {
+          "n": 7,
+          "min": 30.6,
+          "median": 124.5,
+          "mean": 171.4,
+          "max": 392.4,
+          "values": [
+            122.4,
+            30.6,
+            190.6,
+            53.3,
+            286.2,
+            392.4,
+            124.5
+          ]
+        },
+        "sha256sums_sha256": "dfd5e2247ff1ffe13630efe05dcb14d046e78a8e6b9058b4eab5f45063fa40bf",
+        "results_json_sha256": "b2ac683b3657d04d61521ee048091ab9b92db84ca5636a7e8889dea4a9d6e7d7"
+      },
+      "20260905T032217Z_seed12345_ee3b847e": {
+        "game": "s5i5-18d95033",
+        "stop_reason": "level_budget_exhausted",
+        "model_calls": 6,
+        "model_wallclock_seconds_total": 281.76,
+        "wallclock_seconds": 426.9,
+        "tokens_by_kind": {
+          "cache_creation": 57484,
+          "cache_read": 0,
+          "input": 12,
+          "output": 24758
+        },
+        "usd_equivalent_prereg_prices": 1.9566,
+        "usd_cli_total_cost_sum": 2.4212,
+        "per_call_wallclock_seconds": {
+          "n": 6,
+          "min": 23.5,
+          "median": 48.6,
+          "mean": 47.0,
+          "max": 69.4,
+          "values": [
+            23.5,
+            69.4,
+            58.6,
+            42.3,
+            33.1,
+            54.9
+          ]
+        },
+        "sha256sums_sha256": "663d8b528a9e56d5377a35e55bbbf97565fbb31619aa174b81d0c8a418d4af98",
+        "results_json_sha256": "937787880a2f9be33ac50a96cc3b9c571969224bf0d9c305d7653efd4421b1a3"
+      },
+      "20260905T033303Z_seed12345_fd9e79ad": {
+        "game": "wa30-ee6fef47",
+        "stop_reason": "wallclock",
+        "model_calls": 11,
+        "model_wallclock_seconds_total": 621.14,
+        "wallclock_seconds": 7090.6,
+        "tokens_by_kind": {
+          "cache_creation": 333000,
+          "cache_read": 0,
+          "input": 22,
+          "output": 55236
+        },
+        "usd_equivalent_prereg_prices": 6.9245,
+        "usd_cli_total_cost_sum": 9.7019,
+        "per_call_wallclock_seconds": {
+          "n": 11,
+          "min": 21.3,
+          "median": 46.6,
+          "mean": 56.5,
+          "max": 128.1,
+          "values": [
+            46.6,
+            21.3,
+            23.7,
+            128.1,
+            47.7,
+            58.9,
+            110.0,
+            30.6,
+            36.4,
+            45.5,
+            72.3
+          ]
+        },
+        "sha256sums_sha256": "b182fd67d87fee7820bc45022f0895be7e7bee4f1e2d34d92423306f69c59de2",
+        "results_json_sha256": "0d7c14d60d909e7c43cf44854ac4efda36795ba5fceffdd94ec37aeaac175193"
+      }
+    },
+    "measured": {
+      "totals": {
+        "model_calls": 24,
+        "model_wallclock_seconds_total": 2103.0,
+        "wallclock_seconds": 9084.6,
+        "engine_seconds_outside_model_calls": 6981.6,
+        "tokens_by_kind": {
+          "cache_creation": 510669,
+          "cache_read": 0,
+          "input": 46,
+          "output": 171189
+        },
+        "tokens_total": 681904,
+        "usd_equivalent_prereg_prices": 14.9433,
+        "usd_cli_total_cost_sum": 19.1837
+      },
+      "per_call_wallclock_seconds_all_runs": {
+        "n": 24,
+        "min": 21.3,
+        "median": 54.1,
+        "mean": 87.6,
+        "max": 392.4,
+        "stdev": 89.4,
+        "over_170s": 3,
+        "sorted": [
+          21.3,
+          23.5,
+          23.7,
+          30.6,
+          30.6,
+          33.1,
+          36.4,
+          42.3,
+          45.5,
+          46.6,
+          47.7,
+          53.3,
+          54.9,
+          58.6,
+          58.9,
+          69.4,
+          72.3,
+          110.0,
+          122.4,
+          124.5,
+          128.1,
+          190.6,
+          286.2,
+          392.4
+        ]
+      },
+      "per_call_output_tokens_all_runs": {
+        "n": 24,
+        "min": 0,
+        "median": 4481.0,
+        "mean": 7133,
+        "max": 34104
+      },
+      "prices_usd_per_million": {
+        "input": 10.0,
+        "output": 50.0,
+        "cache_read": 0.25,
+        "cache_creation": 12.5
+      },
+      "script": "scripts/g36_preflight_totals.py",
+      "recorded_utc": "2026-09-05T07:34:32Z"
+    },
+    "supervisor_job_charging": "fixed by the human's commit 425f74d (2026-09-05T05:35Z): nested model_wallclock_seconds_total is found and a charge is clamped to the job's wall-clock; the three jobs now carry 1200 / 281 / 621 s (state/supervisor.jsonl lines 203, 206, 209 and meter_correction entries 210, 213)"
   },
   "effort_policy": {
     "planning": "max",
