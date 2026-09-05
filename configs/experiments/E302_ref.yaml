@@ -1,0 +1,137 @@
+# E300_ref: the reference architecture (REF) on one cached public game per invocation.
+#
+# Pre-registered in preregistration/G3.yaml, experiment. One invocation runs exactly one game
+# (experiment.one_game_per_run): the config lists all 25 cached stems and --game <stem>
+# selects one; the entry point records the selection under runner_params.game and resolves
+# budgets.action_budget to action_budget_multiplier x sum(official baseline_actions) of that
+# game (the placeholder 0 below is never run). The graded unit is the set of 25 game-runs
+# listed in experiments/E300_ref_run_set.json (scripts/build_e300_run_set.py).
+#
+# Every numeric ceiling under runner_params is copied from the G3 pre-registration thresholds
+# (model_calls_per_game_max, tokens_per_game_max, simulation_steps_per_game_max, the three
+# sandbox limits, action_budget_multiplier, cache_manifest_sha256); the verifier compares the
+# copies with the locked values. induction_min_history, wallclock_reserve_seconds and planner
+# are internal design choices (reference_architecture.what_is_fixed_here), frozen within a
+# graded set by the config hash.
+#
+# model_client.kind headless_cli is the graded channel (model_calls.channel): one `claude -p`
+# subprocess per call, fresh session, tools disabled, prompt on stdin, cwd a temporary
+# directory outside the repository, ARC_* stripped from the environment; each call is bounded
+# by call_wallclock_seconds (an internal design choice frozen by the config hash). The
+# credential is CLAUDE_CODE_OAUTH_TOKEN in the child only: forwarded from the runner's own
+# environment when present, else mapped from the supervisor's alias PLASTICITY_LAB_OAUTH_TOKEN
+# (Claude Code strips the original from its tool subprocesses; human's answer 2026-09-04,
+# state/escalations/20260904T214700Z.md, route (a)); a call with neither variable is refused
+# before anything is spawned (authentication_unavailable). token_file is a declined route and
+# is refused by the adapter (human's answer 2026-09-04, state/escalations/20260904T211800Z.md).
+# Tests replace the channel with kind recorded (a canned-response file).
+#
+# spend_control (same answer): calls are strictly serial; a run makes at most
+# calls_per_run_max model calls or model_wallclock_per_run_seconds of cumulative nested
+# wall-clock, whichever binds first, then completes model-free. Both numbers are provisional,
+# derived from the supervisor's 5000 s per five-hour throttle (state/throttle.json), not
+# measured; they tighten the pre-registered ceilings above and never loosen them.
+#
+# Run:  uv run python scripts/run_experiment.py --config configs/experiments/E300_ref.yaml --game <stem>
+
+schema_version: 1
+experiment_id: E302_ref
+description: Reference architecture (induce an executable world model, certify it by full-history backtest, plan inside it, predict before every action) on one cached public game per invocation under the official 5x per-level action budget, scored by RHAE against the official baselines.
+runner: ref_world_model
+seed: 12345
+wallclock_limit_seconds: 10500
+network_calls_allowed: 0
+model_calls_allowed: 60
+budgets:
+  action_budget: 0
+  simulation_budget: 5000000
+  token_budget: 4000000
+  persistent_state_size_cap_bytes: 0
+language_model:
+  identifier: claude-fable-5-1
+  prompt: |
+    You are writing an executable world model of an unknown grid game from a recorded
+    history of actions and the observations that followed them. The history is complete
+    and exact; your program must reproduce EVERY recorded transition exactly (every grid
+    cell, the state string and levels_completed) when replayed from the start, or it will
+    be rejected with a counterexample. Prefer the simplest rule that explains all of the
+    data. Return a single Python program implementing the contract below, in one fenced
+    ```python block, with no other code blocks.
+
+    Level-completion conjecture (required). In the recorded history levels_completed has
+    never changed, so the data cannot show what completes a level. What completes the
+    current level is therefore a hypothesis that your program must state and implement;
+    a planner will search your model for the shortest action sequence that raises
+    levels_completed, execute that sequence on the real game, and reject your program
+    with a counterexample if the game disagrees. Begin your program with one comment line
+    starting with "# GOAL:" that states, in one sentence, the concrete condition under
+    which you conjecture the current level is completed (for example a movable object
+    reaching a marked target cell, two regions matching in colour, a counter of cells
+    reaching a value). Implement exactly that condition in predict(): when the frame the
+    action produces satisfies it, return levels_completed increased by one and the state
+    string "WIN" if you believe that level was the last one, otherwise "NOT_FINISHED";
+    when it does not, return levels_completed unchanged. The condition must hold on NO
+    recorded transition, or the replay check will reject the program. A program whose
+    levels_completed can never increase does not answer this task. Choose the simplest
+    conjecture consistent with the observed dynamics; when a counterexample below refutes
+    an earlier conjecture, state a different one rather than a variant that cannot fire.
+runner_params:
+  environments_dir: environment_files
+  cache_manifest: experiments/environment_cache_manifest.json
+  cache_manifest_sha256: 023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af
+  games:
+    - ar25
+    - bp35
+    - cd82
+    - cn04
+    - dc22
+    - ft09
+    - g50t
+    - ka59
+    - lf52
+    - lp85
+    - ls20
+    - m0r0
+    - r11l
+    - re86
+    - s5i5
+    - sb26
+    - sc25
+    - sk48
+    - sp80
+    - su15
+    - tn36
+    - tr87
+    - tu93
+    - vc33
+    - wa30
+  action_budget_multiplier: 5
+  model_effort: high
+  model_calls_per_game_max: 60
+  tokens_per_game_max: 4000000
+  simulation_steps_per_game_max: 5000000
+  induction_min_history: 4
+  wallclock_reserve_seconds: 120
+  planner:
+    max_depth: 8
+    max_nodes: 20000
+    click_grid_step: 16
+  sandbox_limits:
+    backtest_seconds_max: 120
+    predict_seconds_max: 5
+    address_space_bytes_max: 2147483648
+  model_client:
+    kind: headless_cli
+    call_wallclock_seconds: 900
+  spend_control:
+    calls_per_run_max: 40
+    model_wallclock_per_run_seconds: 2400
+    concurrency: 1
+  extra_artifacts:
+    - model_calls.jsonl
+    - model_calls/
+    - world_models/
+    - backtests.jsonl
+    - plans.jsonl
+    - level_accounting.json
+    - rhae.json
