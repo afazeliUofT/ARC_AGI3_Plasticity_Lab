@@ -1,0 +1,26 @@
+run_id=20260905T174628Z_seed12345_460bd1b1 experiment=E303_ref runner=ref_world_model seed=12345 config_hash=ddf253d345864060973d368648e1304658fc2e3f0760d6876802d095d7fcfda5 git=de34d66cf00f3b6a3baac183f7baccf68b51744e dirty=True wallclock_limit=10500s network_allowed=0
+ref_world_model game=cd82-fb555c5d game_index=2 seed=12345 multiplier=5 baselines=[55, 8, 41, 21, 23, 23] model_calls_max=60 tokens_max=4000000 client=headless_cli operation_mode=OFFLINE interface_sha256=97624aa135788f61 backtest_sha256=7e09fefd8b61e31c model_client_sha256=e78bf5fa4b41c90e
+cd82-fb555c5d reset: state=NOT_FINISHED win_levels=6 available=[1, 2, 3, 4, 5, 6] frame_sha256=fe1eaf17e4c079361607c5b62b90a4511d019ba6ab7b590d1a2b4d9e5d744d17 action_budget_total=855
+call 1 (induce) -> h001 sha256=d387efe8571b01b8 certified=True checked=4/4 mismatches=0 failure_kind=None
+plan 0 from h001: not_found actions=0 nodes=277 steps=34902 budget_used=34902 traced=True; queue exhausted after 277 nodes and 34902 predictions: 295 distinct states, 34608 duplicates, 18 new states dropped at depth cap 16, max depth reached 16, predicted levels max 0 (target 1), states {'NOT_FINISHED': 34902}, 0 frame-unchanged predictions
+call 2 (revise) -> h002 sha256=cbc9140af4e4c604 certified=True checked=5/5 mismatches=0 failure_kind=None
+plan 1 from h002: not_found actions=0 nodes=277 steps=34902 budget_used=69805 traced=True; queue exhausted after 277 nodes and 34902 predictions: 295 distinct states, 34608 duplicates, 18 new states dropped at depth cap 16, max depth reached 16, predicted levels max 0 (target 1), states {'NOT_FINISHED': 34902}, 13640 frame-unchanged predictions
+plan 2 from h002: not_found actions=0 nodes=277 steps=34902 budget_used=104708 traced=True; queue exhausted after 277 nodes and 34902 predictions: 295 distinct states, 34608 duplicates, 18 new states dropped at depth cap 16, max depth reached 16, predicted levels max 0 (target 1), states {'NOT_FINISHED': 34902}, 13640 frame-unchanged predictions
+call 3 (revise) -> h003 sha256=2358df7f4562f68e certified=True checked=7/7 mismatches=0 failure_kind=None
+plan 3 from h003: found actions=3 nodes=10 steps=1139 budget_used=105848 traced=False; found at depth 3 after 10 nodes
+call 4 (revise) -> h004 sha256=510df6c0eaee3a55 certified=True checked=10/10 mismatches=0 failure_kind=None
+plan 4 from h004: found actions=5 nodes=31 steps=3785 budget_used=109636 traced=False; found at depth 5 after 31 nodes
+call 5 (revise) -> h005 sha256=32200b9a044c636e certified=True checked=13/13 mismatches=0 failure_kind=None
+plan 5 from h005: found actions=1 nodes=1 steps=1 budget_used=109640 traced=False; found at depth 1 after 1 nodes
+call 6 (revise) -> h006 sha256=5415fa80d7b41793 certified=True checked=14/14 mismatches=0 failure_kind=None
+plan 6 from h006: found actions=1 nodes=1 steps=2 budget_used=109643 traced=False; found at depth 1 after 1 nodes
+call 7 (revise) -> h007 sha256=784ac011cbdb6614 certified=True checked=15/15 mismatches=0 failure_kind=None
+plan 7 from h007: found actions=5 nodes=35 steps=4289 budget_used=113933 traced=False; found at depth 5 after 35 nodes
+call 8 (revise) -> h008 sha256=733bdb9af0d4a85b certified=True checked=17/17 mismatches=0 failure_kind=None
+plan 8 from h008: found actions=9 nodes=995 steps=125249 budget_used=239184 traced=False; found at depth 9 after 995 nodes
+call 9 (revise) -> h009 sha256=056728d2888fd300 certified=True checked=22/22 mismatches=0 failure_kind=None
+plan 9 from h009: found actions=5 nodes=63 steps=7817 budget_used=247006 traced=False; found at depth 5 after 63 nodes
+model call 10 returned no program (exit_code=-1, is_error=True); 1 in a row
+stop: model budget consumed (binding=spend_control.model_wallclock_per_run_seconds, calls=10, tokens=482377, model_wallclock=2400.1s, unavailable=None) and no certified program
+finished stop_reason=model_budget_exhausted levels=1/6 actions=27 rhae=4.7619 model_calls=10 proposed=9 certified=9 plans_executed=7 mismatches=9 exploration=7
+completion_status=completed wallclock_seconds=3058.139

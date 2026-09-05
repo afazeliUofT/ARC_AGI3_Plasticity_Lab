@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-05T17:43:25Z",
+  "updated_utc": "2026-09-05T18:41:37Z",
   "current_gate": "G3",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T16:50:07Z",
@@ -19,11 +19,12 @@
     "g3_6_attempt_2_deferrals": "turn at 2026-09-04T22:05:24Z: meter 4714/5000 s, deferred (ledger decision 2026-09-04T22:05:24Z); launch window expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-04T22:06:17Z: meter 4869/5000 s, deferred (ledger decision 2026-09-04T22:06:17Z); turn at 2026-09-04T22:07:33Z: meter 4913/5000 s, deferred (ledger decision 2026-09-04T22:07:33Z); turn at 2026-09-04T22:08:26Z: meter 4994/5000 s, deferred (ledger decision 2026-09-04T22:08:26Z); meter at the ceiling, supervisor sleep expected before the next turn; turn at 2026-09-05T01:29:21Z: meter 4759/5000 s, deferred (ledger decision 2026-09-05T01:29:21Z); supervisor woke after the 01:19:35Z age-out step; launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:30:18Z: meter 4177/5000 s, deferred (ledger decision 2026-09-05T01:30:18Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:31:20Z: meter 4230/5000 s, deferred (ledger decision 2026-09-05T01:31:20Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:32:04Z: meter 4279/5000 s, deferred (ledger decision 2026-09-05T01:32:04Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:32:55Z: meter 4326/5000 s, deferred (ledger decision 2026-09-05T01:32:55Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:33:26Z: meter 4365/5000 s, deferred (ledger decision 2026-09-05T01:33:26Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:34:17Z: meter 4410/5000 s, deferred (ledger decision 2026-09-05T01:34:17Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:35:30Z: meter 4454/5000 s, deferred (ledger decision 2026-09-05T01:35:30Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:36:29Z: meter 4509/5000 s, deferred (ledger decision 2026-09-05T01:36:29Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:37:24Z: meter 4560/5000 s, deferred (ledger decision 2026-09-05T01:37:24Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:38:32Z: meter 4607/5000 s, deferred (ledger decision 2026-09-05T01:38:32Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:39:46Z: meter 4688/5000 s, deferred (ledger decision 2026-09-05T01:39:46Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:40:12Z: meter 4738/5000 s, deferred (ledger decision 2026-09-05T01:40:12Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:41:02Z: meter 4777/5000 s, deferred (ledger decision 2026-09-05T01:41:02Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:41:57Z: meter 4823/5000 s, deferred (ledger decision 2026-09-05T01:41:57Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:42:44Z: meter 4865/5000 s, deferred (ledger decision 2026-09-05T01:42:44Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:44:00Z: meter 4908/5000 s, deferred (ledger decision 2026-09-05T01:44:00Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:44:59Z: meter 4970/5000 s, deferred (ledger decision 2026-09-05T01:44:59Z); meter at the ceiling, supervisor sleep expected before the next turn; launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:49:03Z: meter 3937/5000 s, deferred (ledger decision 2026-09-05T01:49:03Z); meter fell from 4970 s as the rolling window aged out; launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:50:17Z: meter 3983/5000 s, deferred (ledger decision 2026-09-05T01:50:17Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:51:01Z: meter 4033/5000 s, deferred (ledger decision 2026-09-05T01:51:01Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:52:16Z: meter 4090/5000 s, deferred (ledger decision 2026-09-05T01:52:16Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:53:09Z: meter 4142/5000 s, deferred (ledger decision 2026-09-05T01:53:09Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:54:08Z: meter 4183/5000 s, deferred (ledger decision 2026-09-05T01:54:08Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:54:53Z: meter 4238/5000 s, deferred (ledger decision 2026-09-05T01:54:53Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:55:26Z: meter 4274/5000 s, deferred (ledger decision 2026-09-05T01:55:26Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:56:06Z: meter 4320/5000 s, deferred (ledger decision 2026-09-05T01:56:06Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:57:16Z: meter 4355/5000 s, deferred (ledger decision 2026-09-05T01:57:16Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:58:12Z: meter 4409/5000 s, deferred (ledger decision 2026-09-05T01:58:12Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:58:44Z: meter 4457/5000 s, deferred (ledger decision 2026-09-05T01:58:44Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T02:00:02Z: meter 4506/5000 s, deferred (ledger decision 2026-09-05T02:00:02Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T02:04:30Z: meter 4549/5000 s, deferred a thirty-sixth time and ESCALATED (ledger decision + human_escalation 2026-09-05T02:04:30Z): scripts/g36_meter_sim.py shows the 3000 s launch condition is unreachable while deferral turns run (minimum 3779 s over 8 h); 35 deferral turns cost 1812 s of metered model time; blocked so the meter drains (2066 s by 03:00Z, 1496 s by 04:00Z 2026-09-05)",
     "g3_6_preflight_closed_utc": "2026-09-05T07:34:32Z",
     "g3_6_closed": "G3.6 (cost pre-flight, three runs, escalation item 10) closed by the human's answer at 2026-09-05T08:20:01Z (state/escalations/20260905T082003Z.md): items 1,2,3,5,6,7 defaults accepted, item 4 changed to a diagnostic set first. Previous description: Cost pre-flight: the three pre-registered game-runs cd82, s5i5, wa30 through the canonical entry point with configs/experiments/E300_ref.yaml (cost_preflight.games); after the first run report the per-call wall-clock distribution in the ledger; after the third compute the absolute numbers with a script and escalate under section 6 item 10 (cost_preflight.no_denominator_rule) before any fourth game-run",
-    "g3_6b_steps": "step 1 done 2026-09-05T08:31:02Z (planner instrumentation); step 2 done 2026-09-05T08:33:26Z (E301_ref.yaml fe7f3319, job g36b-cd82-1 queued); step 3 done 2026-09-05T10:26:23Z (cd82 run 20260905T083428Z_seed12345_68ed39d4 recorded, scripts/g36b_plan_table.py committed); step 4 done 2026-09-05T10:34:46Z (s5i5 run 20260905T102715Z_seed12345_64491fb6 recorded, ledger success kind diagnostic_run_recorded, job g36b-wa30-1 queued with wallclock_limit_s 10800); step 4b done 2026-09-05T12:56:09Z (wa30 run 20260905T103513Z_seed12345_1b898667 recorded, ledger success kind diagnostic_run_recorded, no further job; no level completed on any of the three diagnostic runs, so the human's first prong is not met); step 5 next: scripts/g36b_plan_diagnosis.py and the decision; step 5 done 2026-09-05T13:07:39Z (scripts/g36b_plan_diagnosis.py 46218c01 over the six runs, report /tmp/g36b_plan_diagnosis.json 2a3f98be359cb0b2: 1227/1227 not_found, 43/43 certified programs copy levels_completed, 0 ever predict a level; candidates a refuted, b derivative, c and d confirmed; F1 prompt fix named; decision rule prong 2 met, default: validate F1 in a successor E302_ref diagnostic set before any graded run; docs/DECISION_LOG.md entry 2026-09-05T13:07:39Z); step 6 done 2026-09-05T13:13:18Z (configs/experiments/E302_ref.yaml da84c695 = E301_ref + experiment_id + F1 prompt paragraph, prompt_hash ddeb01c5; job g36c-s5i5-1 queued in gitignored state/job_request.json, wallclock_limit_s 10800; ledger attempt kind f1_validation_run_queued); step 7 next: record the s5i5 F1 run and apply the found-plan test; step 7 done 2026-09-05T15:38:58Z (s5i5 F1 run 20260905T131531Z_seed12345_d915c5ae recorded, ledger failure kind f1_found_plan_test_not_met + decision kind f2_f3_planner_config_patch: F1 complied with 3/3 (GOAL line, conditional level increment, certified) but 95/95 searches not_found because the 16-point click lattice never hits the R/D buttons (F2) and the goal needs 13 actions against depth 8 (F3); offline pitch 6 + depth 16 finds a 13-action plan under h003; default: E303_ref.yaml with the two planner values changed, s5i5 first); step 8 next: E303_ref.yaml and job g36d-s5i5-1; step 8 done 2026-09-05T15:45:00Z (configs/experiments/E303_ref.yaml 7d1506ce = E302_ref + planner.max_depth 16 + planner.click_grid_step 6, prompt_hash unchanged ddeb01c5; job g36d-s5i5-1 queued in gitignored state/job_request.json, wallclock_limit_s 10800; ledger attempt kind f2_f3_validation_run_queued); step 9 next: record the s5i5 F2/F3 run and apply the found-plan test; step 9 done 2026-09-05T17:43:25Z (s5i5 F2/F3 run 20260905T154536Z_seed12345_7b8f2b62 recorded, ledger success kind f2_f3_validation_run_recorded: found-plan test MET, 3 found plans, 16 plan actions, level 1 completed at action 33 by h006's planned click, h006 decertified at the completing step; level 2 not completed, simulation budget 5M exhausted at plan 22 and 436 searches refused; job g36d-cd82-1 queued); step 10 next: record the cd82 E303_ref run and queue wa30",
+    "g3_6b_steps": "step 1 done 2026-09-05T08:31:02Z (planner instrumentation); step 2 done 2026-09-05T08:33:26Z (E301_ref.yaml fe7f3319, job g36b-cd82-1 queued); step 3 done 2026-09-05T10:26:23Z (cd82 run 20260905T083428Z_seed12345_68ed39d4 recorded, scripts/g36b_plan_table.py committed); step 4 done 2026-09-05T10:34:46Z (s5i5 run 20260905T102715Z_seed12345_64491fb6 recorded, ledger success kind diagnostic_run_recorded, job g36b-wa30-1 queued with wallclock_limit_s 10800); step 4b done 2026-09-05T12:56:09Z (wa30 run 20260905T103513Z_seed12345_1b898667 recorded, ledger success kind diagnostic_run_recorded, no further job; no level completed on any of the three diagnostic runs, so the human's first prong is not met); step 5 next: scripts/g36b_plan_diagnosis.py and the decision; step 5 done 2026-09-05T13:07:39Z (scripts/g36b_plan_diagnosis.py 46218c01 over the six runs, report /tmp/g36b_plan_diagnosis.json 2a3f98be359cb0b2: 1227/1227 not_found, 43/43 certified programs copy levels_completed, 0 ever predict a level; candidates a refuted, b derivative, c and d confirmed; F1 prompt fix named; decision rule prong 2 met, default: validate F1 in a successor E302_ref diagnostic set before any graded run; docs/DECISION_LOG.md entry 2026-09-05T13:07:39Z); step 6 done 2026-09-05T13:13:18Z (configs/experiments/E302_ref.yaml da84c695 = E301_ref + experiment_id + F1 prompt paragraph, prompt_hash ddeb01c5; job g36c-s5i5-1 queued in gitignored state/job_request.json, wallclock_limit_s 10800; ledger attempt kind f1_validation_run_queued); step 7 next: record the s5i5 F1 run and apply the found-plan test; step 7 done 2026-09-05T15:38:58Z (s5i5 F1 run 20260905T131531Z_seed12345_d915c5ae recorded, ledger failure kind f1_found_plan_test_not_met + decision kind f2_f3_planner_config_patch: F1 complied with 3/3 (GOAL line, conditional level increment, certified) but 95/95 searches not_found because the 16-point click lattice never hits the R/D buttons (F2) and the goal needs 13 actions against depth 8 (F3); offline pitch 6 + depth 16 finds a 13-action plan under h003; default: E303_ref.yaml with the two planner values changed, s5i5 first); step 8 next: E303_ref.yaml and job g36d-s5i5-1; step 8 done 2026-09-05T15:45:00Z (configs/experiments/E303_ref.yaml 7d1506ce = E302_ref + planner.max_depth 16 + planner.click_grid_step 6, prompt_hash unchanged ddeb01c5; job g36d-s5i5-1 queued in gitignored state/job_request.json, wallclock_limit_s 10800; ledger attempt kind f2_f3_validation_run_queued); step 9 next: record the s5i5 F2/F3 run and apply the found-plan test; step 9 done 2026-09-05T17:43:25Z (s5i5 F2/F3 run 20260905T154536Z_seed12345_7b8f2b62 recorded, ledger success kind f2_f3_validation_run_recorded: found-plan test MET, 3 found plans, 16 plan actions, level 1 completed at action 33 by h006's planned click, h006 decertified at the completing step; level 2 not completed, simulation budget 5M exhausted at plan 22 and 436 searches refused; job g36d-cd82-1 queued); step 10 next: record the cd82 E303_ref run and queue wa30; step 10 done 2026-09-05T18:41:37Z (cd82 E303_ref run 20260905T174628Z_seed12345_460bd1b1 recorded, ledger success kind f2_f3_validation_run_recorded: found-plan test MET, 7 found plans, 20 plan actions, level 1 completed at action 27 by h009's planned press (rhae level score 115, the cap), h009 decertified at the completing step; binding limit the 2400 s model cap (call 10 timed out on the remaining 243.66 s, stop model_budget_exhausted at action 27, level 2 never attempted); job g36d-wa30-1 queued); step 11 next: record the wa30 E303_ref run, summarise the three runs, then G3b.yaml",
     "g3_6b_diagnostic_set_totals": "three E301_ref runs: model time 1438.2 + 224.6 + 675.6 = 2338.4 s (supervisor charged 1438 + 224 + 675 = 2337 s), 28.62 USD equivalent (16.32 + 1.94 + 10.36), 23 calls all with programs, 23 hypotheses certified, 714 plan searches all not_found/queue_exhausted, predicted_levels_completed_max 0 in every search, levels 0/6 + 0/8 + 0/9, run wall-clock 6176.5 + 294.8 + 7989.7 s",
     "g3_6b_diagnosis": "Answer recorded 2026-09-05T13:07:39Z (ledger decision kind plan_diagnosis): every certified program copies levels_completed from its input (43/43 static AST + 1210-prediction sandbox probe, 0 exceed input), the real history never showed a level change (1257/1257 transitions at 0), so the planner's goal is unsatisfiable at any depth; node budget refuted (max 583 of 20000), depth cap irrelevant. Fix F1: prompt requires an explicit, implemented level-completion conjecture ('# GOAL:' comment + code), certified as a conjecture, planned toward, refuted by predict-before-act.",
     "g3_6b_f1_result": "F1 (prompt) validated for compliance on s5i5 2026-09-05T15:38:58Z: 3/3 programs carry '# GOAL:' and implement a conditional level increment, 3/3 certified; the found-plan test failed for planner reasons F2 (click lattice pitch 16 misses the R and D buttons) and F3 (depth cap 8 < 13 required); offline search with pitch 6 and depth 16 over h003 from history prefix 51 found a 13-action plan predicting level 1 (/tmp/g36c_s5i5_deep_step6.json ae2742c4). Successor E303_ref = E302_ref + planner.max_depth 16 + planner.click_grid_step 6.",
-    "g3_6b_f2_f3_result": "F2/F3 (planner config: pitch 6, depth 16) validated on s5i5 2026-09-05T17:43:25Z: 3 plans found (depth 2, 15, 7), 16 planned actions, level 1 completed at action index 33 (official baseline 20, rhae level score 36.73), three conjectures refuted on planned actions with counterexamples; first level completion by the REF in the programme. Binding limit on level 2: the 5M simulation budget (exhausted after 7 searches, 436 later searches refused, 438 random exploration actions, model idle). Node cap max 11769 of 20000; run wall-clock 6646.6 s of 10500. Decision-rule prong 1 now met; cd82 and wa30 under E303_ref before G3b.yaml."
+    "g3_6b_f2_f3_result": "F2/F3 (planner config: pitch 6, depth 16) validated on s5i5 2026-09-05T17:43:25Z: 3 plans found (depth 2, 15, 7), 16 planned actions, level 1 completed at action index 33 (official baseline 20, rhae level score 36.73), three conjectures refuted on planned actions with counterexamples; first level completion by the REF in the programme. Binding limit on level 2: the 5M simulation budget (exhausted after 7 searches, 436 later searches refused, 438 random exploration actions, model idle). Node cap max 11769 of 20000; run wall-clock 6646.6 s of 10500. Decision-rule prong 1 now met; cd82 and wa30 under E303_ref before G3b.yaml.",
+    "g3_6b_cd82_e303_result": "cd82 under E303_ref recorded 2026-09-05T18:41:37Z: 7 plans found (depths 3, 5, 1, 1, 5, 9, 5), 20 planned actions, level 1 completed at action index 27 (official baseline 55, rhae level score 115.0 cap, environment score 4.76), seven conjectures refuted on planned actions with counterexamples, the seventh (h009) at the completing step. Binding limit: the per-run model cap 2400 s (10 calls, per-call 60-666 s, revise calls grow with history; call 10 timed out on the 243.66 s remainder, budget consumed, stop model_budget_exhausted at action 27 of 855 with level 2 never attempted). Simulation budget 247011 of 5M, node cap max 995 of 20000, run wall-clock 3058 s of 10500. Cost 12.88 USD equivalent (CLI 15.39). The two games so far bind on different limits (s5i5 simulation budget with the model idle; cd82 model cap with the game abandoned): G3b must fix both caps knowingly, and whether model_budget_exhausted ends the game or falls back to exploration is a pre-registration choice."
   },
   "blocked_on": null,
   "remote_push": {
@@ -34,7 +35,7 @@
     "authorised_by": "state/escalations/20260904T152234Z.md item 3",
     "policy": "push after every gate verdict from here on (constitution section 11); the G2.13 record commit and later commits are not yet pushed"
   },
-  "next_action": "G3.6b step 10: read state/jobs/g36d-cd82-1/result.json (accepted, returncode, timed_out, wallclock_s, model_seconds_charged) and the run directory it names under artifacts/E303_ref/ (stdout_tail run_dir). Verify: results.json config_file_sha256 == 7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae (E303_ref.yaml), manifest prompt_hash ddeb01c5, manifest git_commit == the step-9 commit (git log -1 after 7e61961), sha256sum -c SHA256SUMS all OK, stderr.log empty, config_file digests of E300/E301/E302/E303 and the six source digests unchanged. Run uv run python scripts/g36b_plan_table.py <run_dir> and read results.json (stop_reason, actions, plans_executed, plan_actions, levels_completed, model_calls, calls_without_program, model_wallclock_seconds_total, tokens, simulation_budget used, wallclock_seconds), plans.jsonl (outcome counts; found records: depth, nodes, predicted levels, actions; the plan_index at which the simulation budget ran out and how many searches were refused with zero steps afterwards), hypotheses.jsonl (decertified events with plan_index set), transitions.jsonl (source plan steps and any levels_completed change), world_models/*.py ('# GOAL:' lines). Record which limit bound (simulation budget 5M, node cap 20000, runner wall-clock 10500 s, level budget, model cap 2400 s). Ledger success kind f2_f3_validation_run_recorded (a found plan or a completed level is not required on cd82: the test on cd82/wa30 is that the run completes and the binding limit is measured; still apply the found-plan test and report it either way), record the run under experiment_runs.E303_ref.runs with the same fields as the s5i5 record, then write state/job_request.json (gitignored) as {\"id\": \"g36d-wa30-1\", \"runner\": \"run_experiment\", \"config\": \"configs/experiments/E303_ref.yaml\", \"game\": \"wa30\", \"wallclock_limit_s\": 10800}, commit. After wa30 is recorded (step 11): summarise the three E303_ref runs (levels, found plans, binding limits, cost) in one ledger decision entry and in docs/DECISION_LOG.md, then author preregistration/G3b.yaml (write-once, Write tool) for the graded 25-game set on E303_ref or a successor config whose only changes are recorded there, before any graded run; consider the open question of 2026-09-05T17:43:25Z (per-search step cap, refused-search counter) when fixing that config, each change being a new digest re-recorded in g3_components. IF result.json is absent (job not yet run) the turn only verifies state and waits (no-progress turn, do not requeue). Never edit E300_ref.yaml, E301_ref.yaml, E302_ref.yaml, E303_ref.yaml, backtest.py, interface.py, the frozen files, or anything under artifacts/.",
+  "next_action": "G3.6b step 11: read state/jobs/g36d-wa30-1/result.json (accepted, returncode, timed_out, wallclock_s, model_seconds_charged) and the run directory it names under artifacts/E303_ref/ (stdout_tail run_dir). Verify: results.json config_file_sha256 == 7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae (E303_ref.yaml), manifest prompt_hash ddeb01c5, manifest git_commit == the step-10 commit (git log -1 after de34d66), sha256sum -c SHA256SUMS all OK, stderr.log empty, config_file digests of E300/E301/E302/E303 and the six source digests unchanged. Run uv run python scripts/g36b_plan_table.py <run_dir> and read results.json (stop_reason, model_budget_binding, actions, plans_executed, plan_actions, levels_completed, model_calls, calls_without_program, model_wallclock_seconds_total, tokens, simulation_budget used, wallclock_seconds), plans.jsonl (outcome counts; found records: depth, nodes, predicted levels, actions; searches refused with zero steps after simulation-budget exhaustion), hypotheses.jsonl (decertified events with plan_index set), transitions.jsonl (source plan steps and any levels_completed change), model_calls.jsonl (per-call wall-clock, timed_out calls), world_models/*.py ('# GOAL:' lines). Record which limit bound (simulation budget 5M, node cap 20000, runner wall-clock 10500 s, level budget, model cap 2400 s: on wa30 the E301 run was runner-wall-clock bound with 6470 s of engine time, so read wallclock_seconds against 10500 first). Ledger success kind f2_f3_validation_run_recorded (a found plan or a completed level is not required on wa30; apply the found-plan test and report it either way), record the run under experiment_runs.E303_ref.runs with the same fields as the cd82 record, then in the SAME turn or the next: summarise the three E303_ref runs (levels, found plans, binding limits per game, cost, model-cap versus simulation-budget behaviour) in one ledger decision entry and a docs/DECISION_LOG.md entry, stating the default for the graded set: E303_ref as the graded config or a successor whose only changes are named there (candidates, each a new digest re-recorded in g3_components: a per-search simulation-step cap so one open-state-space level cannot consume the whole 5M budget; a refused-search counter in results.json; whether model_budget_exhausted should end the game or fall back to exploration for the remaining action budget). Then author preregistration G3b.yaml (write-once, Write tool) for the graded 25-game set on that config before any graded run, hash-locking both caps and the stop-reason semantics. IF result.json is absent (job not yet run) the turn only verifies state and waits (no-progress turn, do not requeue). Never edit E300_ref.yaml, E301_ref.yaml, E302_ref.yaml, E303_ref.yaml, backtest.py, interface.py, the frozen files, or anything under artifacts/.",
   "open_questions": [
     "ARC_API_KEY required once to populate environment_files - see EVIDENCE_ARC section 3.0 (environment_files/ holds 25 game directories dated 2026-09-04 05:28Z; hashes recorded in experiments/environment_cache_manifest.json on 2026-09-04T07:44:50Z under G1.3. Every metadata.json embeds the absolute local_dir of the downloading machine, so a re-download on another path changes 25 hashes and requires a manifest regeneration, not a drift diagnosis)",
     "Whether the statusline usage gauge fires in headless mode - see EVIDENCE_TOOLING section 11; carried as open item in the G1 pre-registration open_tooling_observations",
@@ -585,7 +586,7 @@
       }
     },
     "E303_ref": {
-      "status": "F2/F3 validation set (never graded): s5i5 run complete 2026-09-05T17:43:25Z, found-plan test MET, level 1 completed; job g36d-cd82-1 queued 2026-09-05T17:43:25Z; wa30 after cd82 is recorded; preregistration/G3b.yaml after all three runs",
+      "status": "F2/F3 validation set (never graded): s5i5 run complete 2026-09-05T17:43:25Z (found-plan test MET, level 1 completed); cd82 run complete 2026-09-05T18:41:37Z (found-plan test MET, level 1 completed at the RHAE cap, model cap binding); job g36d-wa30-1 queued 2026-09-05T18:41:37Z; the three-run summary, the decision log entry and preregistration G3b.yaml after wa30 is recorded",
       "config_file_sha256": "7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae",
       "prompt_hash": "ddeb01c5ef38a128e4da5200e25a24e11f8ecd02a3122139d38b327ce205223d",
       "derived_from": "E302_ref.yaml da84c695 by exactly three line changes: experiment_id E303_ref, planner.max_depth 8 -> 16, planner.click_grid_step 16 -> 6",
@@ -601,7 +602,13 @@
           "game": "cd82",
           "queued_utc": "2026-09-05T17:43:25Z",
           "wallclock_limit_s": 10800,
-          "result": "pending (state/jobs/g36d-cd82-1/result.json is written by the supervisor)"
+          "result": "accepted, rc 0, timed_out false, wallclock_s 3193, model_seconds_charged 2400 from the run's results.json; ran 17:46:27Z-18:39:41Z; run 20260905T174628Z_seed12345_460bd1b1"
+        },
+        "g36d-wa30-1": {
+          "game": "wa30",
+          "queued_utc": "2026-09-05T18:41:37Z",
+          "wallclock_limit_s": 10800,
+          "result": "pending (state/jobs/g36d-wa30-1/result.json is written by the supervisor)"
         }
       },
       "runs": {
@@ -726,6 +733,183 @@
             "h009": "d40259b27e91165136bf96fc7e8ea8fa65e30250a0c1f95012a06e94083f138c",
             "h010": "7184b7d2edc584abc9364adf45f5f8fd1a564c270cf8433815cec6649503b7ae"
           }
+        },
+        "20260905T174628Z_seed12345_460bd1b1": {
+          "game": "cd82",
+          "job": "g36d-cd82-1",
+          "seed": 12345,
+          "completion_status": "completed",
+          "stop_reason": "model_budget_exhausted",
+          "model_budget_binding": "spend_control.model_wallclock_per_run_seconds",
+          "model_calls": 10,
+          "calls_without_program": 1,
+          "call_10_note": "revise at history 27, per-request wall-clock 243.66 s (the cap remainder), timed_out true, exit_code -1, no program; budget consumed",
+          "model_wallclock_seconds_total": 2400.0909346839762,
+          "per_call_wallclock_seconds": [
+            388.2,
+            60.5,
+            109.2,
+            309.2,
+            144.3,
+            153.3,
+            146.1,
+            665.9,
+            179.7,
+            243.8
+          ],
+          "wallclock_seconds": 3058.13867749396,
+          "supervisor_model_seconds_charged": 2400,
+          "tokens_total": 482377,
+          "tokens_by_kind": {
+            "cache_creation": 299643,
+            "cache_read": 0,
+            "input": 18,
+            "output": 182716
+          },
+          "usd_equivalent_prereg_prices": 12.8815,
+          "total_cost_usd_sum": 15.3912,
+          "rhae_environment_score": 4.761904761904762,
+          "rhae_level_scores": [
+            115.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "levels_completed": 1,
+          "levels_total": 6,
+          "completion_action_indices": [
+            27
+          ],
+          "level_1_official_baseline_actions": 55,
+          "actions_total": 27,
+          "action_budget_total": 855,
+          "exploration_actions": 7,
+          "reset_actions": 0,
+          "hypotheses_proposed": 9,
+          "hypotheses_certified": 9,
+          "hypotheses_decertified": 9,
+          "goal_programs": "9/9 begin with '# GOAL:'; all target the level-1 condition (10x10 canvas block equals the target picture) with successive mechanism conjectures: pour inserts rows (h001-h003), pour paints the top layer (h004), flip (h005), mirror (h006), tilted pour (h007), cup orbits the block and a press paints the half on its side (h008), cup on an 8-position ring with edge-ignored moves (h009)",
+          "plans_searched": 10,
+          "plans_found": 7,
+          "plans_found_detail": [
+            {
+              "plan_index": 3,
+              "hypothesis_id": "h003",
+              "step_index_at_plan": 7,
+              "depth": 3,
+              "nodes": 10,
+              "steps": 1139,
+              "actions": 3,
+              "outcome_on_execution": "2 predictions matched, refuted at the press (step 10)"
+            },
+            {
+              "plan_index": 4,
+              "hypothesis_id": "h004",
+              "step_index_at_plan": 10,
+              "depth": 5,
+              "nodes": 31,
+              "steps": 3785,
+              "actions": 5,
+              "outcome_on_execution": "2 predictions matched, refuted at the third action (step 13)"
+            },
+            {
+              "plan_index": 5,
+              "hypothesis_id": "h005",
+              "step_index_at_plan": 13,
+              "depth": 1,
+              "nodes": 1,
+              "steps": 1,
+              "actions": 1,
+              "outcome_on_execution": "refuted at its only action (step 14)"
+            },
+            {
+              "plan_index": 6,
+              "hypothesis_id": "h006",
+              "step_index_at_plan": 14,
+              "depth": 1,
+              "nodes": 1,
+              "steps": 2,
+              "actions": 1,
+              "outcome_on_execution": "refuted at its only action (step 15)"
+            },
+            {
+              "plan_index": 7,
+              "hypothesis_id": "h007",
+              "step_index_at_plan": 15,
+              "depth": 5,
+              "nodes": 35,
+              "steps": 4289,
+              "actions": 5,
+              "outcome_on_execution": "1 prediction matched, refuted at the press (step 17)"
+            },
+            {
+              "plan_index": 8,
+              "hypothesis_id": "h008",
+              "step_index_at_plan": 17,
+              "depth": 9,
+              "nodes": 995,
+              "steps": 125249,
+              "actions": 9,
+              "outcome_on_execution": "4 predictions matched, refuted at the fifth action (step 22)"
+            },
+            {
+              "plan_index": 9,
+              "hypothesis_id": "h009",
+              "step_index_at_plan": 22,
+              "depth": 5,
+              "nodes": 63,
+              "steps": 7817,
+              "actions": 5,
+              "outcome_on_execution": "4 predictions matched; 5th action (press, step 27) completed level 1 and mismatched the predicted frame (new level layout), h009 decertified"
+            }
+          ],
+          "plans_not_found": 3,
+          "plans_not_found_detail": "plan_index 0-2 (h001, h002, h002): queue exhausted after 277 nodes and 34902 predictions each, 295 distinct states, 18 states dropped at depth cap 16, predicted level max 0",
+          "plans_simulation_budget_exhausted": 0,
+          "plans_refused_zero_steps_after_budget": 0,
+          "plans_queue_exhausted": 3,
+          "plans_executed": 7,
+          "plan_actions": 20,
+          "searches_with_states_dropped_at_depth_cap": 3,
+          "distinct_states_max": 1914,
+          "nodes_expanded_max": 995,
+          "predicted_levels_completed_max": 1,
+          "prediction_mismatches": 9,
+          "predictions_compared": 23,
+          "predictions_matched": 14,
+          "plan_trace_records": 104706,
+          "plans_traced": 3,
+          "simulation_steps_used": 247011,
+          "simulation_budget_binding": false,
+          "binding_limit": "spend_control.model_wallclock_per_run_seconds 2400 (model cap); level 2 never attempted",
+          "manifest_git_commit": "de34d66",
+          "manifest_git_dirty": true,
+          "manifest_prompt_hash": "ddeb01c5ef38a128e4da5200e25a24e11f8ecd02a3122139d38b327ce205223d",
+          "config_file_sha256": "7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae",
+          "results_json_sha256": "0bea7956b615934e12007eca26b73f8a8482caf800c4be1bb836c4cf76b72f39",
+          "manifest_json_sha256": "6c444ce51b6ee85ebcd271acbce4200f8d23c56aca691d0a4093653bbc3bd359",
+          "plans_jsonl_sha256": "27fe8d22aeaffad0b167d96f2cb35846c08a910b90e70504ff1bd9f4d44989af",
+          "plan_traces_jsonl_sha256": "bd3f7e2882d283ca23223f6ff10760c674e2c03ccdef73a8f2805bd3c684d3c8",
+          "model_calls_jsonl_sha256": "cc23f5e5d4ee27a19f97d8430d9af97e475e9cd91c601735abc2801b614b47ae",
+          "hypotheses_jsonl_sha256": "e0f083967b2fd47ce12da658bd2d2edf9c06b432a74fa9791a1f62ba929d16dd",
+          "backtests_jsonl_sha256": "17abfd5972bba7eed038a66462f8714ee02cdc02b78ac233fdcd5ccd9ff970f9",
+          "transitions_jsonl_sha256": "1308e76043cc4ca396cfae4e91db30910a84f9914dab87290bb4a89c8f3367f8",
+          "rhae_json_sha256": "08dfecb646b4b36c9c0fb363d7b2e31eb8856900b2ada2f1b36f7a391034d96d",
+          "level_accounting_json_sha256": "b3327219cdb61f41fadc36e3d13bdca4a8db639091810dc0addb521562dd39c0",
+          "sha256sums_sha256": "9752f9a8bad02082d2a8d8bd6c5df1c4537353990d2f52bfa00fa7c7b0faf3e2",
+          "world_models_sha256": {
+            "h001": "d387efe8571b01b88e37356f0d619c69a45ef3ad05e3aa940eb824c023bf6c1b",
+            "h002": "cbc9140af4e4c60420f415f5319d083d272aa930d0854ed1da184c21fc669eaa",
+            "h003": "2358df7f4562f68e584944ddfb2b51814aac80e304a23fc3866857e54a101604",
+            "h004": "510df6c0eaee3a55707c086415216eab31065279bef1aae71d8af8009fc2faeb",
+            "h005": "32200b9a044c636e9f7de4b0f9e084609ebc14a92d267c0e6a2c9fc88371e056",
+            "h006": "5415fa80d7b417934988835acea33d4ec8cc87540bfc85da7ee33d079489a53c",
+            "h007": "784ac011cbdb66149d65cf73cb48932d55ecc47728b3d4762c88630d87c1d2e0",
+            "h008": "733bdb9af0d4a85b7597cc33f5c552ae70b89fce6dda0bd75560c74a42844255",
+            "h009": "056728d2888fd3005d62bae3336dd17ede9496540c5cabe59c72dc39d34793a5"
+          }
         }
       }
     }
@@ -782,6 +966,7 @@
     "e303_config_sha256": "7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae",
     "e303_prompt_hash": "ddeb01c5ef38a128e4da5200e25a24e11f8ecd02a3122139d38b327ce205223d",
     "g3_6b_step8_note": "Recorded 2026-09-05T15:45:00Z: configs/experiments/E303_ref.yaml 7d1506ce derived from E302_ref.yaml da84c695 by exactly three line changes (experiment_id E303_ref, planner.max_depth 8 -> 16, planner.click_grid_step 16 -> 6; click_points_for_step(6) = 121 points); prompt template untouched, prompt_hash ddeb01c5. results.json config_file_sha256 must read 7d1506ce and the manifest prompt_hash ddeb01c5 for every E303_ref run. ref_planner 90ebe3c9, ref_world_model 92a1086f, run_experiment 106e3023, backtest 7e09fefd, interface 97624aa1, history_encoding cb9a80fa, E302_ref.yaml da84c695, E301_ref.yaml fe7f3319, E300_ref.yaml 4624ea0d re-verified unchanged by sha256sum at HEAD feca45f. No source change this step.",
-    "g3_6b_step9_note": "Recorded 2026-09-05T17:43:25Z: ref_planner 90ebe3c9, ref_world_model 92a1086f, run_experiment 106e3023, backtest 7e09fefd, interface 97624aa1, history_encoding cb9a80fa, E303_ref.yaml 7d1506ce, E302_ref.yaml da84c695, E301_ref.yaml fe7f3319, E300_ref.yaml 4624ea0d re-verified unchanged by sha256sum at HEAD 7e61961 == the s5i5 F2/F3 run's manifest git_commit. No source or config change this step."
+    "g3_6b_step9_note": "Recorded 2026-09-05T17:43:25Z: ref_planner 90ebe3c9, ref_world_model 92a1086f, run_experiment 106e3023, backtest 7e09fefd, interface 97624aa1, history_encoding cb9a80fa, E303_ref.yaml 7d1506ce, E302_ref.yaml da84c695, E301_ref.yaml fe7f3319, E300_ref.yaml 4624ea0d re-verified unchanged by sha256sum at HEAD 7e61961 == the s5i5 F2/F3 run's manifest git_commit. No source or config change this step.",
+    "g3_6b_step10_note": "Recorded 2026-09-05T18:41:37Z: ref_planner 90ebe3c9, ref_world_model 92a1086f, run_experiment 106e3023, backtest 7e09fefd, interface 97624aa1, history_encoding cb9a80fa, E303_ref.yaml 7d1506ce, E302_ref.yaml da84c695, E301_ref.yaml fe7f3319, E300_ref.yaml 4624ea0d re-verified unchanged by sha256sum at HEAD de34d66 == the cd82 E303_ref run's manifest git_commit. No source or config change this step."
   }
 }

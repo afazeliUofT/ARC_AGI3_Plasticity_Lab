@@ -1,0 +1,141 @@
+budgets:
+  action_budget: 855
+  persistent_state_size_cap_bytes: 0
+  simulation_budget: 5000000
+  token_budget: 4000000
+description: Reference architecture (induce an executable world model, certify it
+  by full-history backtest, plan inside it, predict before every action) on one cached
+  public game per invocation under the official 5x per-level action budget, scored
+  by RHAE against the official baselines.
+experiment_id: E303_ref
+language_model:
+  identifier: claude-fable-5-1
+  prompt: 'You are writing an executable world model of an unknown grid game from
+    a recorded
+
+    history of actions and the observations that followed them. The history is complete
+
+    and exact; your program must reproduce EVERY recorded transition exactly (every
+    grid
+
+    cell, the state string and levels_completed) when replayed from the start, or
+    it will
+
+    be rejected with a counterexample. Prefer the simplest rule that explains all
+    of the
+
+    data. Return a single Python program implementing the contract below, in one fenced
+
+    ```python block, with no other code blocks.
+
+
+    Level-completion conjecture (required). In the recorded history levels_completed
+    has
+
+    never changed, so the data cannot show what completes a level. What completes
+    the
+
+    current level is therefore a hypothesis that your program must state and implement;
+
+    a planner will search your model for the shortest action sequence that raises
+
+    levels_completed, execute that sequence on the real game, and reject your program
+
+    with a counterexample if the game disagrees. Begin your program with one comment
+    line
+
+    starting with "# GOAL:" that states, in one sentence, the concrete condition under
+
+    which you conjecture the current level is completed (for example a movable object
+
+    reaching a marked target cell, two regions matching in colour, a counter of cells
+
+    reaching a value). Implement exactly that condition in predict(): when the frame
+    the
+
+    action produces satisfies it, return levels_completed increased by one and the
+    state
+
+    string "WIN" if you believe that level was the last one, otherwise "NOT_FINISHED";
+
+    when it does not, return levels_completed unchanged. The condition must hold on
+    NO
+
+    recorded transition, or the replay check will reject the program. A program whose
+
+    levels_completed can never increase does not answer this task. Choose the simplest
+
+    conjecture consistent with the observed dynamics; when a counterexample below
+    refutes
+
+    an earlier conjecture, state a different one rather than a variant that cannot
+    fire.
+
+    '
+model_calls_allowed: 60
+network_calls_allowed: 0
+runner: ref_world_model
+runner_params:
+  action_budget_multiplier: 5
+  cache_manifest: experiments/environment_cache_manifest.json
+  cache_manifest_sha256: 023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af
+  environments_dir: environment_files
+  extra_artifacts:
+  - model_calls.jsonl
+  - model_calls/
+  - world_models/
+  - backtests.jsonl
+  - plans.jsonl
+  - level_accounting.json
+  - rhae.json
+  game: cd82
+  games:
+  - ar25
+  - bp35
+  - cd82
+  - cn04
+  - dc22
+  - ft09
+  - g50t
+  - ka59
+  - lf52
+  - lp85
+  - ls20
+  - m0r0
+  - r11l
+  - re86
+  - s5i5
+  - sb26
+  - sc25
+  - sk48
+  - sp80
+  - su15
+  - tn36
+  - tr87
+  - tu93
+  - vc33
+  - wa30
+  induction_min_history: 4
+  model_calls_per_game_max: 60
+  model_client:
+    call_wallclock_seconds: 900
+    kind: headless_cli
+  model_effort: high
+  planner:
+    click_grid_step: 6
+    max_depth: 16
+    max_nodes: 20000
+  sandbox_limits:
+    address_space_bytes_max: 2147483648
+    backtest_seconds_max: 120
+    predict_seconds_max: 5
+  simulation_steps_per_game_max: 5000000
+  spend_control:
+    calls_per_run_max: 40
+    concurrency: 1
+    model_wallclock_per_run_seconds: 2400
+  tokens_per_game_max: 4000000
+  wallclock_reserve_seconds: 120
+schema_version: 1
+seed: 12345
+wallclock_limit_seconds: 10500
