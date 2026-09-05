@@ -1,0 +1,857 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 1; actions remaining on this level: 154
+
+## Rejected programs (most recent last)
+
+### h009
+
+```python
+import copy
+
+BG = 1
+BODY = 14
+MARK = 0
+BAR_ROW = 63
+BAR_BASE = 7
+BAR_USED = 4
+
+DIRS = {1: (-1, 0), 2: (1, 0), 3: (0, -1), 4: (0, 1)}  # up, down, left, right
+FACE = {1: 'u', 2: 'd', 3: 'l', 4: 'r'}
+
+
+def _find_player(g):
+    cells = [(y, x) for y in range(BAR_ROW) for x in range(len(g[0]))
+             if g[y][x] == BODY or g[y][x] == MARK]
+    if not cells:
+        return None
+    top = min(c[0] for c in cells)
+    left = min(c[1] for c in cells)
+    return top, left
+
+
+def _draw_player(g, top, left, facing):
+    W = len(g[0])
+    for dy in range(4):
+        for dx in range(4):
+            y, x = top + dy, left + dx
+            if 0 <= y < BAR_ROW and 0 <= x < W:
+                g[y][x] = BODY
+    if facing == 'u':
+        marks = [(top, left + j) for j in range(4)]
+    elif facing == 'd':
+        marks = [(top + 3, left + j) for j in range(4)]
+    elif facing == 'l':
+        marks = [(top + i, left) for i in range(4)]
+    else:
+        marks = [(top + i, left + 3) for i in range(4)]
+    for y, x in marks:
+        if 0 <= y < BAR_ROW and 0 <= x < W:
+            g[y][x] = MARK
+
+
+def predict(history, action):
+    last = history[-1]
+    g = copy.deepcopy(last["frame"][0])
+    H, W = len(g), len(g[0])
+    a = action.get("action")
+
+    result = {
+        "state": last["state"],
+        "levels_completed": last["levels_completed"],
+        "available_actions": list(last["available_actions"]),
+    }
+
+    # Game over: once the timer bar is completely used up (or state already over),
+    # nothing changes and the state becomes GAME_OVER.
+    bar_full = all(g[BAR_ROW][x] == BAR_USED for x in range(W))
+    if last["state"] == "GAME_OVER" or bar_full:
+        result["state"] = "GAME_OVER"
+        result["frame"] = [g]
+        return result
+
+    if a in DIRS:
+        pos = _find_player(g)
+        if pos is not None:
+            top, left = pos
+            dy, dx = DIRS[a]
+            nt, nl = top + 4 * dy, left + 4 * dx
+            old_cells = {(top + i, left + j) for i in range(4) for j in range(4)}
+            ok = 0 <= nt and nt + 3 < H and 0 <= nl and nl + 3 < W
+            if ok:
+                for i in range(4):
+                    for j in range(4):
+                        y, x = nt + i, nl + j
+                        if (y, x) in old_cells or y >= BAR_ROW:
+                            continue
+                        if g[y][x] != BG:
+                            ok = False
+            for (y, x) in old_cells:
+                if 0 <= y < BAR_ROW and 0 <= x < W:
+                    g[y][x] = BG
+            if ok:
+                top, left = nt, nl
+            _draw_player(g, top, left, FACE[a])
+
+    # timer: after k actions, used cells = floor((8k + 12) / 25), capped at the bar width
+    k = len(history)
+    used = min((8 * k + 12) // 25, W)
+    for x in range(W):
+        g[BAR_ROW][x] = BAR_BASE
+    for i in range(used):
+        g[BAR_ROW][W - 1 - i] = BAR_USED
+
+    result["frame"] = [g]
+    return result
+```
+
+## Counterexamples
+
+{"action":3,"data":{},"hypothesis_id":"h001","kind":"prediction_mismatch","observation_sha256":"e084bc46017a66240d77a66574ccb5865d168daadf91b8e36651bff08d16a9f7","plan_index":null,"predicted_observation_sha256":"7b792132b3dd5a4f0161499c45cef465e3816f5be0630ad78c944fc04b8b24f8","step_index":5}
+{"action":5,"data":{},"hypothesis_id":"h002","kind":"prediction_mismatch","observation_sha256":"502232e0b44405b7be062f94da42f7c49fcc54dabf51bf9fb3e60fe1516250f1","plan_index":null,"predicted_observation_sha256":"e561558c1454ff6b9e641e5d007354f677a22ba8eff87bbd797ddedc38c66df8","step_index":11}
+{"action":2,"data":{},"hypothesis_id":"h003","kind":"prediction_mismatch","observation_sha256":"b7009e2e07d965176890b1cbe2db03ab1eb53d3e9d78b18cc2de7f4bf51eea41","plan_index":null,"predicted_observation_sha256":"5a6f49983a8d820f4bdcd753cb1fa8236543d747a225c0d556e1f11840c33ae2","step_index":14}
+{"action":2,"data":{},"hypothesis_id":"h004","kind":"prediction_mismatch","observation_sha256":"e3a2a6c5720b5e5ec734e10098e04a98f2fdf79daf881bf99217b0855757bab1","plan_index":null,"predicted_observation_sha256":"5a6f49983a8d820f4bdcd753cb1fa8236543d747a225c0d556e1f11840c33ae2","step_index":15}
+{"action":2,"data":{},"hypothesis_id":"h005","kind":"prediction_mismatch","observation_sha256":"b71f7ee0d0bc468251cbcdfef0733aefb6eb2de70006f4a1d4108c0fceba2ec5","plan_index":null,"predicted_observation_sha256":"fb069c2ab9f7e74651e02e88489c9a15367c0a0ccf2d3023d2140d17a94a3cdc","step_index":39}
+{"action":3,"data":{},"hypothesis_id":"h006","kind":"prediction_mismatch","observation_sha256":"cfdc0a9639a26174ffaa2b6349c3e6c1a7ed2f916b4f0af070a3003bf970435f","plan_index":null,"predicted_observation_sha256":"aa2b8cdc355b478f7fe582c56a2aca744d1ff45d7a7f79c4e26dc35b3a925317","step_index":89}
+{"action":4,"data":{},"hypothesis_id":"h007","kind":"prediction_mismatch","observation_sha256":"27957a791a93ca8c3fb888e5f463255ae65faa44869412279d44c3c2c554fc29","plan_index":null,"predicted_observation_sha256":"5dc9433386ca29f0f3834c106bd116dd8d0698fa1b46863b555d0ff923f95cc5","step_index":199}
+{"action":4,"data":{},"hypothesis_id":"h008","kind":"prediction_mismatch","observation_sha256":"5dc9433386ca29f0f3834c106bd116dd8d0698fa1b46863b555d0ff923f95cc5","plan_index":null,"predicted_observation_sha256":"27957a791a93ca8c3fb888e5f463255ae65faa44869412279d44c3c2c554fc29","step_index":200}
+{"action":0,"data":{},"hypothesis_id":"h009","kind":"prediction_mismatch","observation_sha256":"b5f33d79e256813e21ac4d2681879e327c3d79ef97ed2673977a7e5a2d094872","plan_index":null,"predicted_observation_sha256":"5dc9433386ca29f0f3834c106bd116dd8d0698fa1b46863b555d0ff923f95cc5","step_index":201}
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r47: 1*64
+g0 r48: 1*32 0*4 1*28
+g0 r49-r51: 1*32 14*4 1*28
+g0 r52-r62: 1*64
+g0 r63: 7*64
+record 1: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 0
+record 2: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 1, 33 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1 (63,63)=4
+record 3: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 2, 32 cell(s)
+g0 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (48,32)=14 (48,33)=14 (48,34)=14 (48,35)=0 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=0 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=0 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=0
+record 4: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 3, 32 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1
+record 5: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 4, 33 cell(s)
+g0 (48,24)=0 (48,25)=14 (48,26)=14 (48,27)=14 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (49,24)=0 (49,25)=14 (49,26)=14 (49,27)=14 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (50,24)=0 (50,25)=14 (50,26)=14 (50,27)=14 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (51,24)=0 (51,25)=14 (51,26)=14 (51,27)=14 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (63,62)=4
+record 6: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 5, 32 cell(s)
+g0 (48,24)=1 (48,25)=1 (48,26)=1 (48,27)=1 (49,24)=1 (49,25)=1 (49,26)=1 (49,27)=1 (50,24)=1 (50,25)=1 (50,26)=1 (50,27)=1 (51,24)=1 (51,25)=1 (51,26)=1 (51,27)=1 (52,24)=14 (52,25)=14 (52,26)=14 (52,27)=14 (53,24)=14 (53,25)=14 (53,26)=14 (53,27)=14 (54,24)=14 (54,25)=14 (54,26)=14 (54,27)=14 (55,24)=0 (55,25)=0 (55,26)=0 (55,27)=0
+record 7: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 6, 32 cell(s)
+g0 (52,20)=0 (52,21)=14 (52,22)=14 (52,23)=14 (52,24)=1 (52,25)=1 (52,26)=1 (52,27)=1 (53,20)=0 (53,21)=14 (53,22)=14 (53,23)=14 (53,24)=1 (53,25)=1 (53,26)=1 (53,27)=1 (54,20)=0 (54,21)=14 (54,22)=14 (54,23)=14 (54,24)=1 (54,25)=1 (54,26)=1 (54,27)=1 (55,20)=0 (55,21)=14 (55,22)=14 (55,23)=14 (55,24)=1 (55,25)=1 (55,26)=1 (55,27)=1
+record 8: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 7, 33 cell(s)
+g0 (48,20)=0 (48,21)=0 (48,22)=0 (48,23)=0 (49,20)=14 (49,21)=14 (49,22)=14 (49,23)=14 (50,20)=14 (50,21)=14 (50,22)=14 (50,23)=14 (51,20)=14 (51,21)=14 (51,22)=14 (51,23)=14 (52,20)=1 (52,21)=1 (52,22)=1 (52,23)=1 (53,20)=1 (53,21)=1 (53,22)=1 (53,23)=1 (54,20)=1 (54,21)=1 (54,22)=1 (54,23)=1 (55,20)=1 (55,21)=1 (55,22)=1 (55,23)=1 (63,61)=4
+record 9: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 8, 32 cell(s)
+g0 (48,20)=1 (48,21)=1 (48,22)=1 (48,23)=1 (49,20)=1 (49,21)=1 (49,22)=1 (49,23)=1 (50,20)=1 (50,21)=1 (50,22)=1 (50,23)=1 (51,20)=1 (51,21)=1 (51,22)=1 (51,23)=1 (52,20)=14 (52,21)=14 (52,22)=14 (52,23)=14 (53,20)=14 (53,21)=14 (53,22)=14 (53,23)=14 (54,20)=14 (54,21)=14 (54,22)=14 (54,23)=14 (55,20)=0 (55,21)=0 (55,22)=0 (55,23)=0
+record 10: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 9, 32 cell(s)
+g0 (52,20)=1 (52,21)=1 (52,22)=1 (52,23)=1 (52,24)=14 (52,25)=14 (52,26)=14 (52,27)=0 (53,20)=1 (53,21)=1 (53,22)=1 (53,23)=1 (53,24)=14 (53,25)=14 (53,26)=14 (53,27)=0 (54,20)=1 (54,21)=1 (54,22)=1 (54,23)=1 (54,24)=14 (54,25)=14 (54,26)=14 (54,27)=0 (55,20)=1 (55,21)=1 (55,22)=1 (55,23)=1 (55,24)=14 (55,25)=14 (55,26)=14 (55,27)=0
+record 11: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 10, 1 cell(s)
+g0 (63,60)=4
+record 12: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 11
+record 13: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 12, 32 cell(s)
+g0 (52,20)=0 (52,21)=14 (52,22)=14 (52,23)=14 (52,24)=1 (52,25)=1 (52,26)=1 (52,27)=1 (53,20)=0 (53,21)=14 (53,22)=14 (53,23)=14 (53,24)=1 (53,25)=1 (53,26)=1 (53,27)=1 (54,20)=0 (54,21)=14 (54,22)=14 (54,23)=14 (54,24)=1 (54,25)=1 (54,26)=1 (54,27)=1 (55,20)=0 (55,21)=14 (55,22)=14 (55,23)=14 (55,24)=1 (55,25)=1 (55,26)=1 (55,27)=1
+record 14: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 13, 32 cell(s)
+g0 (52,20)=1 (52,21)=1 (52,22)=1 (52,23)=1 (53,20)=1 (53,21)=1 (53,22)=1 (53,23)=1 (54,20)=1 (54,21)=1 (54,22)=1 (54,23)=1 (55,20)=1 (55,21)=1 (55,22)=1 (55,23)=1 (56,20)=14 (56,21)=14 (56,22)=14 (56,23)=14 (57,20)=14 (57,21)=14 (57,22)=14 (57,23)=14 (58,20)=14 (58,21)=14 (58,22)=14 (58,23)=14 (59,20)=0 (59,21)=0 (59,22)=0 (59,23)=0
+record 15: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 14, 29 cell(s)
+g0 (56,20)=1 (56,21)=1 (56,22)=1 (56,23)=1 (57,20)=1 (57,21)=1 (57,22)=1 (57,23)=1 (58,20)=1 (58,21)=1 (58,22)=1 (58,23)=1 (59,20)=1 (59,21)=1 (59,22)=1 (59,23)=1 (60,20)=14 (60,21)=14 (60,22)=14 (60,23)=14 (61,20)=14 (61,21)=14 (61,22)=14 (61,23)=14 (62,20)=14 (62,21)=14 (62,22)=14 (62,23)=14 (63,59)=4
+record 16: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 15, 28 cell(s)
+g0 (56,20)=0 (56,21)=0 (56,22)=0 (56,23)=0 (57,20)=14 (57,21)=14 (57,22)=14 (57,23)=14 (58,20)=14 (58,21)=14 (58,22)=14 (58,23)=14 (59,20)=14 (59,21)=14 (59,22)=14 (59,23)=14 (60,20)=1 (60,21)=1 (60,22)=1 (60,23)=1 (61,20)=1 (61,21)=1 (61,22)=1 (61,23)=1 (62,20)=1 (62,21)=1 (62,22)=1 (62,23)=1
+record 17: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 16, 32 cell(s)
+g0 (52,20)=0 (52,21)=0 (52,22)=0 (52,23)=0 (53,20)=14 (53,21)=14 (53,22)=14 (53,23)=14 (54,20)=14 (54,21)=14 (54,22)=14 (54,23)=14 (55,20)=14 (55,21)=14 (55,22)=14 (55,23)=14 (56,20)=1 (56,21)=1 (56,22)=1 (56,23)=1 (57,20)=1 (57,21)=1 (57,22)=1 (57,23)=1 (58,20)=1 (58,21)=1 (58,22)=1 (58,23)=1 (59,20)=1 (59,21)=1 (59,22)=1 (59,23)=1
+record 18: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 17, 1 cell(s)
+g0 (63,58)=4
+record 19: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 18, 32 cell(s)
+g0 (52,20)=1 (52,21)=1 (52,22)=1 (52,23)=1 (53,20)=1 (53,21)=1 (53,22)=1 (53,23)=1 (54,20)=1 (54,21)=1 (54,22)=1 (54,23)=1 (55,20)=1 (55,21)=1 (55,22)=1 (55,23)=1 (56,20)=14 (56,21)=14 (56,22)=14 (56,23)=14 (57,20)=14 (57,21)=14 (57,22)=14 (57,23)=14 (58,20)=14 (58,21)=14 (58,22)=14 (58,23)=14 (59,20)=0 (59,21)=0 (59,22)=0 (59,23)=0
+record 20: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 19
+record 21: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 20, 29 cell(s)
+g0 (56,20)=1 (56,21)=1 (56,22)=1 (56,23)=1 (57,20)=1 (57,21)=1 (57,22)=1 (57,23)=1 (58,20)=1 (58,21)=1 (58,22)=1 (58,23)=1 (59,20)=1 (59,21)=1 (59,22)=1 (59,23)=1 (60,20)=14 (60,21)=14 (60,22)=14 (60,23)=14 (61,20)=14 (61,21)=14 (61,22)=14 (61,23)=14 (62,20)=14 (62,21)=14 (62,22)=14 (62,23)=14 (63,57)=4
+record 22: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 21, 24 cell(s)
+g0 (60,16)=0 (60,17)=14 (60,18)=14 (60,19)=14 (60,20)=1 (60,21)=1 (60,22)=1 (60,23)=1 (61,16)=0 (61,17)=14 (61,18)=14 (61,19)=14 (61,20)=1 (61,21)=1 (61,22)=1 (61,23)=1 (62,16)=0 (62,17)=14 (62,18)=14 (62,19)=14 (62,20)=1 (62,21)=1 (62,22)=1 (62,23)=1
+record 23: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 22, 28 cell(s)
+g0 (56,16)=0 (56,17)=0 (56,18)=0 (56,19)=0 (57,16)=14 (57,17)=14 (57,18)=14 (57,19)=14 (58,16)=14 (58,17)=14 (58,18)=14 (58,19)=14 (59,16)=14 (59,17)=14 (59,18)=14 (59,19)=14 (60,16)=1 (60,17)=1 (60,18)=1 (60,19)=1 (61,16)=1 (61,17)=1 (61,18)=1 (61,19)=1 (62,16)=1 (62,17)=1 (62,18)=1 (62,19)=1
+record 24: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 23, 29 cell(s)
+g0 (56,16)=1 (56,17)=1 (56,18)=1 (56,19)=1 (57,16)=1 (57,17)=1 (57,18)=1 (57,19)=1 (58,16)=1 (58,17)=1 (58,18)=1 (58,19)=1 (59,16)=1 (59,17)=1 (59,18)=1 (59,19)=1 (60,16)=14 (60,17)=14 (60,18)=14 (60,19)=14 (61,16)=14 (61,17)=14 (61,18)=14 (61,19)=14 (62,16)=14 (62,17)=14 (62,18)=14 (62,19)=14 (63,56)=4
+record 25: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 24
+record 26: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 25, 28 cell(s)
+g0 (56,16)=0 (56,17)=0 (56,18)=0 (56,19)=0 (57,16)=14 (57,17)=14 (57,18)=14 (57,19)=14 (58,16)=14 (58,17)=14 (58,18)=14 (58,19)=14 (59,16)=14 (59,17)=14 (59,18)=14 (59,19)=14 (60,16)=1 (60,17)=1 (60,18)=1 (60,19)=1 (61,16)=1 (61,17)=1 (61,18)=1 (61,19)=1 (62,16)=1 (62,17)=1 (62,18)=1 (62,19)=1
+record 27: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 26, 33 cell(s)
+g0 (56,12)=0 (56,13)=14 (56,14)=14 (56,15)=14 (56,16)=1 (56,17)=1 (56,18)=1 (56,19)=1 (57,12)=0 (57,13)=14 (57,14)=14 (57,15)=14 (57,16)=1 (57,17)=1 (57,18)=1 (57,19)=1 (58,12)=0 (58,13)=14 (58,14)=14 (58,15)=14 (58,16)=1 (58,17)=1 (58,18)=1 (58,19)=1 (59,12)=0 (59,13)=14 (59,14)=14 (59,15)=14 (59,16)=1 (59,17)=1 (59,18)=1 (59,19)=1 (63,55)=4
+record 28: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 27
+record 29: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 28, 32 cell(s)
+g0 (56,8)=0 (56,9)=14 (56,10)=14 (56,11)=14 (56,12)=1 (56,13)=1 (56,14)=1 (56,15)=1 (57,8)=0 (57,9)=14 (57,10)=14 (57,11)=14 (57,12)=1 (57,13)=1 (57,14)=1 (57,15)=1 (58,8)=0 (58,9)=14 (58,10)=14 (58,11)=14 (58,12)=1 (58,13)=1 (58,14)=1 (58,15)=1 (59,8)=0 (59,9)=14 (59,10)=14 (59,11)=14 (59,12)=1 (59,13)=1 (59,14)=1 (59,15)=1
+record 30: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 29, 33 cell(s)
+g0 (56,8)=1 (56,9)=1 (56,10)=1 (56,11)=1 (56,12)=14 (56,13)=14 (56,14)=14 (56,15)=0 (57,8)=1 (57,9)=1 (57,10)=1 (57,11)=1 (57,12)=14 (57,13)=14 (57,14)=14 (57,15)=0 (58,8)=1 (58,9)=1 (58,10)=1 (58,11)=1 (58,12)=14 (58,13)=14 (58,14)=14 (58,15)=0 (59,8)=1 (59,9)=1 (59,10)=1 (59,11)=1 (59,12)=14 (59,13)=14 (59,14)=14 (59,15)=0 (63,54)=4
+record 31: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 30, 32 cell(s)
+g0 (56,8)=0 (56,9)=14 (56,10)=14 (56,11)=14 (56,12)=1 (56,13)=1 (56,14)=1 (56,15)=1 (57,8)=0 (57,9)=14 (57,10)=14 (57,11)=14 (57,12)=1 (57,13)=1 (57,14)=1 (57,15)=1 (58,8)=0 (58,9)=14 (58,10)=14 (58,11)=14 (58,12)=1 (58,13)=1 (58,14)=1 (58,15)=1 (59,8)=0 (59,9)=14 (59,10)=14 (59,11)=14 (59,12)=1 (59,13)=1 (59,14)=1 (59,15)=1
+record 32: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 31, 28 cell(s)
+g0 (56,8)=1 (56,9)=1 (56,10)=1 (56,11)=1 (57,8)=1 (57,9)=1 (57,10)=1 (57,11)=1 (58,8)=1 (58,9)=1 (58,10)=1 (58,11)=1 (59,8)=1 (59,9)=1 (59,10)=1 (59,11)=1 (60,8)=14 (60,9)=14 (60,10)=14 (60,11)=14 (61,8)=14 (61,9)=14 (61,10)=14 (61,11)=14 (62,8)=14 (62,9)=14 (62,10)=14 (62,11)=14
+record 33: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 32, 1 cell(s)
+g0 (63,53)=4
+record 34: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 33
+record 35: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 34, 28 cell(s)
+g0 (56,8)=0 (56,9)=0 (56,10)=0 (56,11)=0 (57,8)=14 (57,9)=14 (57,10)=14 (57,11)=14 (58,8)=14 (58,9)=14 (58,10)=14 (58,11)=14 (59,8)=14 (59,9)=14 (59,10)=14 (59,11)=14 (60,8)=1 (60,9)=1 (60,10)=1 (60,11)=1 (61,8)=1 (61,9)=1 (61,10)=1 (61,11)=1 (62,8)=1 (62,9)=1 (62,10)=1 (62,11)=1
+record 36: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 35, 33 cell(s)
+g0 (52,8)=0 (52,9)=0 (52,10)=0 (52,11)=0 (53,8)=14 (53,9)=14 (53,10)=14 (53,11)=14 (54,8)=14 (54,9)=14 (54,10)=14 (54,11)=14 (55,8)=14 (55,9)=14 (55,10)=14 (55,11)=14 (56,8)=1 (56,9)=1 (56,10)=1 (56,11)=1 (57,8)=1 (57,9)=1 (57,10)=1 (57,11)=1 (58,8)=1 (58,9)=1 (58,10)=1 (58,11)=1 (59,8)=1 (59,9)=1 (59,10)=1 (59,11)=1 (63,52)=4
+record 37: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 36
+record 38: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 37, 32 cell(s)
+g0 (52,4)=0 (52,5)=14 (52,6)=14 (52,7)=14 (52,8)=1 (52,9)=1 (52,10)=1 (52,11)=1 (53,4)=0 (53,5)=14 (53,6)=14 (53,7)=14 (53,8)=1 (53,9)=1 (53,10)=1 (53,11)=1 (54,4)=0 (54,5)=14 (54,6)=14 (54,7)=14 (54,8)=1 (54,9)=1 (54,10)=1 (54,11)=1 (55,4)=0 (55,5)=14 (55,6)=14 (55,7)=14 (55,8)=1 (55,9)=1 (55,10)=1 (55,11)=1
+record 39: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 38, 32 cell(s)
+g0 (52,4)=1 (52,5)=1 (52,6)=1 (52,7)=1 (53,4)=1 (53,5)=1 (53,6)=1 (53,7)=1 (54,4)=1 (54,5)=1 (54,6)=1 (54,7)=1 (55,4)=1 (55,5)=1 (55,6)=1 (55,7)=1 (56,4)=14 (56,5)=14 (56,6)=14 (56,7)=14 (57,4)=14 (57,5)=14 (57,6)=14 (57,7)=14 (58,4)=14 (58,5)=14 (58,6)=14 (58,7)=14 (59,4)=0 (59,5)=0 (59,6)=0 (59,7)=0
+record 40: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 39, 33 cell(s)
+g0 (56,4)=1 (56,5)=1 (56,6)=1 (56,7)=1 (56,8)=14 (56,9)=14 (56,10)=14 (56,11)=0 (57,4)=1 (57,5)=1 (57,6)=1 (57,7)=1 (57,8)=14 (57,9)=14 (57,10)=14 (57,11)=0 (58,4)=1 (58,5)=1 (58,6)=1 (58,7)=1 (58,8)=14 (58,9)=14 (58,10)=14 (58,11)=0 (59,4)=1 (59,5)=1 (59,6)=1 (59,7)=1 (59,8)=14 (59,9)=14 (59,10)=14 (59,11)=0 (63,51)=4
+record 41: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 40
+record 42: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 41, 32 cell(s)
+g0 (56,8)=1 (56,9)=1 (56,10)=1 (56,11)=1 (56,12)=14 (56,13)=14 (56,14)=14 (56,15)=0 (57,8)=1 (57,9)=1 (57,10)=1 (57,11)=1 (57,12)=14 (57,13)=14 (57,14)=14 (57,15)=0 (58,8)=1 (58,9)=1 (58,10)=1 (58,11)=1 (58,12)=14 (58,13)=14 (58,14)=14 (58,15)=0 (59,8)=1 (59,9)=1 (59,10)=1 (59,11)=1 (59,12)=14 (59,13)=14 (59,14)=14 (59,15)=0
+record 43: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 42, 33 cell(s)
+g0 (56,12)=1 (56,13)=1 (56,14)=1 (56,15)=1 (56,16)=14 (56,17)=14 (56,18)=14 (56,19)=0 (57,12)=1 (57,13)=1 (57,14)=1 (57,15)=1 (57,16)=14 (57,17)=14 (57,18)=14 (57,19)=0 (58,12)=1 (58,13)=1 (58,14)=1 (58,15)=1 (58,16)=14 (58,17)=14 (58,18)=14 (58,19)=0 (59,12)=1 (59,13)=1 (59,14)=1 (59,15)=1 (59,16)=14 (59,17)=14 (59,18)=14 (59,19)=0 (63,50)=4
+record 44: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 43, 32 cell(s)
+g0 (56,16)=1 (56,17)=1 (56,18)=1 (56,19)=1 (56,20)=14 (56,21)=14 (56,22)=14 (56,23)=0 (57,16)=1 (57,17)=1 (57,18)=1 (57,19)=1 (57,20)=14 (57,21)=14 (57,22)=14 (57,23)=0 (58,16)=1 (58,17)=1 (58,18)=1 (58,19)=1 (58,20)=14 (58,21)=14 (58,22)=14 (58,23)=0 (59,16)=1 (59,17)=1 (59,18)=1 (59,19)=1 (59,20)=14 (59,21)=14 (59,22)=14 (59,23)=0
+record 45: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 44, 28 cell(s)
+g0 (56,20)=1 (56,21)=1 (56,22)=1 (56,23)=1 (57,20)=1 (57,21)=1 (57,22)=1 (57,23)=1 (58,20)=1 (58,21)=1 (58,22)=1 (58,23)=1 (59,20)=1 (59,21)=1 (59,22)=1 (59,23)=1 (60,20)=14 (60,21)=14 (60,22)=14 (60,23)=14 (61,20)=14 (61,21)=14 (61,22)=14 (61,23)=14 (62,20)=14 (62,21)=14 (62,22)=14 (62,23)=14
+record 46: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 45, 25 cell(s)
+g0 (60,20)=1 (60,21)=1 (60,22)=1 (60,23)=1 (60,24)=14 (60,25)=14 (60,26)=14 (60,27)=0 (61,20)=1 (61,21)=1 (61,22)=1 (61,23)=1 (61,24)=14 (61,25)=14 (61,26)=14 (61,27)=0 (62,20)=1 (62,21)=1 (62,22)=1 (62,23)=1 (62,24)=14 (62,25)=14 (62,26)=14 (62,27)=0 (63,49)=4
+record 47: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 46, 24 cell(s)
+g0 (60,24)=1 (60,25)=1 (60,26)=1 (60,27)=1 (60,28)=14 (60,29)=14 (60,30)=14 (60,31)=0 (61,24)=1 (61,25)=1 (61,26)=1 (61,27)=1 (61,28)=14 (61,29)=14 (61,30)=14 (61,31)=0 (62,24)=1 (62,25)=1 (62,26)=1 (62,27)=1 (62,28)=14 (62,29)=14 (62,30)=14 (62,31)=0
+record 48: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 47, 28 cell(s)
+g0 (56,28)=0 (56,29)=0 (56,30)=0 (56,31)=0 (57,28)=14 (57,29)=14 (57,30)=14 (57,31)=14 (58,28)=14 (58,29)=14 (58,30)=14 (58,31)=14 (59,28)=14 (59,29)=14 (59,30)=14 (59,31)=14 (60,28)=1 (60,29)=1 (60,30)=1 (60,31)=1 (61,28)=1 (61,29)=1 (61,30)=1 (61,31)=1 (62,28)=1 (62,29)=1 (62,30)=1 (62,31)=1
+record 49: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 48, 33 cell(s)
+g0 (56,24)=0 (56,25)=14 (56,26)=14 (56,27)=14 (56,28)=1 (56,29)=1 (56,30)=1 (56,31)=1 (57,24)=0 (57,25)=14 (57,26)=14 (57,27)=14 (57,28)=1 (57,29)=1 (57,30)=1 (57,31)=1 (58,24)=0 (58,25)=14 (58,26)=14 (58,27)=14 (58,28)=1 (58,29)=1 (58,30)=1 (58,31)=1 (59,24)=0 (59,25)=14 (59,26)=14 (59,27)=14 (59,28)=1 (59,29)=1 (59,30)=1 (59,31)=1 (63,48)=4
+record 50: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 49, 32 cell(s)
+g0 (56,24)=1 (56,25)=1 (56,26)=1 (56,27)=1 (56,28)=14 (56,29)=14 (56,30)=14 (56,31)=0 (57,24)=1 (57,25)=1 (57,26)=1 (57,27)=1 (57,28)=14 (57,29)=14 (57,30)=14 (57,31)=0 (58,24)=1 (58,25)=1 (58,26)=1 (58,27)=1 (58,28)=14 (58,29)=14 (58,30)=14 (58,31)=0 (59,24)=1 (59,25)=1 (59,26)=1 (59,27)=1 (59,28)=14 (59,29)=14 (59,30)=14 (59,31)=0
+record 51: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 50, 32 cell(s)
+g0 (52,28)=0 (52,29)=0 (52,30)=0 (52,31)=0 (53,28)=14 (53,29)=14 (53,30)=14 (53,31)=14 (54,28)=14 (54,29)=14 (54,30)=14 (54,31)=14 (55,28)=14 (55,29)=14 (55,30)=14 (55,31)=14 (56,28)=1 (56,29)=1 (56,30)=1 (56,31)=1 (57,28)=1 (57,29)=1 (57,30)=1 (57,31)=1 (58,28)=1 (58,29)=1 (58,30)=1 (58,31)=1 (59,28)=1 (59,29)=1 (59,30)=1 (59,31)=1
+record 52: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 51, 33 cell(s)
+g0 (52,28)=1 (52,29)=1 (52,30)=1 (52,31)=1 (53,28)=1 (53,29)=1 (53,30)=1 (53,31)=1 (54,28)=1 (54,29)=1 (54,30)=1 (54,31)=1 (55,28)=1 (55,29)=1 (55,30)=1 (55,31)=1 (56,28)=14 (56,29)=14 (56,30)=14 (56,31)=14 (57,28)=14 (57,29)=14 (57,30)=14 (57,31)=14 (58,28)=14 (58,29)=14 (58,30)=14 (58,31)=14 (59,28)=0 (59,29)=0 (59,30)=0 (59,31)=0 (63,47)=4
+record 53: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 52
+record 54: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 53, 28 cell(s)
+g0 (56,28)=1 (56,29)=1 (56,30)=1 (56,31)=1 (57,28)=1 (57,29)=1 (57,30)=1 (57,31)=1 (58,28)=1 (58,29)=1 (58,30)=1 (58,31)=1 (59,28)=1 (59,29)=1 (59,30)=1 (59,31)=1 (60,28)=14 (60,29)=14 (60,30)=14 (60,31)=14 (61,28)=14 (61,29)=14 (61,30)=14 (61,31)=14 (62,28)=14 (62,29)=14 (62,30)=14 (62,31)=14
+record 55: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 54, 29 cell(s)
+g0 (56,28)=0 (56,29)=0 (56,30)=0 (56,31)=0 (57,28)=14 (57,29)=14 (57,30)=14 (57,31)=14 (58,28)=14 (58,29)=14 (58,30)=14 (58,31)=14 (59,28)=14 (59,29)=14 (59,30)=14 (59,31)=14 (60,28)=1 (60,29)=1 (60,30)=1 (60,31)=1 (61,28)=1 (61,29)=1 (61,30)=1 (61,31)=1 (62,28)=1 (62,29)=1 (62,30)=1 (62,31)=1 (63,46)=4
+record 56: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 55
+record 57: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 56, 28 cell(s)
+g0 (56,28)=1 (56,29)=1 (56,30)=1 (56,31)=1 (57,28)=1 (57,29)=1 (57,30)=1 (57,31)=1 (58,28)=1 (58,29)=1 (58,30)=1 (58,31)=1 (59,28)=1 (59,29)=1 (59,30)=1 (59,31)=1 (60,28)=14 (60,29)=14 (60,30)=14 (60,31)=14 (61,28)=14 (61,29)=14 (61,30)=14 (61,31)=14 (62,28)=14 (62,29)=14 (62,30)=14 (62,31)=14
+record 58: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 57, 29 cell(s)
+g0 (56,28)=0 (56,29)=0 (56,30)=0 (56,31)=0 (57,28)=14 (57,29)=14 (57,30)=14 (57,31)=14 (58,28)=14 (58,29)=14 (58,30)=14 (58,31)=14 (59,28)=14 (59,29)=14 (59,30)=14 (59,31)=14 (60,28)=1 (60,29)=1 (60,30)=1 (60,31)=1 (61,28)=1 (61,29)=1 (61,30)=1 (61,31)=1 (62,28)=1 (62,29)=1 (62,30)=1 (62,31)=1 (63,45)=4
+record 59: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 58, 32 cell(s)
+g0 (56,28)=1 (56,29)=1 (56,30)=1 (56,31)=1 (56,32)=14 (56,33)=14 (56,34)=14 (56,35)=0 (57,28)=1 (57,29)=1 (57,30)=1 (57,31)=1 (57,32)=14 (57,33)=14 (57,34)=14 (57,35)=0 (58,28)=1 (58,29)=1 (58,30)=1 (58,31)=1 (58,32)=14 (58,33)=14 (58,34)=14 (58,35)=0 (59,28)=1 (59,29)=1 (59,30)=1 (59,31)=1 (59,32)=14 (59,33)=14 (59,34)=14 (59,35)=0
+record 60: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 59, 28 cell(s)
+g0 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1 (60,32)=14 (60,33)=14 (60,34)=14 (60,35)=14 (61,32)=14 (61,33)=14 (61,34)=14 (61,35)=14 (62,32)=14 (62,33)=14 (62,34)=14 (62,35)=14
+record 61: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 60, 29 cell(s)
+g0 (56,32)=0 (56,33)=0 (56,34)=0 (56,35)=0 (57,32)=14 (57,33)=14 (57,34)=14 (57,35)=14 (58,32)=14 (58,33)=14 (58,34)=14 (58,35)=14 (59,32)=14 (59,33)=14 (59,34)=14 (59,35)=14 (60,32)=1 (60,33)=1 (60,34)=1 (60,35)=1 (61,32)=1 (61,33)=1 (61,34)=1 (61,35)=1 (62,32)=1 (62,33)=1 (62,34)=1 (62,35)=1 (63,44)=4
+record 62: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 61, 32 cell(s)
+g0 (52,32)=0 (52,33)=0 (52,34)=0 (52,35)=0 (53,32)=14 (53,33)=14 (53,34)=14 (53,35)=14 (54,32)=14 (54,33)=14 (54,34)=14 (54,35)=14 (55,32)=14 (55,33)=14 (55,34)=14 (55,35)=14 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1
+record 63: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 62, 32 cell(s)
+g0 (48,32)=0 (48,33)=0 (48,34)=0 (48,35)=0 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=14 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=14 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=14 (52,32)=1 (52,33)=1 (52,34)=1 (52,35)=1 (53,32)=1 (53,33)=1 (53,34)=1 (53,35)=1 (54,32)=1 (54,33)=1 (54,34)=1 (54,35)=1 (55,32)=1 (55,33)=1 (55,34)=1 (55,35)=1
+record 64: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 63
+record 65: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 64, 33 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1 (63,43)=4
+record 66: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 65, 32 cell(s)
+g0 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (48,32)=14 (48,33)=14 (48,34)=14 (48,35)=0 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=0 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=0 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=0
+record 67: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 66, 32 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1
+record 68: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 67, 33 cell(s)
+g0 (48,24)=0 (48,25)=14 (48,26)=14 (48,27)=14 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (49,24)=0 (49,25)=14 (49,26)=14 (49,27)=14 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (50,24)=0 (50,25)=14 (50,26)=14 (50,27)=14 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (51,24)=0 (51,25)=14 (51,26)=14 (51,27)=14 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (63,42)=4
+record 69: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 68, 32 cell(s)
+g0 (44,24)=0 (44,25)=0 (44,26)=0 (44,27)=0 (45,24)=14 (45,25)=14 (45,26)=14 (45,27)=14 (46,24)=14 (46,25)=14 (46,26)=14 (46,27)=14 (47,24)=14 (47,25)=14 (47,26)=14 (47,27)=14 (48,24)=1 (48,25)=1 (48,26)=1 (48,27)=1 (49,24)=1 (49,25)=1 (49,26)=1 (49,27)=1 (50,24)=1 (50,25)=1 (50,26)=1 (50,27)=1 (51,24)=1 (51,25)=1 (51,26)=1 (51,27)=1
+record 70: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 69, 32 cell(s)
+g0 (44,24)=1 (44,25)=1 (44,26)=1 (44,27)=1 (45,24)=1 (45,25)=1 (45,26)=1 (45,27)=1 (46,24)=1 (46,25)=1 (46,26)=1 (46,27)=1 (47,24)=1 (47,25)=1 (47,26)=1 (47,27)=1 (48,24)=14 (48,25)=14 (48,26)=14 (48,27)=14 (49,24)=14 (49,25)=14 (49,26)=14 (49,27)=14 (50,24)=14 (50,25)=14 (50,26)=14 (50,27)=14 (51,24)=0 (51,25)=0 (51,26)=0 (51,27)=0
+record 71: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 70, 1 cell(s)
+g0 (63,41)=4
+record 72: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 71, 32 cell(s)
+g0 (48,24)=1 (48,25)=1 (48,26)=1 (48,27)=1 (49,24)=1 (49,25)=1 (49,26)=1 (49,27)=1 (50,24)=1 (50,25)=1 (50,26)=1 (50,27)=1 (51,24)=1 (51,25)=1 (51,26)=1 (51,27)=1 (52,24)=14 (52,25)=14 (52,26)=14 (52,27)=14 (53,24)=14 (53,25)=14 (53,26)=14 (53,27)=14 (54,24)=14 (54,25)=14 (54,26)=14 (54,27)=14 (55,24)=0 (55,25)=0 (55,26)=0 (55,27)=0
+record 73: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 72
+record 74: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 73, 33 cell(s)
+g0 (48,24)=0 (48,25)=0 (48,26)=0 (48,27)=0 (49,24)=14 (49,25)=14 (49,26)=14 (49,27)=14 (50,24)=14 (50,25)=14 (50,26)=14 (50,27)=14 (51,24)=14 (51,25)=14 (51,26)=14 (51,27)=14 (52,24)=1 (52,25)=1 (52,26)=1 (52,27)=1 (53,24)=1 (53,25)=1 (53,26)=1 (53,27)=1 (54,24)=1 (54,25)=1 (54,26)=1 (54,27)=1 (55,24)=1 (55,25)=1 (55,26)=1 (55,27)=1 (63,40)=4
+record 75: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 74, 32 cell(s)
+g0 (48,24)=1 (48,25)=1 (48,26)=1 (48,27)=1 (48,28)=14 (48,29)=14 (48,30)=14 (48,31)=0 (49,24)=1 (49,25)=1 (49,26)=1 (49,27)=1 (49,28)=14 (49,29)=14 (49,30)=14 (49,31)=0 (50,24)=1 (50,25)=1 (50,26)=1 (50,27)=1 (50,28)=14 (50,29)=14 (50,30)=14 (50,31)=0 (51,24)=1 (51,25)=1 (51,26)=1 (51,27)=1 (51,28)=14 (51,29)=14 (51,30)=14 (51,31)=0
+record 76: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 75, 32 cell(s)
+g0 (48,24)=0 (48,25)=14 (48,26)=14 (48,27)=14 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (49,24)=0 (49,25)=14 (49,26)=14 (49,27)=14 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (50,24)=0 (50,25)=14 (50,26)=14 (50,27)=14 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (51,24)=0 (51,25)=14 (51,26)=14 (51,27)=14 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1
+record 77: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 76, 33 cell(s)
+g0 (44,24)=0 (44,25)=0 (44,26)=0 (44,27)=0 (45,24)=14 (45,25)=14 (45,26)=14 (45,27)=14 (46,24)=14 (46,25)=14 (46,26)=14 (46,27)=14 (47,24)=14 (47,25)=14 (47,26)=14 (47,27)=14 (48,24)=1 (48,25)=1 (48,26)=1 (48,27)=1 (49,24)=1 (49,25)=1 (49,26)=1 (49,27)=1 (50,24)=1 (50,25)=1 (50,26)=1 (50,27)=1 (51,24)=1 (51,25)=1 (51,26)=1 (51,27)=1 (63,39)=4
+record 78: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 77, 32 cell(s)
+g0 (40,24)=0 (40,25)=0 (40,26)=0 (40,27)=0 (41,24)=14 (41,25)=14 (41,26)=14 (41,27)=14 (42,24)=14 (42,25)=14 (42,26)=14 (42,27)=14 (43,24)=14 (43,25)=14 (43,26)=14 (43,27)=14 (44,24)=1 (44,25)=1 (44,26)=1 (44,27)=1 (45,24)=1 (45,25)=1 (45,26)=1 (45,27)=1 (46,24)=1 (46,25)=1 (46,26)=1 (46,27)=1 (47,24)=1 (47,25)=1 (47,26)=1 (47,27)=1
+record 79: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 78, 32 cell(s)
+g0 (40,24)=1 (40,25)=1 (40,26)=1 (40,27)=1 (40,28)=14 (40,29)=14 (40,30)=14 (40,31)=0 (41,24)=1 (41,25)=1 (41,26)=1 (41,27)=1 (41,28)=14 (41,29)=14 (41,30)=14 (41,31)=0 (42,24)=1 (42,25)=1 (42,26)=1 (42,27)=1 (42,28)=14 (42,29)=14 (42,30)=14 (42,31)=0 (43,24)=1 (43,25)=1 (43,26)=1 (43,27)=1 (43,28)=14 (43,29)=14 (43,30)=14 (43,31)=0
+record 80: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 79, 33 cell(s)
+g0 (40,28)=1 (40,29)=1 (40,30)=1 (40,31)=1 (41,28)=1 (41,29)=1 (41,30)=1 (41,31)=1 (42,28)=1 (42,29)=1 (42,30)=1 (42,31)=1 (43,28)=1 (43,29)=1 (43,30)=1 (43,31)=1 (44,28)=14 (44,29)=14 (44,30)=14 (44,31)=14 (45,28)=14 (45,29)=14 (45,30)=14 (45,31)=14 (46,28)=14 (46,29)=14 (46,30)=14 (46,31)=14 (47,28)=0 (47,29)=0 (47,30)=0 (47,31)=0 (63,38)=4
+record 81: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 80, 32 cell(s)
+g0 (44,24)=0 (44,25)=14 (44,26)=14 (44,27)=14 (44,28)=1 (44,29)=1 (44,30)=1 (44,31)=1 (45,24)=0 (45,25)=14 (45,26)=14 (45,27)=14 (45,28)=1 (45,29)=1 (45,30)=1 (45,31)=1 (46,24)=0 (46,25)=14 (46,26)=14 (46,27)=14 (46,28)=1 (46,29)=1 (46,30)=1 (46,31)=1 (47,24)=0 (47,25)=14 (47,26)=14 (47,27)=14 (47,28)=1 (47,29)=1 (47,30)=1 (47,31)=1
+record 82: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 81, 32 cell(s)
+g0 (44,24)=1 (44,25)=1 (44,26)=1 (44,27)=1 (44,28)=14 (44,29)=14 (44,30)=14 (44,31)=0 (45,24)=1 (45,25)=1 (45,26)=1 (45,27)=1 (45,28)=14 (45,29)=14 (45,30)=14 (45,31)=0 (46,24)=1 (46,25)=1 (46,26)=1 (46,27)=1 (46,28)=14 (46,29)=14 (46,30)=14 (46,31)=0 (47,24)=1 (47,25)=1 (47,26)=1 (47,27)=1 (47,28)=14 (47,29)=14 (47,30)=14 (47,31)=0
+record 83: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 82, 33 cell(s)
+g0 (44,24)=0 (44,25)=14 (44,26)=14 (44,27)=14 (44,28)=1 (44,29)=1 (44,30)=1 (44,31)=1 (45,24)=0 (45,25)=14 (45,26)=14 (45,27)=14 (45,28)=1 (45,29)=1 (45,30)=1 (45,31)=1 (46,24)=0 (46,25)=14 (46,26)=14 (46,27)=14 (46,28)=1 (46,29)=1 (46,30)=1 (46,31)=1 (47,24)=0 (47,25)=14 (47,26)=14 (47,27)=14 (47,28)=1 (47,29)=1 (47,30)=1 (47,31)=1 (63,37)=4
+record 84: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 83
+record 85: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 84, 32 cell(s)
+g0 (44,20)=0 (44,21)=14 (44,22)=14 (44,23)=14 (44,24)=1 (44,25)=1 (44,26)=1 (44,27)=1 (45,20)=0 (45,21)=14 (45,22)=14 (45,23)=14 (45,24)=1 (45,25)=1 (45,26)=1 (45,27)=1 (46,20)=0 (46,21)=14 (46,22)=14 (46,23)=14 (46,24)=1 (46,25)=1 (46,26)=1 (46,27)=1 (47,20)=0 (47,21)=14 (47,22)=14 (47,23)=14 (47,24)=1 (47,25)=1 (47,26)=1 (47,27)=1
+record 86: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 85, 33 cell(s)
+g0 (40,20)=0 (40,21)=0 (40,22)=0 (40,23)=0 (41,20)=14 (41,21)=14 (41,22)=14 (41,23)=14 (42,20)=14 (42,21)=14 (42,22)=14 (42,23)=14 (43,20)=14 (43,21)=14 (43,22)=14 (43,23)=14 (44,20)=1 (44,21)=1 (44,22)=1 (44,23)=1 (45,20)=1 (45,21)=1 (45,22)=1 (45,23)=1 (46,20)=1 (46,21)=1 (46,22)=1 (46,23)=1 (47,20)=1 (47,21)=1 (47,22)=1 (47,23)=1 (63,36)=4
+record 87: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*20 0*4 1*8 4*4 1*28
+g0 r37-r38: 1*20 14*4 1*8 4*1 9*2 4*1 1*28
+g0 r39: 1*20 14*4 1*8 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*36 4*28
+record 88: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 87, 32 cell(s)
+g0 (36,20)=1 (36,21)=1 (36,22)=1 (36,23)=1 (37,20)=1 (37,21)=1 (37,22)=1 (37,23)=1 (38,20)=1 (38,21)=1 (38,22)=1 (38,23)=1 (39,20)=1 (39,21)=1 (39,22)=1 (39,23)=1 (40,20)=14 (40,21)=14 (40,22)=14 (40,23)=14 (41,20)=14 (41,21)=14 (41,22)=14 (41,23)=14 (42,20)=14 (42,21)=14 (42,22)=14 (42,23)=14 (43,20)=0 (43,21)=0 (43,22)=0 (43,23)=0
+record 89: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 88, 32 cell(s)
+g0 (40,16)=0 (40,17)=14 (40,18)=14 (40,19)=14 (40,20)=1 (40,21)=1 (40,22)=1 (40,23)=1 (41,16)=0 (41,17)=14 (41,18)=14 (41,19)=14 (41,20)=1 (41,21)=1 (41,22)=1 (41,23)=1 (42,16)=0 (42,17)=14 (42,18)=14 (42,19)=14 (42,20)=1 (42,21)=1 (42,22)=1 (42,23)=1 (43,16)=0 (43,17)=14 (43,18)=14 (43,19)=14 (43,20)=1 (43,21)=1 (43,22)=1 (43,23)=1
+record 90: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 89, 1 cell(s)
+g0 (63,35)=4
+record 91: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 90
+record 92: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 91, 32 cell(s)
+g0 (40,12)=0 (40,13)=14 (40,14)=14 (40,15)=14 (40,16)=1 (40,17)=1 (40,18)=1 (40,19)=1 (41,12)=0 (41,13)=14 (41,14)=14 (41,15)=14 (41,16)=1 (41,17)=1 (41,18)=1 (41,19)=1 (42,12)=0 (42,13)=14 (42,14)=14 (42,15)=14 (42,16)=1 (42,17)=1 (42,18)=1 (42,19)=1 (43,12)=0 (43,13)=14 (43,14)=14 (43,15)=14 (43,16)=1 (43,17)=1 (43,18)=1 (43,19)=1
+record 93: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 92, 33 cell(s)
+g0 (40,12)=1 (40,13)=1 (40,14)=1 (40,15)=1 (41,12)=1 (41,13)=1 (41,14)=1 (41,15)=1 (42,12)=1 (42,13)=1 (42,14)=1 (42,15)=1 (43,12)=1 (43,13)=1 (43,14)=1 (43,15)=1 (44,12)=14 (44,13)=14 (44,14)=14 (44,15)=14 (45,12)=14 (45,13)=14 (45,14)=14 (45,15)=14 (46,12)=14 (46,13)=14 (46,14)=14 (46,15)=14 (47,12)=0 (47,13)=0 (47,14)=0 (47,15)=0 (63,34)=4
+record 94: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 93, 32 cell(s)
+g0 (44,12)=1 (44,13)=1 (44,14)=1 (44,15)=1 (45,12)=1 (45,13)=1 (45,14)=1 (45,15)=1 (46,12)=1 (46,13)=1 (46,14)=1 (46,15)=1 (47,12)=1 (47,13)=1 (47,14)=1 (47,15)=1 (48,12)=14 (48,13)=14 (48,14)=14 (48,15)=14 (49,12)=14 (49,13)=14 (49,14)=14 (49,15)=14 (50,12)=14 (50,13)=14 (50,14)=14 (50,15)=14 (51,12)=0 (51,13)=0 (51,14)=0 (51,15)=0
+record 95: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 94, 32 cell(s)
+g0 (48,12)=1 (48,13)=1 (48,14)=1 (48,15)=1 (48,16)=14 (48,17)=14 (48,18)=14 (48,19)=0 (49,12)=1 (49,13)=1 (49,14)=1 (49,15)=1 (49,16)=14 (49,17)=14 (49,18)=14 (49,19)=0 (50,12)=1 (50,13)=1 (50,14)=1 (50,15)=1 (50,16)=14 (50,17)=14 (50,18)=14 (50,19)=0 (51,12)=1 (51,13)=1 (51,14)=1 (51,15)=1 (51,16)=14 (51,17)=14 (51,18)=14 (51,19)=0
+record 96: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 95, 33 cell(s)
+g0 (48,16)=1 (48,17)=1 (48,18)=1 (48,19)=1 (48,20)=14 (48,21)=14 (48,22)=14 (48,23)=0 (49,16)=1 (49,17)=1 (49,18)=1 (49,19)=1 (49,20)=14 (49,21)=14 (49,22)=14 (49,23)=0 (50,16)=1 (50,17)=1 (50,18)=1 (50,19)=1 (50,20)=14 (50,21)=14 (50,22)=14 (50,23)=0 (51,16)=1 (51,17)=1 (51,18)=1 (51,19)=1 (51,20)=14 (51,21)=14 (51,22)=14 (51,23)=0 (63,33)=4
+record 97: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 96
+record 98: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 97, 32 cell(s)
+g0 (48,16)=0 (48,17)=14 (48,18)=14 (48,19)=14 (48,20)=1 (48,21)=1 (48,22)=1 (48,23)=1 (49,16)=0 (49,17)=14 (49,18)=14 (49,19)=14 (49,20)=1 (49,21)=1 (49,22)=1 (49,23)=1 (50,16)=0 (50,17)=14 (50,18)=14 (50,19)=14 (50,20)=1 (50,21)=1 (50,22)=1 (50,23)=1 (51,16)=0 (51,17)=14 (51,18)=14 (51,19)=14 (51,20)=1 (51,21)=1 (51,22)=1 (51,23)=1
+record 99: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 98, 33 cell(s)
+g0 (44,16)=0 (44,17)=0 (44,18)=0 (44,19)=0 (45,16)=14 (45,17)=14 (45,18)=14 (45,19)=14 (46,16)=14 (46,17)=14 (46,18)=14 (46,19)=14 (47,16)=14 (47,17)=14 (47,18)=14 (47,19)=14 (48,16)=1 (48,17)=1 (48,18)=1 (48,19)=1 (49,16)=1 (49,17)=1 (49,18)=1 (49,19)=1 (50,16)=1 (50,17)=1 (50,18)=1 (50,19)=1 (51,16)=1 (51,17)=1 (51,18)=1 (51,19)=1 (63,32)=4
+record 100: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 99, 32 cell(s)
+g0 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1 (48,16)=14 (48,17)=14 (48,18)=14 (48,19)=14 (49,16)=14 (49,17)=14 (49,18)=14 (49,19)=14 (50,16)=14 (50,17)=14 (50,18)=14 (50,19)=14 (51,16)=0 (51,17)=0 (51,18)=0 (51,19)=0
+record 101: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 100, 32 cell(s)
+g0 (44,16)=0 (44,17)=0 (44,18)=0 (44,19)=0 (45,16)=14 (45,17)=14 (45,18)=14 (45,19)=14 (46,16)=14 (46,17)=14 (46,18)=14 (46,19)=14 (47,16)=14 (47,17)=14 (47,18)=14 (47,19)=14 (48,16)=1 (48,17)=1 (48,18)=1 (48,19)=1 (49,16)=1 (49,17)=1 (49,18)=1 (49,19)=1 (50,16)=1 (50,17)=1 (50,18)=1 (50,19)=1 (51,16)=1 (51,17)=1 (51,18)=1 (51,19)=1
+record 102: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 101, 33 cell(s)
+g0 (44,12)=0 (44,13)=14 (44,14)=14 (44,15)=14 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,12)=0 (45,13)=14 (45,14)=14 (45,15)=14 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,12)=0 (46,13)=14 (46,14)=14 (46,15)=14 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,12)=0 (47,13)=14 (47,14)=14 (47,15)=14 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1 (63,31)=4
+record 103: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 102
+record 104: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 103, 32 cell(s)
+g0 (44,8)=0 (44,9)=14 (44,10)=14 (44,11)=14 (44,12)=1 (44,13)=1 (44,14)=1 (44,15)=1 (45,8)=0 (45,9)=14 (45,10)=14 (45,11)=14 (45,12)=1 (45,13)=1 (45,14)=1 (45,15)=1 (46,8)=0 (46,9)=14 (46,10)=14 (46,11)=14 (46,12)=1 (46,13)=1 (46,14)=1 (46,15)=1 (47,8)=0 (47,9)=14 (47,10)=14 (47,11)=14 (47,12)=1 (47,13)=1 (47,14)=1 (47,15)=1
+record 105: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 104, 33 cell(s)
+g0 (44,8)=1 (44,9)=1 (44,10)=1 (44,11)=1 (44,12)=14 (44,13)=14 (44,14)=14 (44,15)=0 (45,8)=1 (45,9)=1 (45,10)=1 (45,11)=1 (45,12)=14 (45,13)=14 (45,14)=14 (45,15)=0 (46,8)=1 (46,9)=1 (46,10)=1 (46,11)=1 (46,12)=14 (46,13)=14 (46,14)=14 (46,15)=0 (47,8)=1 (47,9)=1 (47,10)=1 (47,11)=1 (47,12)=14 (47,13)=14 (47,14)=14 (47,15)=0 (63,30)=4
+record 106: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 105, 32 cell(s)
+g0 (44,12)=1 (44,13)=1 (44,14)=1 (44,15)=1 (44,16)=14 (44,17)=14 (44,18)=14 (44,19)=0 (45,12)=1 (45,13)=1 (45,14)=1 (45,15)=1 (45,16)=14 (45,17)=14 (45,18)=14 (45,19)=0 (46,12)=1 (46,13)=1 (46,14)=1 (46,15)=1 (46,16)=14 (46,17)=14 (46,18)=14 (46,19)=0 (47,12)=1 (47,13)=1 (47,14)=1 (47,15)=1 (47,16)=14 (47,17)=14 (47,18)=14 (47,19)=0
+record 107: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 106, 32 cell(s)
+g0 (44,12)=0 (44,13)=14 (44,14)=14 (44,15)=14 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,12)=0 (45,13)=14 (45,14)=14 (45,15)=14 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,12)=0 (46,13)=14 (46,14)=14 (46,15)=14 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,12)=0 (47,13)=14 (47,14)=14 (47,15)=14 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1
+record 108: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 107, 33 cell(s)
+g0 (44,12)=1 (44,13)=1 (44,14)=1 (44,15)=1 (44,16)=14 (44,17)=14 (44,18)=14 (44,19)=0 (45,12)=1 (45,13)=1 (45,14)=1 (45,15)=1 (45,16)=14 (45,17)=14 (45,18)=14 (45,19)=0 (46,12)=1 (46,13)=1 (46,14)=1 (46,15)=1 (46,16)=14 (46,17)=14 (46,18)=14 (46,19)=0 (47,12)=1 (47,13)=1 (47,14)=1 (47,15)=1 (47,16)=14 (47,17)=14 (47,18)=14 (47,19)=0 (63,29)=4
+record 109: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 108, 32 cell(s)
+g0 (40,16)=0 (40,17)=0 (40,18)=0 (40,19)=0 (41,16)=14 (41,17)=14 (41,18)=14 (41,19)=14 (42,16)=14 (42,17)=14 (42,18)=14 (42,19)=14 (43,16)=14 (43,17)=14 (43,18)=14 (43,19)=14 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1
+record 110: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 109, 32 cell(s)
+g0 (40,12)=0 (40,13)=14 (40,14)=14 (40,15)=14 (40,16)=1 (40,17)=1 (40,18)=1 (40,19)=1 (41,12)=0 (41,13)=14 (41,14)=14 (41,15)=14 (41,16)=1 (41,17)=1 (41,18)=1 (41,19)=1 (42,12)=0 (42,13)=14 (42,14)=14 (42,15)=14 (42,16)=1 (42,17)=1 (42,18)=1 (42,19)=1 (43,12)=0 (43,13)=14 (43,14)=14 (43,15)=14 (43,16)=1 (43,17)=1 (43,18)=1 (43,19)=1
+record 111: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r43: 1*16 14*3 0*1 1*44
+g0 r44-r62: 1*64
+g0 r63: 7*28 4*36
+record 112: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 111
+record 113: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 112, 32 cell(s)
+g0 (40,16)=1 (40,17)=1 (40,18)=1 (40,19)=1 (40,20)=14 (40,21)=14 (40,22)=14 (40,23)=0 (41,16)=1 (41,17)=1 (41,18)=1 (41,19)=1 (41,20)=14 (41,21)=14 (41,22)=14 (41,23)=0 (42,16)=1 (42,17)=1 (42,18)=1 (42,19)=1 (42,20)=14 (42,21)=14 (42,22)=14 (42,23)=0 (43,16)=1 (43,17)=1 (43,18)=1 (43,19)=1 (43,20)=14 (43,21)=14 (43,22)=14 (43,23)=0
+record 114: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 113, 32 cell(s)
+g0 (40,20)=1 (40,21)=1 (40,22)=1 (40,23)=1 (41,20)=1 (41,21)=1 (41,22)=1 (41,23)=1 (42,20)=1 (42,21)=1 (42,22)=1 (42,23)=1 (43,20)=1 (43,21)=1 (43,22)=1 (43,23)=1 (44,20)=14 (44,21)=14 (44,22)=14 (44,23)=14 (45,20)=14 (45,21)=14 (45,22)=14 (45,23)=14 (46,20)=14 (46,21)=14 (46,22)=14 (46,23)=14 (47,20)=0 (47,21)=0 (47,22)=0 (47,23)=0
+record 115: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 114, 33 cell(s)
+g0 (44,16)=0 (44,17)=14 (44,18)=14 (44,19)=14 (44,20)=1 (44,21)=1 (44,22)=1 (44,23)=1 (45,16)=0 (45,17)=14 (45,18)=14 (45,19)=14 (45,20)=1 (45,21)=1 (45,22)=1 (45,23)=1 (46,16)=0 (46,17)=14 (46,18)=14 (46,19)=14 (46,20)=1 (46,21)=1 (46,22)=1 (46,23)=1 (47,16)=0 (47,17)=14 (47,18)=14 (47,19)=14 (47,20)=1 (47,21)=1 (47,22)=1 (47,23)=1 (63,27)=4
+record 116: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 115, 32 cell(s)
+g0 (40,16)=0 (40,17)=0 (40,18)=0 (40,19)=0 (41,16)=14 (41,17)=14 (41,18)=14 (41,19)=14 (42,16)=14 (42,17)=14 (42,18)=14 (42,19)=14 (43,16)=14 (43,17)=14 (43,18)=14 (43,19)=14 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1
+record 117: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 116, 32 cell(s)
+g0 (40,16)=1 (40,17)=1 (40,18)=1 (40,19)=1 (41,16)=1 (41,17)=1 (41,18)=1 (41,19)=1 (42,16)=1 (42,17)=1 (42,18)=1 (42,19)=1 (43,16)=1 (43,17)=1 (43,18)=1 (43,19)=1 (44,16)=14 (44,17)=14 (44,18)=14 (44,19)=14 (45,16)=14 (45,17)=14 (45,18)=14 (45,19)=14 (46,16)=14 (46,17)=14 (46,18)=14 (46,19)=14 (47,16)=0 (47,17)=0 (47,18)=0 (47,19)=0
+record 118: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 117, 33 cell(s)
+g0 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1 (48,16)=14 (48,17)=14 (48,18)=14 (48,19)=14 (49,16)=14 (49,17)=14 (49,18)=14 (49,19)=14 (50,16)=14 (50,17)=14 (50,18)=14 (50,19)=14 (51,16)=0 (51,17)=0 (51,18)=0 (51,19)=0 (63,26)=4
+record 119: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 118, 32 cell(s)
+g0 (44,16)=0 (44,17)=0 (44,18)=0 (44,19)=0 (45,16)=14 (45,17)=14 (45,18)=14 (45,19)=14 (46,16)=14 (46,17)=14 (46,18)=14 (46,19)=14 (47,16)=14 (47,17)=14 (47,18)=14 (47,19)=14 (48,16)=1 (48,17)=1 (48,18)=1 (48,19)=1 (49,16)=1 (49,17)=1 (49,18)=1 (49,19)=1 (50,16)=1 (50,17)=1 (50,18)=1 (50,19)=1 (51,16)=1 (51,17)=1 (51,18)=1 (51,19)=1
+record 120: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 119
+record 121: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 120, 33 cell(s)
+g0 (44,16)=1 (44,17)=1 (44,18)=1 (44,19)=1 (45,16)=1 (45,17)=1 (45,18)=1 (45,19)=1 (46,16)=1 (46,17)=1 (46,18)=1 (46,19)=1 (47,16)=1 (47,17)=1 (47,18)=1 (47,19)=1 (48,16)=14 (48,17)=14 (48,18)=14 (48,19)=14 (49,16)=14 (49,17)=14 (49,18)=14 (49,19)=14 (50,16)=14 (50,17)=14 (50,18)=14 (50,19)=14 (51,16)=0 (51,17)=0 (51,18)=0 (51,19)=0 (63,25)=4
+record 122: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 121, 32 cell(s)
+g0 (48,16)=1 (48,17)=1 (48,18)=1 (48,19)=1 (49,16)=1 (49,17)=1 (49,18)=1 (49,19)=1 (50,16)=1 (50,17)=1 (50,18)=1 (50,19)=1 (51,16)=1 (51,17)=1 (51,18)=1 (51,19)=1 (52,16)=14 (52,17)=14 (52,18)=14 (52,19)=14 (53,16)=14 (53,17)=14 (53,18)=14 (53,19)=14 (54,16)=14 (54,17)=14 (54,18)=14 (54,19)=14 (55,16)=0 (55,17)=0 (55,18)=0 (55,19)=0
+record 123: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 122, 32 cell(s)
+g0 (48,16)=0 (48,17)=0 (48,18)=0 (48,19)=0 (49,16)=14 (49,17)=14 (49,18)=14 (49,19)=14 (50,16)=14 (50,17)=14 (50,18)=14 (50,19)=14 (51,16)=14 (51,17)=14 (51,18)=14 (51,19)=14 (52,16)=1 (52,17)=1 (52,18)=1 (52,19)=1 (53,16)=1 (53,17)=1 (53,18)=1 (53,19)=1 (54,16)=1 (54,17)=1 (54,18)=1 (54,19)=1 (55,16)=1 (55,17)=1 (55,18)=1 (55,19)=1
+record 124: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 123, 33 cell(s)
+g0 (48,16)=1 (48,17)=1 (48,18)=1 (48,19)=1 (48,20)=14 (48,21)=14 (48,22)=14 (48,23)=0 (49,16)=1 (49,17)=1 (49,18)=1 (49,19)=1 (49,20)=14 (49,21)=14 (49,22)=14 (49,23)=0 (50,16)=1 (50,17)=1 (50,18)=1 (50,19)=1 (50,20)=14 (50,21)=14 (50,22)=14 (50,23)=0 (51,16)=1 (51,17)=1 (51,18)=1 (51,19)=1 (51,20)=14 (51,21)=14 (51,22)=14 (51,23)=0 (63,24)=4
+record 125: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 124, 32 cell(s)
+g0 (48,20)=1 (48,21)=1 (48,22)=1 (48,23)=1 (48,24)=14 (48,25)=14 (48,26)=14 (48,27)=0 (49,20)=1 (49,21)=1 (49,22)=1 (49,23)=1 (49,24)=14 (49,25)=14 (49,26)=14 (49,27)=0 (50,20)=1 (50,21)=1 (50,22)=1 (50,23)=1 (50,24)=14 (50,25)=14 (50,26)=14 (50,27)=0 (51,20)=1 (51,21)=1 (51,22)=1 (51,23)=1 (51,24)=14 (51,25)=14 (51,26)=14 (51,27)=0
+record 126: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 125, 32 cell(s)
+g0 (48,24)=1 (48,25)=1 (48,26)=1 (48,27)=1 (48,28)=14 (48,29)=14 (48,30)=14 (48,31)=0 (49,24)=1 (49,25)=1 (49,26)=1 (49,27)=1 (49,28)=14 (49,29)=14 (49,30)=14 (49,31)=0 (50,24)=1 (50,25)=1 (50,26)=1 (50,27)=1 (50,28)=14 (50,29)=14 (50,30)=14 (50,31)=0 (51,24)=1 (51,25)=1 (51,26)=1 (51,27)=1 (51,28)=14 (51,29)=14 (51,30)=14 (51,31)=0
+record 127: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 126, 1 cell(s)
+g0 (63,23)=4
+record 128: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 127, 32 cell(s)
+g0 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (48,32)=14 (48,33)=14 (48,34)=14 (48,35)=0 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=0 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=0 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=0
+record 129: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 128, 32 cell(s)
+g0 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1 (52,32)=14 (52,33)=14 (52,34)=14 (52,35)=14 (53,32)=14 (53,33)=14 (53,34)=14 (53,35)=14 (54,32)=14 (54,33)=14 (54,34)=14 (54,35)=14 (55,32)=0 (55,33)=0 (55,34)=0 (55,35)=0
+record 130: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 129, 33 cell(s)
+g0 (52,32)=1 (52,33)=1 (52,34)=1 (52,35)=1 (53,32)=1 (53,33)=1 (53,34)=1 (53,35)=1 (54,32)=1 (54,33)=1 (54,34)=1 (54,35)=1 (55,32)=1 (55,33)=1 (55,34)=1 (55,35)=1 (56,32)=14 (56,33)=14 (56,34)=14 (56,35)=14 (57,32)=14 (57,33)=14 (57,34)=14 (57,35)=14 (58,32)=14 (58,33)=14 (58,34)=14 (58,35)=14 (59,32)=0 (59,33)=0 (59,34)=0 (59,35)=0 (63,22)=4
+record 131: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 130
+record 132: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 131, 32 cell(s)
+g0 (52,32)=0 (52,33)=0 (52,34)=0 (52,35)=0 (53,32)=14 (53,33)=14 (53,34)=14 (53,35)=14 (54,32)=14 (54,33)=14 (54,34)=14 (54,35)=14 (55,32)=14 (55,33)=14 (55,34)=14 (55,35)=14 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1
+record 133: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 132, 33 cell(s)
+g0 (52,32)=1 (52,33)=1 (52,34)=1 (52,35)=1 (53,32)=1 (53,33)=1 (53,34)=1 (53,35)=1 (54,32)=1 (54,33)=1 (54,34)=1 (54,35)=1 (55,32)=1 (55,33)=1 (55,34)=1 (55,35)=1 (56,32)=14 (56,33)=14 (56,34)=14 (56,35)=14 (57,32)=14 (57,33)=14 (57,34)=14 (57,35)=14 (58,32)=14 (58,33)=14 (58,34)=14 (58,35)=14 (59,32)=0 (59,33)=0 (59,34)=0 (59,35)=0 (63,21)=4
+record 134: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 133, 28 cell(s)
+g0 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1 (60,32)=14 (60,33)=14 (60,34)=14 (60,35)=14 (61,32)=14 (61,33)=14 (61,34)=14 (61,35)=14 (62,32)=14 (62,33)=14 (62,34)=14 (62,35)=14
+record 135: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 134, 24 cell(s)
+g0 (60,32)=1 (60,33)=1 (60,34)=1 (60,35)=1 (60,36)=14 (60,37)=14 (60,38)=14 (60,39)=0 (61,32)=1 (61,33)=1 (61,34)=1 (61,35)=1 (61,36)=14 (61,37)=14 (61,38)=14 (61,39)=0 (62,32)=1 (62,33)=1 (62,34)=1 (62,35)=1 (62,36)=14 (62,37)=14 (62,38)=14 (62,39)=0
+record 136: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 135, 29 cell(s)
+g0 (56,36)=0 (56,37)=0 (56,38)=0 (56,39)=0 (57,36)=14 (57,37)=14 (57,38)=14 (57,39)=14 (58,36)=14 (58,37)=14 (58,38)=14 (58,39)=14 (59,36)=14 (59,37)=14 (59,38)=14 (59,39)=14 (60,36)=1 (60,37)=1 (60,38)=1 (60,39)=1 (61,36)=1 (61,37)=1 (61,38)=1 (61,39)=1 (62,36)=1 (62,37)=1 (62,38)=1 (62,39)=1 (63,20)=4
+record 137: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 136, 32 cell(s)
+g0 (52,36)=0 (52,37)=0 (52,38)=0 (52,39)=0 (53,36)=14 (53,37)=14 (53,38)=14 (53,39)=14 (54,36)=14 (54,37)=14 (54,38)=14 (54,39)=14 (55,36)=14 (55,37)=14 (55,38)=14 (55,39)=14 (56,36)=1 (56,37)=1 (56,38)=1 (56,39)=1 (57,36)=1 (57,37)=1 (57,38)=1 (57,39)=1 (58,36)=1 (58,37)=1 (58,38)=1 (58,39)=1 (59,36)=1 (59,37)=1 (59,38)=1 (59,39)=1
+record 138: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 137, 32 cell(s)
+g0 (48,36)=0 (48,37)=0 (48,38)=0 (48,39)=0 (49,36)=14 (49,37)=14 (49,38)=14 (49,39)=14 (50,36)=14 (50,37)=14 (50,38)=14 (50,39)=14 (51,36)=14 (51,37)=14 (51,38)=14 (51,39)=14 (52,36)=1 (52,37)=1 (52,38)=1 (52,39)=1 (53,36)=1 (53,37)=1 (53,38)=1 (53,39)=1 (54,36)=1 (54,37)=1 (54,38)=1 (54,39)=1 (55,36)=1 (55,37)=1 (55,38)=1 (55,39)=1
+record 139: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 138
+record 140: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 139, 33 cell(s)
+g0 (48,36)=1 (48,37)=1 (48,38)=1 (48,39)=1 (49,36)=1 (49,37)=1 (49,38)=1 (49,39)=1 (50,36)=1 (50,37)=1 (50,38)=1 (50,39)=1 (51,36)=1 (51,37)=1 (51,38)=1 (51,39)=1 (52,36)=14 (52,37)=14 (52,38)=14 (52,39)=14 (53,36)=14 (53,37)=14 (53,38)=14 (53,39)=14 (54,36)=14 (54,37)=14 (54,38)=14 (54,39)=14 (55,36)=0 (55,37)=0 (55,38)=0 (55,39)=0 (63,19)=4
+record 141: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 140, 32 cell(s)
+g0 (52,36)=1 (52,37)=1 (52,38)=1 (52,39)=1 (53,36)=1 (53,37)=1 (53,38)=1 (53,39)=1 (54,36)=1 (54,37)=1 (54,38)=1 (54,39)=1 (55,36)=1 (55,37)=1 (55,38)=1 (55,39)=1 (56,36)=14 (56,37)=14 (56,38)=14 (56,39)=14 (57,36)=14 (57,37)=14 (57,38)=14 (57,39)=14 (58,36)=14 (58,37)=14 (58,38)=14 (58,39)=14 (59,36)=0 (59,37)=0 (59,38)=0 (59,39)=0
+record 142: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 141, 32 cell(s)
+g0 (56,32)=0 (56,33)=14 (56,34)=14 (56,35)=14 (56,36)=1 (56,37)=1 (56,38)=1 (56,39)=1 (57,32)=0 (57,33)=14 (57,34)=14 (57,35)=14 (57,36)=1 (57,37)=1 (57,38)=1 (57,39)=1 (58,32)=0 (58,33)=14 (58,34)=14 (58,35)=14 (58,36)=1 (58,37)=1 (58,38)=1 (58,39)=1 (59,32)=0 (59,33)=14 (59,34)=14 (59,35)=14 (59,36)=1 (59,37)=1 (59,38)=1 (59,39)=1
+record 143: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 142, 29 cell(s)
+g0 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1 (60,32)=14 (60,33)=14 (60,34)=14 (60,35)=14 (61,32)=14 (61,33)=14 (61,34)=14 (61,35)=14 (62,32)=14 (62,33)=14 (62,34)=14 (62,35)=14 (63,18)=4
+record 144: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 143
+record 145: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 144, 28 cell(s)
+g0 (56,32)=0 (56,33)=0 (56,34)=0 (56,35)=0 (57,32)=14 (57,33)=14 (57,34)=14 (57,35)=14 (58,32)=14 (58,33)=14 (58,34)=14 (58,35)=14 (59,32)=14 (59,33)=14 (59,34)=14 (59,35)=14 (60,32)=1 (60,33)=1 (60,34)=1 (60,35)=1 (61,32)=1 (61,33)=1 (61,34)=1 (61,35)=1 (62,32)=1 (62,33)=1 (62,34)=1 (62,35)=1
+record 146: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 145, 33 cell(s)
+g0 (52,32)=0 (52,33)=0 (52,34)=0 (52,35)=0 (53,32)=14 (53,33)=14 (53,34)=14 (53,35)=14 (54,32)=14 (54,33)=14 (54,34)=14 (54,35)=14 (55,32)=14 (55,33)=14 (55,34)=14 (55,35)=14 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1 (63,17)=4
+record 147: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 146
+record 148: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 147, 32 cell(s)
+g0 (52,32)=1 (52,33)=1 (52,34)=1 (52,35)=1 (53,32)=1 (53,33)=1 (53,34)=1 (53,35)=1 (54,32)=1 (54,33)=1 (54,34)=1 (54,35)=1 (55,32)=1 (55,33)=1 (55,34)=1 (55,35)=1 (56,32)=14 (56,33)=14 (56,34)=14 (56,35)=14 (57,32)=14 (57,33)=14 (57,34)=14 (57,35)=14 (58,32)=14 (58,33)=14 (58,34)=14 (58,35)=14 (59,32)=0 (59,33)=0 (59,34)=0 (59,35)=0
+record 149: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 148, 33 cell(s)
+g0 (56,28)=0 (56,29)=14 (56,30)=14 (56,31)=14 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,28)=0 (57,29)=14 (57,30)=14 (57,31)=14 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,28)=0 (58,29)=14 (58,30)=14 (58,31)=14 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,28)=0 (59,29)=14 (59,30)=14 (59,31)=14 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1 (63,16)=4
+record 150: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 149
+record 151: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 150, 32 cell(s)
+g0 (52,28)=0 (52,29)=0 (52,30)=0 (52,31)=0 (53,28)=14 (53,29)=14 (53,30)=14 (53,31)=14 (54,28)=14 (54,29)=14 (54,30)=14 (54,31)=14 (55,28)=14 (55,29)=14 (55,30)=14 (55,31)=14 (56,28)=1 (56,29)=1 (56,30)=1 (56,31)=1 (57,28)=1 (57,29)=1 (57,30)=1 (57,31)=1 (58,28)=1 (58,29)=1 (58,30)=1 (58,31)=1 (59,28)=1 (59,29)=1 (59,30)=1 (59,31)=1
+record 152: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 151, 33 cell(s)
+g0 (52,24)=0 (52,25)=14 (52,26)=14 (52,27)=14 (52,28)=1 (52,29)=1 (52,30)=1 (52,31)=1 (53,24)=0 (53,25)=14 (53,26)=14 (53,27)=14 (53,28)=1 (53,29)=1 (53,30)=1 (53,31)=1 (54,24)=0 (54,25)=14 (54,26)=14 (54,27)=14 (54,28)=1 (54,29)=1 (54,30)=1 (54,31)=1 (55,24)=0 (55,25)=14 (55,26)=14 (55,27)=14 (55,28)=1 (55,29)=1 (55,30)=1 (55,31)=1 (63,15)=4
+record 153: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 152, 32 cell(s)
+g0 (52,20)=0 (52,21)=14 (52,22)=14 (52,23)=14 (52,24)=1 (52,25)=1 (52,26)=1 (52,27)=1 (53,20)=0 (53,21)=14 (53,22)=14 (53,23)=14 (53,24)=1 (53,25)=1 (53,26)=1 (53,27)=1 (54,20)=0 (54,21)=14 (54,22)=14 (54,23)=14 (54,24)=1 (54,25)=1 (54,26)=1 (54,27)=1 (55,20)=0 (55,21)=14 (55,22)=14 (55,23)=14 (55,24)=1 (55,25)=1 (55,26)=1 (55,27)=1
+record 154: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 153, 32 cell(s)
+g0 (52,20)=1 (52,21)=1 (52,22)=1 (52,23)=1 (53,20)=1 (53,21)=1 (53,22)=1 (53,23)=1 (54,20)=1 (54,21)=1 (54,22)=1 (54,23)=1 (55,20)=1 (55,21)=1 (55,22)=1 (55,23)=1 (56,20)=14 (56,21)=14 (56,22)=14 (56,23)=14 (57,20)=14 (57,21)=14 (57,22)=14 (57,23)=14 (58,20)=14 (58,21)=14 (58,22)=14 (58,23)=14 (59,20)=0 (59,21)=0 (59,22)=0 (59,23)=0
+record 155: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 154, 29 cell(s)
+g0 (56,20)=1 (56,21)=1 (56,22)=1 (56,23)=1 (57,20)=1 (57,21)=1 (57,22)=1 (57,23)=1 (58,20)=1 (58,21)=1 (58,22)=1 (58,23)=1 (59,20)=1 (59,21)=1 (59,22)=1 (59,23)=1 (60,20)=14 (60,21)=14 (60,22)=14 (60,23)=14 (61,20)=14 (61,21)=14 (61,22)=14 (61,23)=14 (62,20)=14 (62,21)=14 (62,22)=14 (62,23)=14 (63,14)=4
+record 156: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 155, 24 cell(s)
+g0 (60,20)=1 (60,21)=1 (60,22)=1 (60,23)=1 (60,24)=14 (60,25)=14 (60,26)=14 (60,27)=0 (61,20)=1 (61,21)=1 (61,22)=1 (61,23)=1 (61,24)=14 (61,25)=14 (61,26)=14 (61,27)=0 (62,20)=1 (62,21)=1 (62,22)=1 (62,23)=1 (62,24)=14 (62,25)=14 (62,26)=14 (62,27)=0
+record 157: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 156, 24 cell(s)
+g0 (60,24)=1 (60,25)=1 (60,26)=1 (60,27)=1 (60,28)=14 (60,29)=14 (60,30)=14 (60,31)=0 (61,24)=1 (61,25)=1 (61,26)=1 (61,27)=1 (61,28)=14 (61,29)=14 (61,30)=14 (61,31)=0 (62,24)=1 (62,25)=1 (62,26)=1 (62,27)=1 (62,28)=14 (62,29)=14 (62,30)=14 (62,31)=0
+record 158: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 157, 25 cell(s)
+g0 (60,28)=1 (60,29)=1 (60,30)=1 (60,31)=1 (60,32)=14 (60,33)=14 (60,34)=14 (60,35)=0 (61,28)=1 (61,29)=1 (61,30)=1 (61,31)=1 (61,32)=14 (61,33)=14 (61,34)=14 (61,35)=0 (62,28)=1 (62,29)=1 (62,30)=1 (62,31)=1 (62,32)=14 (62,33)=14 (62,34)=14 (62,35)=0 (63,13)=4
+record 159: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 158, 24 cell(s)
+g0 (60,32)=1 (60,33)=1 (60,34)=1 (60,35)=1 (60,36)=14 (60,37)=14 (60,38)=14 (60,39)=0 (61,32)=1 (61,33)=1 (61,34)=1 (61,35)=1 (61,36)=14 (61,37)=14 (61,38)=14 (61,39)=0 (62,32)=1 (62,33)=1 (62,34)=1 (62,35)=1 (62,36)=14 (62,37)=14 (62,38)=14 (62,39)=0
+record 160: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 159
+record 161: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 160, 29 cell(s)
+g0 (56,36)=0 (56,37)=0 (56,38)=0 (56,39)=0 (57,36)=14 (57,37)=14 (57,38)=14 (57,39)=14 (58,36)=14 (58,37)=14 (58,38)=14 (58,39)=14 (59,36)=14 (59,37)=14 (59,38)=14 (59,39)=14 (60,36)=1 (60,37)=1 (60,38)=1 (60,39)=1 (61,36)=1 (61,37)=1 (61,38)=1 (61,39)=1 (62,36)=1 (62,37)=1 (62,38)=1 (62,39)=1 (63,12)=4
+record 162: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 161, 32 cell(s)
+g0 (56,32)=0 (56,33)=14 (56,34)=14 (56,35)=14 (56,36)=1 (56,37)=1 (56,38)=1 (56,39)=1 (57,32)=0 (57,33)=14 (57,34)=14 (57,35)=14 (57,36)=1 (57,37)=1 (57,38)=1 (57,39)=1 (58,32)=0 (58,33)=14 (58,34)=14 (58,35)=14 (58,36)=1 (58,37)=1 (58,38)=1 (58,39)=1 (59,32)=0 (59,33)=14 (59,34)=14 (59,35)=14 (59,36)=1 (59,37)=1 (59,38)=1 (59,39)=1
+record 163: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 162, 28 cell(s)
+g0 (56,32)=1 (56,33)=1 (56,34)=1 (56,35)=1 (57,32)=1 (57,33)=1 (57,34)=1 (57,35)=1 (58,32)=1 (58,33)=1 (58,34)=1 (58,35)=1 (59,32)=1 (59,33)=1 (59,34)=1 (59,35)=1 (60,32)=14 (60,33)=14 (60,34)=14 (60,35)=14 (61,32)=14 (61,33)=14 (61,34)=14 (61,35)=14 (62,32)=14 (62,33)=14 (62,34)=14 (62,35)=14
+record 164: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 163
+record 165: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 164, 25 cell(s)
+g0 (60,32)=1 (60,33)=1 (60,34)=1 (60,35)=1 (60,36)=14 (60,37)=14 (60,38)=14 (60,39)=0 (61,32)=1 (61,33)=1 (61,34)=1 (61,35)=1 (61,36)=14 (61,37)=14 (61,38)=14 (61,39)=0 (62,32)=1 (62,33)=1 (62,34)=1 (62,35)=1 (62,36)=14 (62,37)=14 (62,38)=14 (62,39)=0 (63,11)=4
+record 166: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 165, 24 cell(s)
+g0 (60,36)=1 (60,37)=1 (60,38)=1 (60,39)=1 (60,40)=14 (60,41)=14 (60,42)=14 (60,43)=0 (61,36)=1 (61,37)=1 (61,38)=1 (61,39)=1 (61,40)=14 (61,41)=14 (61,42)=14 (61,43)=0 (62,36)=1 (62,37)=1 (62,38)=1 (62,39)=1 (62,40)=14 (62,41)=14 (62,42)=14 (62,43)=0
+record 167: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 166
+record 168: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 167, 29 cell(s)
+g0 (56,40)=0 (56,41)=0 (56,42)=0 (56,43)=0 (57,40)=14 (57,41)=14 (57,42)=14 (57,43)=14 (58,40)=14 (58,41)=14 (58,42)=14 (58,43)=14 (59,40)=14 (59,41)=14 (59,42)=14 (59,43)=14 (60,40)=1 (60,41)=1 (60,42)=1 (60,43)=1 (61,40)=1 (61,41)=1 (61,42)=1 (61,43)=1 (62,40)=1 (62,41)=1 (62,42)=1 (62,43)=1 (63,10)=4
+record 169: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 168, 32 cell(s)
+g0 (52,40)=0 (52,41)=0 (52,42)=0 (52,43)=0 (53,40)=14 (53,41)=14 (53,42)=14 (53,43)=14 (54,40)=14 (54,41)=14 (54,42)=14 (54,43)=14 (55,40)=14 (55,41)=14 (55,42)=14 (55,43)=14 (56,40)=1 (56,41)=1 (56,42)=1 (56,43)=1 (57,40)=1 (57,41)=1 (57,42)=1 (57,43)=1 (58,40)=1 (58,41)=1 (58,42)=1 (58,43)=1 (59,40)=1 (59,41)=1 (59,42)=1 (59,43)=1
+record 170: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 169, 32 cell(s)
+g0 (48,40)=0 (48,41)=0 (48,42)=0 (48,43)=0 (49,40)=14 (49,41)=14 (49,42)=14 (49,43)=14 (50,40)=14 (50,41)=14 (50,42)=14 (50,43)=14 (51,40)=14 (51,41)=14 (51,42)=14 (51,43)=14 (52,40)=1 (52,41)=1 (52,42)=1 (52,43)=1 (53,40)=1 (53,41)=1 (53,42)=1 (53,43)=1 (54,40)=1 (54,41)=1 (54,42)=1 (54,43)=1 (55,40)=1 (55,41)=1 (55,42)=1 (55,43)=1
+record 171: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 170, 33 cell(s)
+g0 (48,36)=0 (48,37)=14 (48,38)=14 (48,39)=14 (48,40)=1 (48,41)=1 (48,42)=1 (48,43)=1 (49,36)=0 (49,37)=14 (49,38)=14 (49,39)=14 (49,40)=1 (49,41)=1 (49,42)=1 (49,43)=1 (50,36)=0 (50,37)=14 (50,38)=14 (50,39)=14 (50,40)=1 (50,41)=1 (50,42)=1 (50,43)=1 (51,36)=0 (51,37)=14 (51,38)=14 (51,39)=14 (51,40)=1 (51,41)=1 (51,42)=1 (51,43)=1 (63,9)=4
+record 172: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 171, 32 cell(s)
+g0 (48,36)=1 (48,37)=1 (48,38)=1 (48,39)=1 (48,40)=14 (48,41)=14 (48,42)=14 (48,43)=0 (49,36)=1 (49,37)=1 (49,38)=1 (49,39)=1 (49,40)=14 (49,41)=14 (49,42)=14 (49,43)=0 (50,36)=1 (50,37)=1 (50,38)=1 (50,39)=1 (50,40)=14 (50,41)=14 (50,42)=14 (50,43)=0 (51,36)=1 (51,37)=1 (51,38)=1 (51,39)=1 (51,40)=14 (51,41)=14 (51,42)=14 (51,43)=0
+record 173: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 172, 32 cell(s)
+g0 (48,40)=1 (48,41)=1 (48,42)=1 (48,43)=1 (49,40)=1 (49,41)=1 (49,42)=1 (49,43)=1 (50,40)=1 (50,41)=1 (50,42)=1 (50,43)=1 (51,40)=1 (51,41)=1 (51,42)=1 (51,43)=1 (52,40)=14 (52,41)=14 (52,42)=14 (52,43)=14 (53,40)=14 (53,41)=14 (53,42)=14 (53,43)=14 (54,40)=14 (54,41)=14 (54,42)=14 (54,43)=14 (55,40)=0 (55,41)=0 (55,42)=0 (55,43)=0
+record 174: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 173, 33 cell(s)
+g0 (52,40)=1 (52,41)=1 (52,42)=1 (52,43)=1 (53,40)=1 (53,41)=1 (53,42)=1 (53,43)=1 (54,40)=1 (54,41)=1 (54,42)=1 (54,43)=1 (55,40)=1 (55,41)=1 (55,42)=1 (55,43)=1 (56,40)=14 (56,41)=14 (56,42)=14 (56,43)=14 (57,40)=14 (57,41)=14 (57,42)=14 (57,43)=14 (58,40)=14 (58,41)=14 (58,42)=14 (58,43)=14 (59,40)=0 (59,41)=0 (59,42)=0 (59,43)=0 (63,8)=4
+record 175: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 174, 32 cell(s)
+g0 (52,40)=0 (52,41)=0 (52,42)=0 (52,43)=0 (53,40)=14 (53,41)=14 (53,42)=14 (53,43)=14 (54,40)=14 (54,41)=14 (54,42)=14 (54,43)=14 (55,40)=14 (55,41)=14 (55,42)=14 (55,43)=14 (56,40)=1 (56,41)=1 (56,42)=1 (56,43)=1 (57,40)=1 (57,41)=1 (57,42)=1 (57,43)=1 (58,40)=1 (58,41)=1 (58,42)=1 (58,43)=1 (59,40)=1 (59,41)=1 (59,42)=1 (59,43)=1
+record 176: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 175, 32 cell(s)
+g0 (52,40)=1 (52,41)=1 (52,42)=1 (52,43)=1 (52,44)=14 (52,45)=14 (52,46)=14 (52,47)=0 (53,40)=1 (53,41)=1 (53,42)=1 (53,43)=1 (53,44)=14 (53,45)=14 (53,46)=14 (53,47)=0 (54,40)=1 (54,41)=1 (54,42)=1 (54,43)=1 (54,44)=14 (54,45)=14 (54,46)=14 (54,47)=0 (55,40)=1 (55,41)=1 (55,42)=1 (55,43)=1 (55,44)=14 (55,45)=14 (55,46)=14 (55,47)=0
+record 177: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 176, 33 cell(s)
+g0 (52,44)=1 (52,45)=1 (52,46)=1 (52,47)=1 (52,48)=14 (52,49)=14 (52,50)=14 (52,51)=0 (53,44)=1 (53,45)=1 (53,46)=1 (53,47)=1 (53,48)=14 (53,49)=14 (53,50)=14 (53,51)=0 (54,44)=1 (54,45)=1 (54,46)=1 (54,47)=1 (54,48)=14 (54,49)=14 (54,50)=14 (54,51)=0 (55,44)=1 (55,45)=1 (55,46)=1 (55,47)=1 (55,48)=14 (55,49)=14 (55,50)=14 (55,51)=0 (63,7)=4
+record 178: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 177, 32 cell(s)
+g0 (48,48)=0 (48,49)=0 (48,50)=0 (48,51)=0 (49,48)=14 (49,49)=14 (49,50)=14 (49,51)=14 (50,48)=14 (50,49)=14 (50,50)=14 (50,51)=14 (51,48)=14 (51,49)=14 (51,50)=14 (51,51)=14 (52,48)=1 (52,49)=1 (52,50)=1 (52,51)=1 (53,48)=1 (53,49)=1 (53,50)=1 (53,51)=1 (54,48)=1 (54,49)=1 (54,50)=1 (54,51)=1 (55,48)=1 (55,49)=1 (55,50)=1 (55,51)=1
+record 179: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 178, 32 cell(s)
+g0 (48,44)=0 (48,45)=14 (48,46)=14 (48,47)=14 (48,48)=1 (48,49)=1 (48,50)=1 (48,51)=1 (49,44)=0 (49,45)=14 (49,46)=14 (49,47)=14 (49,48)=1 (49,49)=1 (49,50)=1 (49,51)=1 (50,44)=0 (50,45)=14 (50,46)=14 (50,47)=14 (50,48)=1 (50,49)=1 (50,50)=1 (50,51)=1 (51,44)=0 (51,45)=14 (51,46)=14 (51,47)=14 (51,48)=1 (51,49)=1 (51,50)=1 (51,51)=1
+record 180: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 179, 33 cell(s)
+g0 (48,44)=1 (48,45)=1 (48,46)=1 (48,47)=1 (48,48)=14 (48,49)=14 (48,50)=14 (48,51)=0 (49,44)=1 (49,45)=1 (49,46)=1 (49,47)=1 (49,48)=14 (49,49)=14 (49,50)=14 (49,51)=0 (50,44)=1 (50,45)=1 (50,46)=1 (50,47)=1 (50,48)=14 (50,49)=14 (50,50)=14 (50,51)=0 (51,44)=1 (51,45)=1 (51,46)=1 (51,47)=1 (51,48)=14 (51,49)=14 (51,50)=14 (51,51)=0 (63,6)=4
+record 181: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 180, 32 cell(s)
+g0 (44,48)=0 (44,49)=0 (44,50)=0 (44,51)=0 (45,48)=14 (45,49)=14 (45,50)=14 (45,51)=14 (46,48)=14 (46,49)=14 (46,50)=14 (46,51)=14 (47,48)=14 (47,49)=14 (47,50)=14 (47,51)=14 (48,48)=1 (48,49)=1 (48,50)=1 (48,51)=1 (49,48)=1 (49,49)=1 (49,50)=1 (49,51)=1 (50,48)=1 (50,49)=1 (50,50)=1 (50,51)=1 (51,48)=1 (51,49)=1 (51,50)=1 (51,51)=1
+record 182: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 181, 32 cell(s)
+g0 (44,48)=1 (44,49)=1 (44,50)=1 (44,51)=1 (44,52)=14 (44,53)=14 (44,54)=14 (44,55)=0 (45,48)=1 (45,49)=1 (45,50)=1 (45,51)=1 (45,52)=14 (45,53)=14 (45,54)=14 (45,55)=0 (46,48)=1 (46,49)=1 (46,50)=1 (46,51)=1 (46,52)=14 (46,53)=14 (46,54)=14 (46,55)=0 (47,48)=1 (47,49)=1 (47,50)=1 (47,51)=1 (47,52)=14 (47,53)=14 (47,54)=14 (47,55)=0
+record 183: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 182, 33 cell(s)
+g0 (44,52)=1 (44,53)=1 (44,54)=1 (44,55)=1 (44,56)=14 (44,57)=14 (44,58)=14 (44,59)=0 (45,52)=1 (45,53)=1 (45,54)=1 (45,55)=1 (45,56)=14 (45,57)=14 (45,58)=14 (45,59)=0 (46,52)=1 (46,53)=1 (46,54)=1 (46,55)=1 (46,56)=14 (46,57)=14 (46,58)=14 (46,59)=0 (47,52)=1 (47,53)=1 (47,54)=1 (47,55)=1 (47,56)=14 (47,57)=14 (47,58)=14 (47,59)=0 (63,5)=4
+record 184: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 183, 32 cell(s)
+g0 (40,56)=0 (40,57)=0 (40,58)=0 (40,59)=0 (41,56)=14 (41,57)=14 (41,58)=14 (41,59)=14 (42,56)=14 (42,57)=14 (42,58)=14 (42,59)=14 (43,56)=14 (43,57)=14 (43,58)=14 (43,59)=14 (44,56)=1 (44,57)=1 (44,58)=1 (44,59)=1 (45,56)=1 (45,57)=1 (45,58)=1 (45,59)=1 (46,56)=1 (46,57)=1 (46,58)=1 (46,59)=1 (47,56)=1 (47,57)=1 (47,58)=1 (47,59)=1
+record 185: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 184, 32 cell(s)
+g0 (40,56)=1 (40,57)=1 (40,58)=1 (40,59)=1 (41,56)=1 (41,57)=1 (41,58)=1 (41,59)=1 (42,56)=1 (42,57)=1 (42,58)=1 (42,59)=1 (43,56)=1 (43,57)=1 (43,58)=1 (43,59)=1 (44,56)=14 (44,57)=14 (44,58)=14 (44,59)=14 (45,56)=14 (45,57)=14 (45,58)=14 (45,59)=14 (46,56)=14 (46,57)=14 (46,58)=14 (46,59)=14 (47,56)=0 (47,57)=0 (47,58)=0 (47,59)=0
+record 186: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 185, 33 cell(s)
+g0 (40,56)=0 (40,57)=0 (40,58)=0 (40,59)=0 (41,56)=14 (41,57)=14 (41,58)=14 (41,59)=14 (42,56)=14 (42,57)=14 (42,58)=14 (42,59)=14 (43,56)=14 (43,57)=14 (43,58)=14 (43,59)=14 (44,56)=1 (44,57)=1 (44,58)=1 (44,59)=1 (45,56)=1 (45,57)=1 (45,58)=1 (45,59)=1 (46,56)=1 (46,57)=1 (46,58)=1 (46,59)=1 (47,56)=1 (47,57)=1 (47,58)=1 (47,59)=1 (63,4)=4
+record 187: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*20 0*4 1*4
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*20 14*4 1*4
+g0 r39: 1*32 4*4 1*20 14*4 1*4
+g0 r40-r62: 1*64
+g0 r63: 7*4 4*60
+record 188: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 187
+record 189: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 188, 32 cell(s)
+g0 (36,56)=1 (36,57)=1 (36,58)=1 (36,59)=1 (37,56)=1 (37,57)=1 (37,58)=1 (37,59)=1 (38,56)=1 (38,57)=1 (38,58)=1 (38,59)=1 (39,56)=1 (39,57)=1 (39,58)=1 (39,59)=1 (40,56)=14 (40,57)=14 (40,58)=14 (40,59)=14 (41,56)=14 (41,57)=14 (41,58)=14 (41,59)=14 (42,56)=14 (42,57)=14 (42,58)=14 (42,59)=14 (43,56)=0 (43,57)=0 (43,58)=0 (43,59)=0
+record 190: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 189, 33 cell(s)
+g0 (40,56)=1 (40,57)=1 (40,58)=1 (40,59)=1 (41,56)=1 (41,57)=1 (41,58)=1 (41,59)=1 (42,56)=1 (42,57)=1 (42,58)=1 (42,59)=1 (43,56)=1 (43,57)=1 (43,58)=1 (43,59)=1 (44,56)=14 (44,57)=14 (44,58)=14 (44,59)=14 (45,56)=14 (45,57)=14 (45,58)=14 (45,59)=14 (46,56)=14 (46,57)=14 (46,58)=14 (46,59)=14 (47,56)=0 (47,57)=0 (47,58)=0 (47,59)=0 (63,3)=4
+record 191: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 190
+record 192: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 191, 32 cell(s)
+g0 (44,56)=1 (44,57)=1 (44,58)=1 (44,59)=1 (44,60)=14 (44,61)=14 (44,62)=14 (44,63)=0 (45,56)=1 (45,57)=1 (45,58)=1 (45,59)=1 (45,60)=14 (45,61)=14 (45,62)=14 (45,63)=0 (46,56)=1 (46,57)=1 (46,58)=1 (46,59)=1 (46,60)=14 (46,61)=14 (46,62)=14 (46,63)=0 (47,56)=1 (47,57)=1 (47,58)=1 (47,59)=1 (47,60)=14 (47,61)=14 (47,62)=14 (47,63)=0
+record 193: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40: 1*60 0*4
+g0 r41-r43: 1*60 14*4
+g0 r44-r62: 1*64
+g0 r63: 7*2 4*62
+record 194: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*24 0*4
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*24 14*4
+g0 r39: 1*32 4*4 1*24 14*4
+g0 r40-r62: 1*64
+g0 r63: 7*2 4*62
+record 195: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 194
+record 196: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 195, 7 cell(s)
+g0 (36,60)=14 (36,61)=14 (36,62)=14 (37,63)=0 (38,63)=0 (39,63)=0 (63,1)=4
+record 197: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 196, 32 cell(s)
+g0 (36,56)=0 (36,57)=14 (36,58)=14 (36,59)=14 (36,60)=1 (36,61)=1 (36,62)=1 (36,63)=1 (37,56)=0 (37,57)=14 (37,58)=14 (37,59)=14 (37,60)=1 (37,61)=1 (37,62)=1 (37,63)=1 (38,56)=0 (38,57)=14 (38,58)=14 (38,59)=14 (38,60)=1 (38,61)=1 (38,62)=1 (38,63)=1 (39,56)=0 (39,57)=14 (39,58)=14 (39,59)=14 (39,60)=1 (39,61)=1 (39,62)=1 (39,63)=1
+record 198: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32: 1*56 0*4 1*4
+g0 r33-r35: 1*56 14*4 1*4
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*1 4*63
+record 199: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*60 14*3 0*1
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 4*64
+record 200: action=4 data={}; state="GAME_OVER"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 199
+record 201: action=0 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r47: 1*64
+g0 r48: 1*32 0*4 1*28
+g0 r49-r51: 1*32 14*4 1*28
+g0 r52-r62: 1*64
+g0 r63: 7*64
+```
+
+Reply with one Python program in a ```python fenced block.

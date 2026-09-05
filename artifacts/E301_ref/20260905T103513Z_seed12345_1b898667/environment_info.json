@@ -1,0 +1,16 @@
+{
+  "hardware": "Linux 6.18.33.2-microsoft-standard-WSL2 x86_64 cpu=x86_64 cores=16",
+  "hostname": "AliFazeli",
+  "packages": {
+    "arc-agi": "0.9.9",
+    "arcengine": "0.9.3",
+    "numpy": "2.5.2",
+    "pydantic": "2.13.5",
+    "pyyaml": "6.0.3"
+  },
+  "pid": 2150482,
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "python_executable_path": "/home/afazeli2006/ARC_AGI3_Plasticity_Lab/.venv/bin/python",
+  "python_implementation": "CPython",
+  "python_version": "3.12.13"
+}

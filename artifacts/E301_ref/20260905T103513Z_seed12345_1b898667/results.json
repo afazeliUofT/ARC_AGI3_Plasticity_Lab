@@ -1,0 +1,203 @@
+{
+  "completion_status": "completed",
+  "config_file_sha256": "fe7f33197cbc913e5b82e2eab8fe959ee615dbe49352c9497da94cf38de73115",
+  "config_hash": "d92aef436711cc89691a83a6813f3c4b3d2a0e0a6900797c0c74a3b3195a3ddb",
+  "created_utc": "2026-09-05T10:35:13Z",
+  "experiment_id": "E301_ref",
+  "extra": {},
+  "results": {
+    "action_budget_multiplier": 5,
+    "action_budget_total": 9215,
+    "actions_total": 355,
+    "backtest_module_sha256": "7e09fefd8b61e31c5a18eaf0035d5b7ca8309b58f59ef22908a21158b71e5784",
+    "calls_without_program": 0,
+    "calls_without_program_max_consecutive": 3,
+    "environment_generator_version": "arc-agi-offline-cache-1.0.0",
+    "exploration": {
+      "actions_chosen": 354,
+      "game_index": 24,
+      "grid_size": 64,
+      "pairs_tested": 354,
+      "seed": 12345,
+      "untested_choices": 354
+    },
+    "exploration_actions": 354,
+    "final_frame_sha256": "b1f657e03b0fcf262df44004b45d2f9fd4de9a7246ce1bf67f75010b3c700c61",
+    "final_state": "NOT_FINISHED",
+    "game_id": "wa30-ee6fef47",
+    "game_index": 24,
+    "history_encoding": {
+      "module_sha256": "cb9a80fa3807585af61f8a55af4f235590763a96e1a2b25f4097103404541aba",
+      "name": "rle_rows_delta_v1"
+    },
+    "hypotheses_certified": 11,
+    "hypotheses_proposed": 11,
+    "induction_min_history": 4,
+    "interface_module_sha256": "97624aa135788f61d25a9ac2bb8442ccfbe317c7152abaea58de48af6b252164",
+    "level_accounting_rule": "initial reset not an action; every later action counted, RESET included; level l completed at the first action index c_l with levels_completed >= l; actions attributed to level l are c_l - c_(l-1), c_0 = 0; later full reset and re-completion ignored; a level never reached has no completion and the first uncompleted level takes the remaining actions",
+    "levels": [
+      {
+        "actions_attributed": 355,
+        "budget": 355,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 1,
+        "official_baseline_actions": 71
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 595,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 2,
+        "official_baseline_actions": 119
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 915,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 3,
+        "official_baseline_actions": 183
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 490,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 4,
+        "official_baseline_actions": 98
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 1840,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 5,
+        "official_baseline_actions": 368
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 340,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 6,
+        "official_baseline_actions": 68
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 395,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 7,
+        "official_baseline_actions": 79
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 2210,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 8,
+        "official_baseline_actions": 442
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 2075,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 9,
+        "official_baseline_actions": 415
+      }
+    ],
+    "levels_completed": 0,
+    "model_budget_binding": null,
+    "model_budget_consumed": false,
+    "model_calls": 11,
+    "model_calls_per_game_max": 60,
+    "model_client_kind": "headless_cli",
+    "model_client_sha256": "e78bf5fa4b41c90e3e61500c88136ff6cfc02a6d1b20807c84fbb78edd71c717",
+    "model_effort": "high",
+    "model_identifier": "claude-fable-5-1",
+    "model_unavailable_reason": null,
+    "model_wallclock_seconds_total": 675.5600270160357,
+    "network_guard": "NetworkGuard",
+    "official_baseline_actions": [
+      71,
+      119,
+      183,
+      98,
+      368,
+      68,
+      79,
+      442,
+      415
+    ],
+    "operation_mode": "OFFLINE",
+    "over_budget_levels": [],
+    "plan_actions": 0,
+    "plan_trace_sampling": {
+      "every_nth_plan": 50,
+      "first_plans": 3,
+      "plans_traced": 9,
+      "trace_records": 16825
+    },
+    "planner": {
+      "click_grid_step": 16,
+      "click_points": 16,
+      "max_depth": 8,
+      "max_nodes": 20000
+    },
+    "plans_executed": 0,
+    "plans_searched": 350,
+    "prediction_mismatches": 10,
+    "predictions_compared": 351,
+    "predictions_matched": 341,
+    "prompt_hash": "1df76ae2d07aa1811578acd9d89b2e912b19ed0bab23c767153513511380be19",
+    "reset_actions": 1,
+    "resets_issued": 1,
+    "resumptions": 0,
+    "rhae_environment_score": 0.0,
+    "rhae_level_scores": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sandbox_limits": {
+      "address_space_bytes_max": 2147483648,
+      "backtest_seconds_max": 120.0,
+      "predict_seconds_max": 5.0
+    },
+    "seed": 12345,
+    "simulation_budget": {
+      "max_steps": 5000000,
+      "used": 635221
+    },
+    "simulation_steps_per_game_max": 5000000,
+    "spend_control": {
+      "calls_per_run_max": 40,
+      "concurrency": 1,
+      "model_wallclock_per_run_seconds": 2400.0
+    },
+    "stem": "wa30",
+    "step_failed_at": null,
+    "stop_reason": "level_budget_exhausted",
+    "tokens_by_kind": {
+      "cache_creation": 354293,
+      "cache_read": 0,
+      "input": 22,
+      "output": 59495
+    },
+    "tokens_per_game_max": 4000000,
+    "tokens_total": 413810,
+    "win_levels": 9
+  },
+  "run_id": "20260905T103513Z_seed12345_1b898667",
+  "seed": 12345,
+  "wallclock_seconds": 7989.740874479001
+}
