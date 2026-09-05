@@ -1,0 +1,530 @@
+schema_version: 1
+gate: G3b
+title: Successor pre-registration for the graded G3 set - the reference architecture (REF) under
+  configuration E304_ref on the 25 cached public games, one run per game, after the E300-E303
+  pre-flight and diagnostic sets; inherits the G3 pass criteria unchanged and fixes the operational
+  caps those sets showed to be outcome-deciding
+authored_utc: '2026-09-05T22:47:00Z'
+authored_utc_note: typed after `date -u` read 2026-09-05T22:46:08Z in the authoring turn; the git
+  commit time and the ledger entry recording this file's sha256 are the authoritative clock
+authored_at_commit: bab6013
+author: agent (Claude Fable 5.1), G3.6b step 13
+successor_of:
+  file: preregistration/G3.yaml
+  sha256: 5f1ca112b8e6d8d5234cb724780411ddf9d19016096441ae924dac1652d8ff60
+  committed_at: 295962b
+  relation: 'This is the "successor pre-registration" that preregistration/G3.yaml cost_preflight.decision_rule
+    and kill_rule name as one of the three outcomes of the cost pre-flight. G3.yaml is not amended.
+    Every threshold of G3.yaml stays in force for the graded set EXCEPT the keys listed under
+    thresholds_overriding_g3 below, and the pass criteria (rhae_total_min 55.0, backtest_rejection_fraction_min
+    0.95, backtest_correct_model_acceptance_min 1.0) are inherited unchanged and restated here so
+    that no reading of this file can move them. The gate being graded is still G3; this file
+    exists because the graded configuration is no longer the one G3.yaml named (E300_ref.yaml),
+    and C1 requires the configuration and its caps to be fixed before the first graded run.
+
+    '
+authority:
+- 'Human answer 2026-09-05T07:28:18Z and 08:20:01Z (state/escalations/20260905T082003Z.md, section 5):
+  the successor route chosen; per-run model cap 1200 -> 2400 s, calls_per_run_max 40, job wallclock_limit_s
+  10800, runner wallclock_limit_seconds 10500; item 4 changed to a diagnostic set before any graded set.
+
+  '
+- 'Human decision rule 2026-09-05T08:20:01Z (docs/DECISION_LOG.md): a graded 25-game set only if a
+  level completes on one of the three diagnostic games OR the diagnosis names a specific testable
+  defect and its fix. Both prongs are met (docs/FINDINGS_E303.md: levels completed on s5i5 and
+  cd82 under E303_ref; defects F1, F2, F3 named, fixed, validated).
+
+  '
+- 'Human budget directive 2026-09-05T19:19:50Z (ledger decision): G3.6 is met; the graded set does
+  NOT start before the weekly reset on Friday 2026-09-11 17:00 local; the 2400 s per-run model cap
+  is "the binding constraint on the science and a pre-registration item to revisit"; then G3b.yaml.
+
+  '
+- 'AGENT_CONSTITUTION.md section 7 C1 (write-once, before the first treatment run) and section 6
+  ("do not ask a question when a safe default exists"): every value below is a default stated
+  with its reasoning; human_override_route says how a value is changed if the human disagrees.
+
+  '
+hypothesis: 'Unchanged from preregistration/G3.yaml hypothesis: claim 1 (quality bar, RHAE >= 55.0 on
+  the 25 cached public games under the official 5x per-level action budget) and claim 2 (verification
+  is real, E310 rejection >= 0.95 with the true simulator always accepted, and every executed plan
+  cites a fully backtested certified program). Prediction, recorded before the graded set exists:
+  claim 2 already holds on the graded E310 runs (docs/decisions pending; artifacts/E310_ref_backtest_rejection/).
+  Claim 1 is expected to FAIL: the three E303_ref diagnostic runs scored 1.02, 4.76 and 0.0 percent
+  (docs/FINDINGS_E303_summary.json), two levels of 23 completed, and no cap change below is expected
+  to move a per-game score by an order of magnitude. The graded set is run anyway because G3.yaml
+  kill_rule makes a complete set below 55.0 the engineering finding this gate exists to produce,
+  and because the human directed it (authority item 3). A set that is not complete is not a finding.
+
+  '
+graded_experiment:
+  experiment_id: E304_ref
+  config: configs/experiments/E304_ref.yaml
+  config_sha256: fd4ea9f53fa8fac583dcfcbef035a087bde23db9f07200f648301db4834794da
+  derived_from: 'configs/experiments/E303_ref.yaml (sha256 7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae,
+    itself E302_ref da84c695 + planner max_depth 16 + click_grid_step 6) by exactly five line changes,
+    verified by diff in the authoring turn: experiment_id E303_ref -> E304_ref; wallclock_limit_seconds
+    10500 -> 9900; runner_params.planner.max_nodes 20000 -> 2500; runner_params.spend_control.calls_per_run_max
+    40 -> 60; runner_params.spend_control.model_wallclock_per_run_seconds 2400 -> 3600. Nothing else
+    differs: the prompt template, the 25-game list, every G3.yaml ceiling copy (model_calls_per_game_max
+    60, tokens_per_game_max 4000000, simulation_steps_per_game_max 5000000, the three sandbox limits,
+    action_budget_multiplier 5, cache_manifest_sha256), planner max_depth 16 and click_grid_step 6,
+    induction_min_history 4, wallclock_reserve_seconds 120, model_client headless_cli with call_wallclock_seconds
+    900, model claude-fable-5-1 at effort high.
+
+    '
+  prompt_hash: ddeb01c5ef38a128e4da5200e25a24e11f8ecd02a3122139d38b327ce205223d
+  prompt_hash_note: identical to E302_ref and E303_ref (the F1 level-completion-conjecture prompt);
+    the graded set therefore differs from the E303 diagnostic set by cap values only.
+  entry_point: uv run python scripts/run_experiment.py --config configs/experiments/E304_ref.yaml --game <stem>
+  launch_route: 'One supervisor job per game (state/escalations/20260905T024724Z.md option A): the
+    agent writes state/job_request.json {id g37-<stem>-1, runner run_experiment, config configs/experiments/E304_ref.yaml,
+    game <stem>, wallclock_limit_s 10800}; the supervisor runs the entry point between turns and
+    writes state/jobs/<id>/result.json. No game-run is ever started inside a turn (ledger failure
+    process_killed_at_turn_end 2026-09-04T22:02:37Z).
+
+    '
+  artifacts_root: artifacts/E304_ref/
+  artifacts_root_state_at_authoring: does not exist; no E304_ref run exists anywhere
+  run_set_manifest:
+    file: experiments/E304_ref_run_set.json
+    rule: 'As preregistration/G3.yaml experiment.run_set_manifest, applied to artifacts/E304_ref/:
+      committed before the verifier is invoked; lists EVERY run directory under artifacts/E304_ref/
+      with run_id, stem, set_index, role in {graded, failed} and the SHA256SUMS digest; a set is
+      gradable only with exactly one graded run per stem for all 25 stems, each completion_status
+      completed; a run may be labelled failed only if its completion_status is not completed; the
+      verifier grades the highest-numbered complete set. The role preflight_graded does not occur
+      under E304_ref (the pre-flight was E300_ref). scripts/build_e300_run_set.py is pointed at the
+      E304 root and output by its --artifacts-root and --output arguments, or generalised with no
+      change of rule; the manifest records experiment_id E304_ref.
+
+      '
+  set_index_rule: 'E304_ref set 1 is graded set 1 under this successor. The three E300_ref pre-flight
+    runs never formed a complete set and the E301/E302/E303 runs were diagnostic by the human''s
+    decision, so no earlier set counts against graded_sets_max. graded_sets_max stays 2: at most one
+    further complete 25-game set, and only after a ledger ladder entry names the defect fixed, with
+    set 1 preserved unchanged (G3.yaml threshold_reasoning.graded_sets_max).
+
+    '
+what_changes_and_why:
+  purpose: 'Each of the three E303_ref diagnostic runs ended on a different limit and each limit decided
+    that run''s outcome (docs/FINDINGS_E303.md section 4 and 6): s5i5 on the per-game simulation budget
+    with the model idle, cd82 on the per-run model cap while completing levels, wa30 on the runner
+    wall-clock through node-capped searches. A graded set whose scores are set by unexamined caps
+    measures the caps, not the substrate. Five values are fixed below, each with the evidence that
+    fixed it. No prompt change, no source change, no planner algorithm change is made: the configuration
+    is E303_ref with five numbers changed, so the graded set stays one variable-group away from the
+    validated diagnostic set.
+
+    '
+  items:
+  - id: 1
+    name: per-run model wall-clock cap (spend_control.model_wallclock_per_run_seconds)
+    old: 2400
+    new: 3600
+    evidence: 'cd82 under E303_ref (artifacts/E303_ref/20260905T174628Z_seed12345_460bd1b1, results.json
+      stop_reason model_budget_exhausted, model_budget_binding spend_control.model_wallclock_per_run_seconds,
+      model_wallclock_seconds_total 2400.09, actions_total 27 of 855, levels_completed 1 of 6): the
+      cap bound at call 10 while the run was completing levels by planned actions; call 10 timed out
+      on the 243.66 s remainder with no program. s5i5 used 1417.5 s and wa30 968.1 s without binding.
+      Per-call wall-clock grows with history length (cd82 60-666 s per call).
+
+      '
+    reasoning: '3600 s is 1.5 x the human-set 2400 s: at cd82''s mean of 240 s per call it buys about
+      five more revise calls, enough for level 2 to be attempted; at the all-run median call of 54 s
+      it buys 66 calls, so on fast-call games the G3.yaml ceiling of 60 calls per game binds first
+      (item 2). Not larger, because the worst case scales linearly and no weekly denominator exists:
+      25 x 3600 s = 90000 s of model time is the hard bound for the set (25 x 2400 = 60000 under the
+      old cap); the measured E303 mean of 1595 s per run projects 39900 s, and only cap-bound games
+      pay the increase. Not kept at 2400, because the human named that cap the binding constraint on
+      the science and asked for it to be revisited here. This is a resource decision made before
+      any graded result exists; it moves no pass threshold. human_override_route applies.
+
+      '
+  - id: 2
+    name: per-run call cap (spend_control.calls_per_run_max)
+    old: 40
+    new: 60
+    evidence: 'Human answer 2026-09-05T08:20:01Z section 3: at the median call 2400 s buys about 44
+      calls, so calls_per_run_max 40 could become the binding limit on s5i5-like games. Under item 1
+      that crossover moves to every game whose calls average under 60 s.
+
+      '
+    reasoning: '60 equals preregistration/G3.yaml thresholds.model_calls_per_game_max, the pre-registered
+      per-game ceiling the verifier enforces on model_calls.jsonl; the spend_control copy duplicated
+      that ceiling at a lower value for throttle reasons the wall-clock cap (item 1) already covers.
+      With 60 the per-run model wall-clock is the single operational cap and the referee reads one
+      binding limit per run, not two. No ceiling is loosened: 60 calls and 4000000 tokens per game
+      remain the hash-locked maxima.
+
+      '
+  - id: 3
+    name: planner node cap (planner.max_nodes) as the per-search cost bound
+    old: 20000
+    new: 2500
+    evidence: 'Per search, steps_simulated = nodes_expanded x |candidate actions| (plans.jsonl of all
+      three E303 runs): on s5i5 121 click points make one search cost up to 20000 x 121 = 2.4M steps,
+      and search 16 spent 1424049 steps (28 percent of the 5M game budget); seven searches spent 92
+      percent and 437 later searches were refused (outcome simulation_budget_exhausted). On wa30 (five
+      actions, no ACTION6) 27 searches hit the 20000-node cap at 100000 steps and about 340 s each,
+      9533 s of the 10500 s run. Every one of the 11 plans found across the ten diagnostic runs used
+      at most 995 nodes (cd82 plan 8: 995 nodes, 125249 steps; s5i5 plan 14: 777 nodes; wa30 plan 0:
+      53 nodes); the searches that exhausted the reachable set without a plan used 3039-11769 nodes.
+
+      '
+    reasoning: '2500 is 2.5 x the largest node count of any plan found so far and bounds one search
+      at 2500 x 126 = 315000 steps (6.3 percent of the 5M game budget, so at least 15 searches per
+      game) on click games and 12500 steps (about 42 s at wa30''s 3.4 ms per step) on five-action
+      games. The per-game simulation budget stays at the hash-locked 5000000 (G3.yaml thresholds.simulation_steps_per_game_max;
+      not raised, not lowered). A game-independent per-search step cap would be the cleaner bound
+      but needs a planner source change and a new config key; it is recorded as the alternative
+      not taken (docs/FINDINGS_E303.md section 6 item 3), as are object-centred click candidates.
+      The cost of 2500 is that a plan needing more than 2500 expansions is now unreachable; the
+      referee can see, per search, nodes_expanded, steps_simulated and outcome node_limit in plans.jsonl.
+
+      '
+  - id: 4
+    name: runner wall-clock limit (wallclock_limit_seconds) and the supervisor job margin
+    old: 10500 (job limit 10800, margin 300)
+    new: 9900 (job limit 10800, margin 900)
+    evidence: 'Supervisor job g36d-wa30-1 ran 10947 s against wallclock_limit_s 10800 and was not killed:
+      the runner stopped itself at 10501.5 s and then spent about 446 s writing 200261 plan_traces.jsonl
+      records and SHA256SUMS (state/supervisor.jsonl lines 254-255; docs/FINDINGS_E303.md section 5).
+      A job the supervisor kills writes no manifest, so the runner''s own limit must always fire first.
+
+      '
+    reasoning: '10800 s is the supervisor''s maximum job wall-clock (launch route, option A) and is
+      kept. 9900 s leaves a 900 s margin, twice the largest post-stop write observed, under the 20000-node
+      cap that produced it; item 3 also shrinks the trace volume. Measured run wall-clocks under E303
+      were 6647 s (s5i5), 3058 s (cd82) and 10501 s (wa30, binding); with item 3 the wa30 case is
+      expected to spend far less in the planner. The G3.yaml threshold wallclock_per_invocation_seconds
+      (7200) is overridden by this value (thresholds_overriding_g3); wallclock_per_game_total_seconds_max
+      14400 and resumptions_per_game_max 3 stay as upper bounds but no resumption is used in this
+      set (resumption_rule below).
+
+      '
+  - id: 5
+    name: stop-reason semantics of model_budget_exhausted and the level accounting under each stop reason
+    old: as implemented in src/arc_plasticity/agents/ref_world_model.py (sha256 92a1086ff3c246bbff61e64ebcf79238018cda98da3c50de846a4a29c0950b76)
+    new: unchanged; stated here so the referee can check results.json against it
+    semantics: 'A game-run stops with stop_reason model_budget_exhausted when the model budget is consumed
+      (calls_per_run_max, model_wallclock_per_run_seconds, model_calls_per_game_max, tokens_per_game_max,
+      or a client refusal) AND no certified program exists at that moment. While a certified program
+      exists the run continues model-free: it plans inside it and executes with predict-before-act
+      until the program is decertified by a mismatch, then stops. The run does NOT fall back to
+      exploration once the model budget is consumed. This is preregistration/G3.yaml per_game_stop_rule
+      (c) as written and as the cd82 run behaved (27 actions of 855 used, level 2 never attempted).
+
+      '
+    reasoning: 'The alternative (exploration until the level budget is spent) would be a source change
+      to the runner before a graded set and a departure from the hash-locked stop rule; its expected
+      gain is a lottery on random level completion (one level in 75 random game-runs in G1, docs/EVIDENCE_ARC.md
+      3.1) at the cost of the run''s wall-clock; it is not taken. Consequence stated plainly: a game
+      whose model budget is exhausted after k completed levels scores exactly those k levels, every
+      later level 0, and the RHAE environment score is the toolkit''s weighted mean over all levels.
+      Level accounting under every stop reason is preregistration/G3.yaml level_accounting_rule
+      unchanged: level l is completed at the first action index at which levels_completed reaches
+      l; an uncompleted level takes the run''s remaining actions; a level never reached scores 0.
+
+      '
+resumption_rule: 'No graded E304_ref run is resumed. A run that stops on wallclock (stop_reason wallclock,
+  completion_status completed, as the E303 wa30 run) is final and is scored with the levels it reached;
+  the resumption machinery of G3.yaml resumption_rule has never been exercised and exercising it
+  first on a graded run would be an untested code path. resumptions_per_game_max therefore reads
+  0 for this set (resumptions_used_max below); a run whose completion_status is not completed (step_failed,
+  a non-zero exit, a supervisor kill) is labelled failed in the run set manifest and the game is
+  run again under a new run id, at most once per game (failed_reruns_per_game_max), with the failed
+  directory preserved and listed.
+
+  '
+graded_set:
+  games: [ar25, bp35, cd82, cn04, dc22, ft09, g50t, ka59, lf52, lp85, ls20, m0r0, r11l, re86, s5i5, sb26, sc25, sk48, sp80, su15, tn36, tr87, tu93, vc33, wa30]
+  cached_versions: as preregistration/G3.yaml experiment.cached_versions_run (25 full ids; 15 client-side
+    replay versions differ; the cache is pinned by experiments/environment_cache_manifest.json 023726479a3c201161a61ee0d310b20696988933adbf1826dc9d7bd524d960af)
+  seed: 12345
+  seed_role: exploration_fallback and tie-breaking only (G3.yaml model_calls.nondeterminism_protocol);
+    a single seed, one run per game, no selection among runs (graded_runs_per_game 1)
+  order: 'The alphabetical order of the games list above, which is the config''s own order, one job at
+    a time (concurrency 1), the next job queued only after the previous job''s result.json has been
+    read and its run recorded in the ledger. Fixed here so that neither the cheapest nor the most
+    promising games can be chosen first after early scores are seen; the order is a bookkeeping choice
+    and moves no number.
+
+    '
+  earliest_start: 'Friday 2026-09-11 17:00 local (the weekly allowance reset), per the human budget
+    directive 2026-09-05T19:19:50Z. No E304_ref job is queued before then. Between now and then the
+    only work is model-free (verifier evaluators for the pending E300-set checks, run-set tooling,
+    the ledger).
+
+    '
+  pause_rule: 'If the supervisor reports a usage-limit signal (session or weekly, AGENT_CONSTITUTION.md
+    section 8) or the throttle refuses a job, the set PAUSES: no job is queued until the window resets,
+    no run is discarded, no partial set is graded. An interrupted set resumes with the next game in
+    order under the same configuration; completed runs are never re-run.
+
+    '
+  cost_accounting: 'After every run the agent records in the ledger and in state/BUDGET.json g3_graded_set:
+    the run id, stop_reason, model_wallclock_seconds_total, the supervisor''s charged model seconds,
+    tokens by kind, the USD equivalent at the G3.yaml pre-flight prices (10 / 50 / 0.25 / 12.50 USD
+    per million input / output / cache-read / cache-creation tokens), the cumulative totals and the
+    linear projection to 25 runs. Escalation under section 6 item 10 if the cumulative model time
+    exceeds set_model_seconds_escalate_above (below) before the set is complete; the set does not
+    stop by itself because a complete set below 55.0 is the pre-registered finding and an incomplete
+    set is nothing.
+
+    '
+diagnostic_runs_excluded_from_grading:
+  rule: 'The ten completed runs under artifacts/E300_ref/, artifacts/E301_ref/, artifacts/E302_ref/
+    and artifacts/E303_ref/ and the one killed run under artifacts/E300_ref_incomplete/ are preserved,
+    cited by docs/FINDINGS_E303.md and docs/FINDINGS_E303_summary.json (sha256 a98339d533a0fa6399c51940a77bc693b670aaf03257e3bbc5c494e73efab9be),
+    and are never graded: their configurations differ from E304_ref (E300 4624ea0d, E301 fe7f3319,
+    E302 da84c695, E303 7d1506ce), the human declared E301-E303 diagnostic (authority item 1), and
+    G3.yaml cost_preflight.preflight_runs_are_graded says that under a successor the E300 runs stay
+    preserved and never graded. None of them may be copied, linked or re-labelled into artifacts/E304_ref/.
+
+    '
+  runs:
+  - E300_ref cd82 20260905T025114Z_seed12345_8fd63a5a
+  - E300_ref s5i5 20260905T032217Z_seed12345_ee3b847e
+  - E300_ref wa30 20260905T033303Z_seed12345_fd9e79ad
+  - E301_ref cd82 20260905T083428Z_seed12345_68ed39d4
+  - E301_ref s5i5 20260905T102715Z_seed12345_64491fb6
+  - E301_ref wa30 20260905T103513Z_seed12345_1b898667
+  - E302_ref s5i5 20260905T131531Z_seed12345_d915c5ae
+  - E303_ref s5i5 20260905T154536Z_seed12345_7b8f2b62
+  - E303_ref cd82 20260905T174628Z_seed12345_460bd1b1
+  - E303_ref wa30 20260905T191952Z_seed12345_4c6032fd
+  - E300_ref_incomplete cd82 20260904T215745Z_seed12345_32580a64 (killed at turn end, never completed)
+  consequence: 'cd82, s5i5 and wa30 are run again under E304_ref as ordinary members of the set. The model
+    is nondeterministic and carries nothing between runs (G3.yaml cross_game_state), so the new runs
+    are independent draws, not repeats; the referee should nevertheless know these three games have
+    been run four, five and four times respectively during development and that the prompt (ddeb01c5)
+    was fixed after reading their E300/E301 artifacts. That is a threat to the generality of any
+    per-game claim about those three games, not to the 25-game mean, and it is recorded here rather
+    than mitigated.
+
+    '
+rhae_aggregation:
+  per_level: 'src/arc_plasticity/evaluation/rhae.py delegating to arc_agi.scorecard.EnvironmentScoreCalculator:
+    level score min(((h_l / a_l) ** 2) * 100, 115.0) for a completed level with h_l the official
+    metadata.json baseline_actions[l] and a_l the attributed action count; 0 for an uncompleted
+    level; level weight w_l = l. The 115.0 cap is the toolkit''s (G3.yaml rhae_level_cap 1.15 in
+    fraction units).
+
+    '
+  per_game: 'The toolkit''s environment score: the w_l-weighted mean of the level scores, capped at
+    max_weights / total_weights x 100 where max_weights is the weight sum of completed levels (so one
+    completed level of six scores at most 1/21 x 100 = 4.76, as cd82 showed). The project does not
+    reimplement RHAE (CLAUDE.md item 3).
+
+    '
+  total: 'rhae_total_public_25 = the plain mean over the 25 graded game-runs of rhae_environment_score
+    in percent (G3.yaml primary_metric.definition, unchanged); pass if >= 55.0. Recomputed by the
+    verifier from each run''s level_accounting.json within rhae_recompute_abs_tolerance 1e-9.
+
+    '
+referee_notes:
+- 'manifest.json git_dirty is true on every supervisor-job run: the supervisor rewrites state/PROJECT_STATE.json
+  while a job runs and the human''s stray fix_job_runner.sh:Zone.Identifier file has been present
+  since 2026-09-05; each run''s git_state.txt lists exactly the dirty paths. Reproducibility is judged
+  from replay identity of transitions.jsonl (G3.yaml replay_final_frame_identity), not from that flag.
+
+  '
+- 'hypotheses.jsonl may carry a decertified record whose reason is WallclockExceededError (the shutdown
+  of the last search at the wall-clock limit) rather than a prediction mismatch, as the E303 wa30
+  run (h007, plan_index 28). Such records are not refutations by counterexample and must not be
+  counted as such; the honest count reads the reason field.
+
+  '
+- 'cache_read was 0 on all 51 model calls of the pre-flight and diagnostic sets: prompt caching does
+  not take effect through the headless client, so every call pays cache-creation price on the full
+  history prompt. The USD-equivalent figures are therefore upper-bound list equivalents; the subscription
+  meters model wall-clock (state/BUDGET.json g3_preflight.spend_currency).
+
+  '
+- 'Single seed, one run per game, one model: no per-game number carries a variance estimate; the
+  25-game mean is a point estimate of one pass, as the platform itself scores. Any claim of the form
+  "REF scores X on game g" is a single draw of a nondeterministic system.
+
+  '
+- 'The level completions in the diagnostic set were achieved by conjectures that were wrong about
+  the completing transition (both decertified at the completing step): REF completes levels by acting
+  on a good-enough model, not by predicting the level change correctly. Expect the same pattern.
+
+  '
+- 'The binding limit of every graded run is recorded in results.json (stop_reason, model_budget_binding,
+  model_budget_consumed, plans_searched, and per-search outcomes in plans.jsonl); the referee should
+  tabulate stop reasons over the 25 runs before reading the mean.
+
+  '
+- 'The G3.yaml threshold wallclock_per_invocation_seconds 7200 is overridden to 9900 here; the E301-E303
+  diagnostic runs already used 10500 under the human''s 08:20:01Z default. No graded run uses any
+  value other than 9900.
+
+  '
+thresholds:
+  rhae_total_min: 55.0
+  backtest_rejection_fraction_min: 0.95
+  backtest_correct_model_acceptance_min: 1.0
+  graded_config_sha256: fd4ea9f53fa8fac583dcfcbef035a087bde23db9f07200f648301db4834794da
+  graded_config_derived_from_sha256: 7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae
+  graded_config_line_changes_from_e303: 5
+  prompt_hash: ddeb01c5ef38a128e4da5200e25a24e11f8ecd02a3122139d38b327ce205223d
+  experiment_id: E304_ref
+  model_wallclock_per_run_seconds: 3600
+  calls_per_run_max: 60
+  planner_max_depth: 16
+  planner_max_nodes: 2500
+  planner_click_grid_step: 6
+  planner_click_points: 121
+  simulation_steps_per_game_max: 5000000
+  wallclock_per_invocation_seconds: 9900
+  job_wallclock_limit_seconds: 10800
+  job_margin_over_runner_limit_seconds_min: 900
+  resumptions_used_max: 0
+  failed_reruns_per_game_max: 1
+  graded_games_required: 25
+  graded_runs_per_game: 1
+  graded_sets_max: 2
+  seed: 12345
+  diagnostic_runs_excluded: 11
+  set_model_seconds_hard_bound: 90000
+  set_model_seconds_escalate_above: 60000
+  earliest_start_local: '2026-09-11T17:00'
+thresholds_overriding_g3:
+- wallclock_per_invocation_seconds (7200 -> 9900; item 4)
+thresholds_inherited_unchanged_note: 'Every other key of preregistration/G3.yaml thresholds is in force
+  unchanged for the graded set, including rhae_total_min 55.0, backtest_rejection_fraction_min 0.95,
+  model_calls_per_game_max 60, tokens_per_game_max 4000000, simulation_steps_per_game_max 5000000,
+  the sandbox limits, action_budget_multiplier 5, per_level_actions_over_budget_max 0, replay_final_frame_identity_min
+  1.0, cache_manifest_sha256, graded_sets_max 2. The keys above that do not exist in G3.yaml (model_wallclock_per_run_seconds,
+  calls_per_run_max, planner_*, job_*, resumptions_used_max, failed_reruns_per_game_max, set_model_seconds_*,
+  diagnostic_runs_excluded, graded_config_*, earliest_start_local) are new operational caps fixed
+  here; none of them is a pass criterion.
+
+  '
+threshold_reasoning:
+  rhae_total_min: inherited from G3.yaml unchanged (PROPOSAL_v2.md section 9 row G3); restated so this
+    file cannot be read as changing it.
+  backtest_rejection_fraction_min: inherited unchanged; the E310 result is graded against G3.yaml.
+  backtest_correct_model_acceptance_min: inherited unchanged.
+  graded_config_sha256: the digest every graded run's results.json config_file_sha256 must equal; a run
+    under any other digest is not a member of the set.
+  graded_config_derived_from_sha256: the validated diagnostic configuration this one is five lines away from.
+  graded_config_line_changes_from_e303: five, enumerated under graded_experiment.derived_from and checkable
+    by diff; a sixth difference means the graded config is not the pre-registered one.
+  prompt_hash: the F1 prompt validated on s5i5 (compliance 3/3) and used by all three E303 runs; unchanged
+    so that the graded set and the diagnostic set differ by caps alone.
+  experiment_id: a new id so that artifacts/E304_ref/ starts empty and the run set manifest can never
+    include a diagnostic run.
+  model_wallclock_per_run_seconds: item 1.
+  calls_per_run_max: item 2.
+  planner_max_depth: unchanged from E303 (F3; the s5i5 goal needed 13 clicks against the old cap of 8).
+  planner_max_nodes: item 3.
+  planner_click_grid_step: unchanged from E303 (F2; pitch 16 missed two of s5i5's four buttons, pitch
+    6 hits all four).
+  planner_click_points: 121 = the lattice pitch 6 yields on the 64x64 grid, as RefParams reports; restated
+    because it is the branching factor item 3's bound multiplies.
+  simulation_steps_per_game_max: G3.yaml's hash-locked value, restated because item 3 is reasoned against it.
+  wallclock_per_invocation_seconds: item 4.
+  job_wallclock_limit_seconds: the supervisor's maximum job wall-clock; the agent may not request more.
+  job_margin_over_runner_limit_seconds_min: item 4; twice the largest post-stop write observed.
+  resumptions_used_max: resumption_rule; zero because the path is untested.
+  failed_reruns_per_game_max: one re-run of a run whose completion_status is not completed; a second
+    failure of the same game is a defect handled under the ladder, not by a third run.
+  graded_games_required: as G3.yaml; a subset would let the easiest games be chosen.
+  graded_runs_per_game: as G3.yaml; grading the best of several runs is selection.
+  graded_sets_max: as G3.yaml; set_index_rule says how E304 counts.
+  seed: as G3.yaml; the seed governs only exploration_fallback and tie-breaking.
+  diagnostic_runs_excluded: the eleven directories enumerated above; the count lets a script confirm
+    the list has not shrunk.
+  set_model_seconds_hard_bound: 25 x 3600, the arithmetic bound of item 1; nothing can exceed it.
+  set_model_seconds_escalate_above: 60000, the old cap's arithmetic bound (25 x 2400) and 1.5 x the E303
+    mean projection (39900); crossing it before the set is complete means the caps are binding on
+    most games and the human decides under section 6 item 10 whether the remaining runs proceed.
+  earliest_start_local: the human budget directive; a job queued earlier is a violation of it, not a
+    scientific defect.
+verification:
+  verifier: scripts/verify_run.py
+  verifier_sha256_at_authoring: f355ad9f3ac3dcc6e2adbe3ea4d0a5b4e9edb5df2ae3af5ed8f1d6b9e4a8d1e6c
+  verifier_sha256_note: 'The 16-character prefix f355ad9f3ac3dcc6 was read by sha256sum in the authoring
+    turn; the full digest is recorded in the ledger entry for this step and the referee''s verdict
+    records the digest of the verify_run.py that grades G3 (AGENT_CONSTITUTION.md section 7, correction
+    of 2026-09-04). The verifier is unchanged since G3.yaml''s G3.2-G3.6 notes (state/PROJECT_STATE.json
+    g3_components).
+
+    '
+  how_the_graded_set_is_verified: 'python scripts/verify_run.py --gate G3 --artifacts-root artifacts/E304_ref/
+    (the G3 evaluator, extended as G3.yaml verification.verifier_extension_rule permits). The evaluator
+    reads its thresholds from preregistration/G3.yaml, then loads preregistration/G3b.yaml and (a) replaces
+    exactly the keys listed under thresholds_overriding_g3 with this file''s values, (b) reads the new
+    operational keys from this file, (c) requires every graded run''s config_file_sha256 to equal graded_config_sha256
+    and prompt_hash to equal prompt_hash, (d) records both pre-registration digests in its report.
+    The still-pending E300-set checks of G3.yaml (run_set_manifest, official_baselines_used, action_budget_enforced,
+    replay_final_frame_identity, rhae_recomputed, model_call_accounting, verification_active, preflight_recorded)
+    are evaluated over artifacts/E304_ref/ and experiments/E304_ref_run_set.json; preflight_recorded
+    reads state/BUDGET.json g3_preflight (games_measured 3, the no-denominator escalation ledger entry
+    2026-09-05T07:34:32Z) and the three E300_ref pre-flight run ids under artifacts/E300_ref/, which
+    is where they remain. Authoring these evaluators is model-free work scheduled before 2026-09-11.
+
+    '
+  additional_checks_this_file_requires:
+  - graded_config_identity (every graded run's results.json config_file_sha256 == graded_config_sha256; manifest prompt_hash == prompt_hash; configs/experiments/E304_ref.yaml sha256 == graded_config_sha256 at the graded commit)
+  - graded_config_derivation (diff of E303_ref.yaml and E304_ref.yaml has exactly the five named line changes)
+  - spend_caps_respected (per run model_wallclock_seconds_total <= model_wallclock_per_run_seconds + one call_wallclock overrun; model_calls <= calls_per_run_max; manifest wallclock_limit_seconds == wallclock_per_invocation_seconds; wallclock_seconds <= wallclock_per_invocation_seconds + wallclock_reserve)
+  - planner_caps_recorded (results.json planner block reports max_depth 16, max_nodes 2500, click_grid_step 6, click_points 121 for every run)
+  - no_resumption (manifest resumptions empty or zero for every graded run)
+  - diagnostic_runs_untouched (the eleven excluded directories still exist with their SHA256SUMS verifying, and none of their run ids appears in experiments/E304_ref_run_set.json)
+  - stop_reason_semantics (a run with stop_reason model_budget_exhausted has model_budget_consumed true and no certified hypothesis at its last transition; a run with stop_reason wallclock has wallclock_seconds within reserve of the limit; a run with level_budget_exhausted has the current level's actions_attributed == its budget; a run with win has final_state WIN)
+  referee_inspects_in_addition_to_g3_yaml:
+  - this file against the ledger entry that recorded its sha256, to confirm no graded run predates it
+  - the five-line diff between E303_ref.yaml and E304_ref.yaml
+  - the stop_reason table over the 25 runs and which cap bound each
+  - the cd82, s5i5 and wa30 runs of the graded set side by side with their E303 counterparts (same prompt, caps changed)
+kill_rule: 'Inherited from preregistration/G3.yaml kill_rule unchanged: a complete set below rhae_total_min
+  within the ceilings, after at most one ladder-driven second set, is an engineering finding recorded
+  with the artifacts, and the human is asked under section 6 items 7 and 10 whether to raise the ceilings
+  or change the model under a further successor, or to proceed to G4 on a substrate below the competitive
+  standard with that limitation recorded in every later verdict; the threshold is never lowered. Added
+  here: (i) a set interrupted by the allowance pauses and resumes, it is never graded partial; (ii)
+  set_model_seconds_escalate_above crossed before completion is an item 10 escalation with the numbers,
+  not a stop; (iii) a systematic defect discovered mid-set (a runner crash class, a sandbox failure
+  class) is recorded in the ledger and the set continues to completion unless the defect makes the
+  remaining runs meaningless, in which case the set is labelled failed as a whole in the run set manifest,
+  the defect is fixed under the ladder, and set 2 is the one further complete set graded_sets_max allows.
+
+  '
+human_override_route: 'Any value in this file the human wishes to change before the first graded run (in
+  particular item 1, a resource decision on the human''s shared allowance) is changed by a ledger entry
+  or an ESCALATION answer naming the key and the value; the agent then authors preregistration/G3c.yaml
+  as a successor of this file with exactly that change and, if a config value is involved, E305_ref.yaml
+  by the named line change, records both digests in the ledger, and grades under G3c. This file is not
+  amended (write-once, C1). After the first graded E304_ref run exists, no value changes for set 1.
+
+  '
+known_conflicts_at_authoring:
+- 'preregistration/G3.yaml thresholds.wallclock_per_invocation_seconds is 7200 while the diagnostic runs
+  used 10500 (human default of 2026-09-05T08:20:01Z) and this file fixes 9900; the override is explicit
+  (thresholds_overriding_g3) and the referee is asked to note it.
+
+  '
+- 'scripts/verify_run.py has no evaluator for gate G3b and its G3 evaluator does not yet read this file;
+  load_preregistration("G3b") loads it (gate G3b, thresholds mapping present). The overlay described
+  under verification.how_the_graded_set_is_verified is authored as model-free work before 2026-09-11;
+  until then the G3 pending checks report not_yet_evaluable failures, as designed.
+
+  '
+- 'state/throttle.json reads max_model_seconds_per_5h 20000 with ceiling_before_burst 5000 at authoring
+  (a human burst setting); item 1''s reasoning uses the 5000 s ceiling, the conservative value.
+
+  '
+- 'The E303 wa30 job overran its supervisor limit without a kill; whether the supervisor kills at all at
+  wallclock_limit_s is unverified (the runner always stopped first). Item 4 makes the runner stop first
+  by a wider margin rather than relying on the kill.
+
+  '
+- 'cd82, s5i5 and wa30 have been run repeatedly during development and the prompt was fixed after reading
+  their artifacts (diagnostic_runs_excluded_from_grading.consequence); the 25-game mean is the graded
+  quantity and the three games are 12 percent of it.
+
+  '
