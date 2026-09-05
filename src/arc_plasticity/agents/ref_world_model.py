@@ -96,6 +96,17 @@ EXTRA_ARTIFACTS: tuple[str, ...] = (
     "level_accounting.json",
     "rhae.json",
 )
+# Always-on diagnostic artifacts (G3.6b, 2026-09-05): written by the runner itself, never
+# declared in a config (so the accepted E301_ref copy of E300_ref stays byte-identical apart
+# from the human's three values) and never a config switch. run_experiment.py adds them to
+# the writer's declared extras from ``RefWorldModelRunner.diagnostic_artifacts`` so they are
+# sealed into SHA256SUMS like every other file. plan_traces.jsonl carries one record per
+# prediction for the sampled plan searches (the first PLAN_TRACE_FIRST searches of a run and
+# every PLAN_TRACE_EVERY-th after that), each tagged with its plan_index.
+DIAGNOSTIC_ARTIFACTS: tuple[str, ...] = ("plan_traces.jsonl",)
+RUN_ARTIFACTS: tuple[str, ...] = EXTRA_ARTIFACTS + DIAGNOSTIC_ARTIFACTS
+PLAN_TRACE_FIRST = 3
+PLAN_TRACE_EVERY = 50
 MODEL_CALLS_DIR = "model_calls"
 WORLD_MODELS_DIR = "world_models"
 # A made call that returns no program (non-zero exit, timeout, is_error, empty text) counts
@@ -452,6 +463,8 @@ class GameRunReport:
     calls_without_program: int = 0
     model_wallclock_seconds_total: float = 0.0
     model_budget_binding: str | None = None
+    plans_traced: int = 0
+    plan_trace_records: int = 0
 
 
 class RefGameRun:
@@ -507,6 +520,8 @@ class RefGameRun:
         self.hypotheses_certified = 0
         self.last_hypothesis_id: str | None = None
         self.plans: list[dict[str, Any]] = []
+        self.plan_traces: list[dict[str, Any]] = []
+        self.plans_traced = 0
         self.backtests: list[dict[str, Any]] = []
         self.model_call_rows: list[dict[str, Any]] = []
         self.plans_executed = 0
@@ -748,9 +763,17 @@ class RefGameRun:
 
     # ------------------------------------------------------------------ planning
 
+    @staticmethod
+    def plan_is_traced(plan_index: int) -> bool:
+        """The plan_traces.jsonl sampling rule: the first ``PLAN_TRACE_FIRST`` searches of a
+        run and every ``PLAN_TRACE_EVERY``-th search after that."""
+        return plan_index < PLAN_TRACE_FIRST or plan_index % PLAN_TRACE_EVERY == 0
+
     def plan(self) -> None:
         assert self.certified is not None and self.history is not None
         cert = self.certified
+        plan_index = len(self.plans)
+        trace: list[dict[str, Any]] | None = [] if self.plan_is_traced(plan_index) else None
         plan = rp.plan_to_next_level(
             cert.program,
             self.history,
@@ -759,8 +782,8 @@ class RefGameRun:
             budget=self.budget,
             limits=self.params.planner_limits,
             deadline=self.deadline,
+            trace=trace,
         )
-        plan_index = len(self.plans)
         self.plans.append(
             {
                 "plan_index": plan_index,
@@ -768,12 +791,20 @@ class RefGameRun:
                 "step_index_at_plan": self.step_index,
                 **plan.to_dict(),
                 "simulation_budget_used_after": self.budget.used,
+                "traced": trace is not None,
             }
         )
+        if trace is not None:
+            self.plans_traced += 1
+            self.plan_traces.extend(
+                {"plan_index": plan_index, "trace_index": i, **record}
+                for i, record in enumerate(trace)
+            )
         self.writer.log(
             f"plan {plan_index} from {cert.hypothesis_id}: {plan.outcome} "
             f"actions={len(plan.actions)} nodes={plan.nodes_expanded} "
-            f"steps={plan.steps_simulated} budget_used={self.budget.used}"
+            f"steps={plan.steps_simulated} budget_used={self.budget.used} "
+            f"traced={trace is not None}; {plan.stop_detail}"
         )
         if plan.outcome == rp.PLAN_FOUND:
             self.queue.extend(plan.actions)
@@ -970,6 +1001,8 @@ class RefGameRun:
             calls_without_program=self.calls_without_program,
             model_wallclock_seconds_total=self.model_wallclock_seconds_total,
             model_budget_binding=self.model_budget_binding(),
+            plans_traced=self.plans_traced,
+            plan_trace_records=len(self.plan_traces),
         )
 
     def _write_reports(self) -> None:
@@ -993,6 +1026,7 @@ class RefGameRun:
             },
         )
         self.writer.write_extra_jsonl("plans.jsonl", self.plans)
+        self.writer.write_extra_jsonl("plan_traces.jsonl", self.plan_traces)
         self.writer.write_extra_jsonl("backtests.jsonl", self.backtests)
         self.writer.write_extra_jsonl("model_calls.jsonl", self.model_call_rows)
 
@@ -1021,6 +1055,12 @@ def results_mapping(
         "resets_issued": acc.resets_issued,
         "exploration_actions": report.exploration_actions,
         "plan_actions": report.plan_actions,
+        "plan_trace_sampling": {
+            "first_plans": PLAN_TRACE_FIRST,
+            "every_nth_plan": PLAN_TRACE_EVERY,
+            "plans_traced": report.plans_traced,
+            "trace_records": report.plan_trace_records,
+        },
         "reset_actions": report.reset_actions,
         "action_budget_multiplier": acc.multiplier,
         "action_budget_total": acc.action_budget_total,
@@ -1137,6 +1177,8 @@ def environment_rows(report: GameRunReport) -> list[dict[str, Any]]:
 class RefWorldModelRunner:
     name = RUNNER_NAME
     environment_generator_version = ENVIRONMENT_GENERATOR_VERSION
+    # Read by scripts/run_experiment.py when it builds the RunArtifactWriter (G3.6b).
+    diagnostic_artifacts = DIAGNOSTIC_ARTIFACTS
 
     def select_game(self, config: ExperimentConfig, stem: str) -> ExperimentConfig:
         """The config resolved for one game: ``runner_params.game`` set and
@@ -1265,10 +1307,14 @@ class RefWorldModelRunner:
 register_runner(RUNNER_NAME, RefWorldModelRunner)
 
 __all__ = [
+    "DIAGNOSTIC_ARTIFACTS",
     "ENVIRONMENT_COLUMNS",
     "EXTRA_ARTIFACTS",
     "MODEL_CALLS_DIR",
+    "PLAN_TRACE_EVERY",
+    "PLAN_TRACE_FIRST",
     "RUNNER_NAME",
+    "RUN_ARTIFACTS",
     "WORLD_MODELS_DIR",
     "GameEnvironment",
     "GameRunReport",

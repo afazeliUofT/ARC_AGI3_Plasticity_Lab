@@ -295,7 +295,7 @@ def test_no_run_artifact_carries_the_credential(tmp_path: Path) -> None:
     assert client.token_source == "environment_alias"
     params = trw._params(model_client={"kind": "headless_cli"}, spend_calls_per_run_max=5)
     run_dir = tmp_path / "leak_scan_run"
-    with RunArtifactWriter(run_dir, trw.rwm.EXTRA_ARTIFACTS) as writer:
+    with RunArtifactWriter(run_dir, trw.rwm.RUN_ARTIFACTS) as writer:
         game = trw.rwm.RefGameRun(
             game_id="syn0-00000000",
             game_index=0,

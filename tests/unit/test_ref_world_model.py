@@ -171,7 +171,7 @@ def _run_synthetic(
     if not texts:
         params = _params(model_client=None, model_calls_per_game_max=0, **overrides)
     run_dir = tmp_path / name
-    with RunArtifactWriter(run_dir, rwm.EXTRA_ARTIFACTS) as writer:
+    with RunArtifactWriter(run_dir, rwm.RUN_ARTIFACTS) as writer:
         game = rwm.RefGameRun(
             game_id="syn0-00000000",
             game_index=0,
@@ -299,6 +299,31 @@ def test_synthetic_world_wrong_program_then_true_program_completes_every_level(
     for name in CONTRACT_FILES:
         assert (run_dir / name).exists()
 
+    # G3.6b diagnostics: every plan record says why its search stopped, and the sampled
+    # searches (first PLAN_TRACE_FIRST, then every PLAN_TRACE_EVERY-th) have a trace in the
+    # always-on plan_traces.jsonl, sealed into SHA256SUMS.
+    assert "  plan_traces.jsonl\n" in sums
+    for p in plans:
+        assert p["stop_detail"] and isinstance(p["queue_exhausted"], bool)
+        assert p["traced"] is rwm.RefGameRun.plan_is_traced(p["plan_index"])
+        if p["outcome"] == "found":
+            assert p["predicted_levels_completed_max"] == p["target_levels_completed"]
+    traces = _jsonl(run_dir / "plan_traces.jsonl")
+    traced_indices = sorted({t["plan_index"] for t in traces})
+    assert traced_indices == [p["plan_index"] for p in plans if p["traced"]]
+    assert traced_indices[: rwm.PLAN_TRACE_FIRST] == list(range(min(3, len(plans))))
+    for p in plans:
+        if p["traced"]:
+            own = [t for t in traces if t["plan_index"] == p["plan_index"]]
+            assert len(own) == p["steps_simulated"]
+            assert [t["trace_index"] for t in own] == list(range(len(own)))
+            assert sum(t["duplicate"] for t in own) == p["duplicate_predictions"]
+            assert sum(t["found"] for t in own) == (1 if p["outcome"] == "found" else 0)
+    sampling = results["plan_trace_sampling"]
+    assert sampling["first_plans"] == 3 and sampling["every_nth_plan"] == 50
+    assert sampling["plans_traced"] == len(traced_indices) == report.plans_traced
+    assert sampling["trace_records"] == len(traces) == report.plan_trace_records
+
 
 def test_synthetic_runner_is_deterministic_given_the_responses(tmp_path: Path) -> None:
     a_dir, a = _run_synthetic(tmp_path, "a", [IDENTITY_PROGRAM, SYNTHETIC_PROGRAM_SOURCE])
@@ -355,7 +380,7 @@ def test_step_failure_is_a_run_failure_with_artifacts_preserved(tmp_path: Path) 
 
     params = _params(model_client=None, model_calls_per_game_max=0)
     run_dir = tmp_path / "flaky"
-    with RunArtifactWriter(run_dir, rwm.EXTRA_ARTIFACTS) as writer:
+    with RunArtifactWriter(run_dir, rwm.RUN_ARTIFACTS) as writer:
         game = rwm.RefGameRun(
             game_id="syn0-00000000", game_index=0, seed=1, environment=Flaky(),
             baselines=[16, 16], params=params, client=None, writer=writer,
@@ -376,7 +401,7 @@ def test_calls_without_program_count_but_propose_nothing_then_unavailable(tmp_pa
     items = [{"text": "", "usage": {"input_tokens": 10}, "exit_code": 1} for _ in range(5)]
     path.write_text(json.dumps({"schema_version": 1, "responses": items}))
     run_dir = tmp_path / "empty"
-    with RunArtifactWriter(run_dir, rwm.EXTRA_ARTIFACTS) as writer:
+    with RunArtifactWriter(run_dir, rwm.RUN_ARTIFACTS) as writer:
         game = rwm.RefGameRun(
             game_id="syn0-00000000", game_index=0, seed=12345,
             environment=SyntheticEnvironment(), baselines=[16, 16], params=_params(),
@@ -524,7 +549,7 @@ def test_spend_control_wallclock_cap_accumulates_and_bounds_the_next_call(
     client = mc.RecordedResponseClient(path, clock=lambda: float(next(ticks)))
     params = _params(spend_model_wallclock_per_run_seconds=250.0)
     run_dir = tmp_path / "wc_cap"
-    with RunArtifactWriter(run_dir, rwm.EXTRA_ARTIFACTS) as writer:
+    with RunArtifactWriter(run_dir, rwm.RUN_ARTIFACTS) as writer:
         game = rwm.RefGameRun(
             game_id="syn0-00000000", game_index=0, seed=12345,
             environment=SyntheticEnvironment(), baselines=[16, 16], params=params,
@@ -743,6 +768,12 @@ def test_entry_point_runs_one_cached_game_with_recorded_responses(tmp_path: Path
     prereg, _, _ = vr.load_preregistration("G3", ROOT)
     completeness = vr.check_run_completeness(artifacts / "E300_ref", tuple(rwm.EXTRA_ARTIFACTS))
     assert completeness.passed, completeness.observed
+    # The runner's always-on diagnostic reaches a run through the canonical entry point
+    # without being declared in the config (run_experiment.extra_artifacts adds it).
+    assert (run_dir / "plan_traces.jsonl").exists()
+    assert "  plan_traces.jsonl\n" in (run_dir / "SHA256SUMS").read_text()
+    assert rx.extra_artifacts(_config_stub(), rwm.RefWorldModelRunner()) == rwm.RUN_ARTIFACTS
+    assert rx.extra_artifacts(_config_stub()) == rwm.EXTRA_ARTIFACTS
     sums = vr.check_sha256sums(prereg, artifacts / "E300_ref")
     assert sums.passed, sums.observed
     offline = vr.check_offline_run(prereg, artifacts / "E300_ref", model_allowed=60)

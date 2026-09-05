@@ -144,6 +144,106 @@ def test_bfs_stops_on_deadline_and_on_model_error() -> None:
         )  # fmt: skip
 
 
+# --------------------------------------------------------------------------- diagnostics (G3.6b)
+
+
+def _obs(value: int, levels: int = 0, actions: tuple[int, ...] = (1, 2)) -> Observation:
+    return Observation((((value,),),), "NOT_FINISHED", levels, actions)
+
+
+class TwoStateModel:
+    """A closed world: action 1 toggles between two frames, action 2 is a no-op. No action
+    ever raises ``levels_completed``, so a BFS over it must exhaust its queue by dedup alone."""
+
+    def predict(self, history: History, action: ActionRecord) -> Observation:
+        last = history.last_observation()
+        value = last.frame[0][0][0]
+        return _obs(1 - value if action.action == 1 else value)
+
+
+class ChainModel:
+    """An open world: action 1 always produces a never-seen frame (a counter), the level
+    never completes, so only the depth cap can stop the search."""
+
+    def predict(self, history: History, action: ActionRecord) -> Observation:
+        return _obs(history.last_observation().frame[0][0][0] + 1, actions=(1,))
+
+
+def _diag(model: object, limits: rp.PlannerLimits, trace: list[dict[str, object]] | None = None,
+          root: Observation | None = None) -> rp.Plan:  # fmt: skip
+    return rp.plan_to_next_level(
+        model,  # type: ignore[arg-type]
+        History(root or _obs(0)),
+        hypothesis_id="h",
+        certification_history_length=0,
+        budget=rp.SimulationBudget(10_000),
+        limits=limits,
+        trace=trace,
+    )
+
+
+def test_closed_world_exhausts_the_queue_by_deduplication_alone() -> None:
+    trace: list[dict[str, object]] = []
+    plan = _diag(TwoStateModel(), rp.PlannerLimits(max_depth=8, max_nodes=100), trace)
+    assert plan.outcome == rp.PLAN_NOT_FOUND and plan.reason is None
+    assert plan.queue_exhausted is True
+    assert plan.nodes_expanded == 2 and plan.steps_simulated == 4
+    assert plan.distinct_states == 2 and plan.duplicate_predictions == 3
+    assert plan.successors_dropped_at_depth_cap == 0  # the reachable set closed on its own
+    assert plan.max_depth_reached == 2 and plan.predicted_levels_completed_max == 0
+    assert plan.predicted_state_counts == {"NOT_FINISHED": 4}
+    assert plan.frame_unchanged_predictions == 2  # the two no-op predictions
+    assert "queue exhausted after 2 nodes" in plan.stop_detail
+    assert "0 new states dropped at depth cap 8" in plan.stop_detail
+    d = plan.to_dict()
+    assert d["queue_exhausted"] is True and d["predicted_state_counts"] == {"NOT_FINISHED": 4}
+    assert d["stop_detail"] == plan.stop_detail
+    # One trace record per prediction, in search order, with the flags the counts came from.
+    assert len(trace) == 4
+    assert [t["node_index"] for t in trace] == [0, 0, 1, 1]
+    assert [t["depth"] for t in trace] == [1, 1, 2, 2]
+    assert [t["action"] for t in trace] == [1, 2, 1, 2]
+    assert [t["duplicate"] for t in trace] == [False, True, True, True]
+    assert [t["enqueued"] for t in trace] == [True, False, False, False]
+    assert [t["frame_unchanged"] for t in trace] == [False, True, False, True]
+    assert all(t["found"] is False and t["state"] == "NOT_FINISHED" for t in trace)
+    assert all(len(t["predicted_digest"]) == rp.TRACE_DIGEST_PREFIX for t in trace)
+    assert json.dumps(trace)  # serialisable as written to plan_traces.jsonl
+
+
+def test_open_world_is_truncated_by_the_depth_cap_and_says_so() -> None:
+    chain_root = _obs(0, actions=(1,))
+    plan = _diag(ChainModel(), rp.PlannerLimits(max_depth=3, max_nodes=100), root=chain_root)
+    assert plan.outcome == rp.PLAN_NOT_FOUND and plan.queue_exhausted is True
+    assert plan.nodes_expanded == 3 and plan.steps_simulated == 3
+    assert plan.distinct_states == 4 and plan.duplicate_predictions == 0
+    assert plan.successors_dropped_at_depth_cap == 1  # the depth-3 child was never expanded
+    assert plan.max_depth_reached == 3 and plan.frame_unchanged_predictions == 0
+    assert "1 new states dropped at depth cap 3" in plan.stop_detail
+    # A node limit is reported as before, and is not a queue exhaustion.
+    limited = _diag(ChainModel(), rp.PlannerLimits(max_depth=10, max_nodes=2), root=chain_root)
+    assert limited.outcome == rp.PLAN_NODE_LIMIT and limited.queue_exhausted is False
+    assert limited.stop_detail == f"{rp.PLAN_NODE_LIMIT}: max_nodes 2 reached"
+
+
+def test_found_plan_diagnostics_and_trace() -> None:
+    history = synthetic_history([act(1)] * 15)
+    trace: list[dict[str, object]] = []
+    plan = rp.plan_to_next_level(
+        SyntheticModel(), history, hypothesis_id="h1", certification_history_length=15,
+        budget=rp.SimulationBudget(1000), limits=LIMITS, trace=trace,
+    )  # fmt: skip
+    assert plan.outcome == rp.PLAN_FOUND and plan.actions == (act(1),)
+    assert plan.queue_exhausted is False and plan.successors_dropped_at_depth_cap == 0
+    assert plan.predicted_levels_completed_max == 1 == plan.target_levels_completed
+    assert plan.stop_detail == "found at depth 1 after 1 nodes"
+    assert len(trace) == 1 and trace[0]["found"] is True and trace[0]["levels_completed"] == 1
+    assert trace[0]["enqueued"] is False and trace[0]["duplicate"] is False
+    # Without a trace list the search records nothing extra and returns the same plan.
+    again = _plan(synthetic_history([act(1)] * 15), rp.SimulationBudget(1000))
+    assert again.to_dict() == plan.to_dict()
+
+
 # --------------------------------------------------------------------------- exploration (synthetic)
 
 

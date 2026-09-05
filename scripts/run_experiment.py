@@ -80,12 +80,20 @@ def config_file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def extra_artifacts(config: ExperimentConfig) -> tuple[str, ...]:
-    """The extra one-shot artifacts a config declares under ``runner_params.extra_artifacts``."""
+def extra_artifacts(config: ExperimentConfig, runner: object = None) -> tuple[str, ...]:
+    """The extra one-shot artifacts a config declares under ``runner_params.extra_artifacts``,
+    followed by the runner's always-on ``diagnostic_artifacts`` (G3.6b: the REF runner's
+    ``plan_traces.jsonl``), which a config never declares and never switches off."""
     raw = config.runner_params.get("extra_artifacts", [])
     if not isinstance(raw, list) or not all(isinstance(n, str) for n in raw):
         raise ConfigError("runner_params.extra_artifacts must be a list of file names")
-    return tuple(raw)
+    diagnostics = getattr(runner, "diagnostic_artifacts", ())
+    if not isinstance(diagnostics, tuple) or not all(isinstance(n, str) for n in diagnostics):
+        raise ConfigError("runner.diagnostic_artifacts must be a tuple of file names")
+    overlap = sorted(set(raw) & set(diagnostics))
+    if overlap:
+        raise ConfigError(f"runner_params.extra_artifacts redeclares diagnostic {overlap}")
+    return tuple(raw) + diagnostics
 
 
 def budget_wallclock_fallback(root: Path) -> int | None:
@@ -154,7 +162,7 @@ def run(
     failure: BaseException | None = None
     t0 = time.monotonic()
 
-    with RunArtifactWriter(run_dir, extra_artifacts(config)) as writer:
+    with RunArtifactWriter(run_dir, extra_artifacts(config, runner)) as writer:
         writer.write_resolved_config(config_to_yaml(config))
         writer.write_git_state(git.as_text())
         writer.write_environment_info(environment_info())

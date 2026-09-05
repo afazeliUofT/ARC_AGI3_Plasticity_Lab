@@ -16,6 +16,15 @@ Implements ``preregistration/G3.yaml`` ``reference_architecture`` ``planner``,
 
 This module defines no threshold; limits arrive through :class:`PlannerLimits` and
 :class:`SimulationBudget`.
+
+**Diagnostics (G3.6b, 2026-09-05).** Every one of the 513 pre-flight searches ended
+``not_found`` with ``reason`` ``None``, which only says the queue emptied. A :class:`Plan` now
+also records *why* the queue emptied (``queue_exhausted``, ``distinct_states``,
+``duplicate_predictions``, ``successors_dropped_at_depth_cap``, ``max_depth_reached``,
+``predicted_levels_completed_max``, ``predicted_state_counts``,
+``frame_unchanged_predictions``, ``stop_detail``), and :func:`plan_to_next_level` accepts an
+optional ``trace`` list that receives one record per prediction. Outcomes and their semantics
+are unchanged; the diagnostics are always on and cost one extra digest per expanded node.
 """
 
 from __future__ import annotations
@@ -24,7 +33,7 @@ import hashlib
 import json
 from collections import deque
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -132,7 +141,24 @@ class PlannerLimits:
 
 @dataclass(frozen=True)
 class Plan:
-    """A plans.jsonl record. ``actions`` is empty unless ``outcome`` is ``found``."""
+    """A plans.jsonl record. ``actions`` is empty unless ``outcome`` is ``found``.
+
+    The diagnostic fields describe the search that produced the record:
+
+    * ``queue_exhausted`` - the BFS queue emptied (the only way to reach ``not_found``).
+    * ``distinct_states`` - distinct ``(digest, levels_completed, state)`` keys seen,
+      including the start state.
+    * ``duplicate_predictions`` - predictions whose key was already seen (not enqueued).
+    * ``successors_dropped_at_depth_cap`` - new states predicted at depth ``max_depth`` and
+      therefore never expanded; zero with ``queue_exhausted`` means the model's reachable set
+      closed on its own, non-zero means the depth cap truncated the frontier.
+    * ``max_depth_reached`` - the deepest path length of any prediction.
+    * ``predicted_levels_completed_max`` - the largest ``levels_completed`` any prediction
+      carried (``None`` when nothing was predicted).
+    * ``predicted_state_counts`` - predictions per predicted ``state`` string.
+    * ``frame_unchanged_predictions`` - predictions whose digest equals the parent's.
+    * ``stop_detail`` - one human-readable sentence summarising the above.
+    """
 
     actions: tuple[ActionRecord, ...]
     hypothesis_id: str
@@ -143,6 +169,15 @@ class Plan:
     steps_simulated: int
     outcome: str
     reason: str | None = None
+    queue_exhausted: bool = False
+    distinct_states: int = 0
+    duplicate_predictions: int = 0
+    successors_dropped_at_depth_cap: int = 0
+    max_depth_reached: int = 0
+    predicted_levels_completed_max: int | None = None
+    predicted_state_counts: dict[str, int] = field(default_factory=dict)
+    frame_unchanged_predictions: int = 0
+    stop_detail: str = ""
 
     def __post_init__(self) -> None:
         if self.outcome not in PLAN_OUTCOMES:
@@ -164,7 +199,47 @@ class Plan:
             "steps_simulated": self.steps_simulated,
             "outcome": self.outcome,
             "reason": self.reason,
+            "queue_exhausted": self.queue_exhausted,
+            "distinct_states": self.distinct_states,
+            "duplicate_predictions": self.duplicate_predictions,
+            "successors_dropped_at_depth_cap": self.successors_dropped_at_depth_cap,
+            "max_depth_reached": self.max_depth_reached,
+            "predicted_levels_completed_max": self.predicted_levels_completed_max,
+            "predicted_state_counts": dict(sorted(self.predicted_state_counts.items())),
+            "frame_unchanged_predictions": self.frame_unchanged_predictions,
+            "stop_detail": self.stop_detail,
         }
+
+
+TRACE_DIGEST_PREFIX = 12
+
+
+def _trace_record(
+    *,
+    node_index: int,
+    depth: int,
+    action: ActionRecord,
+    parent_digest: str,
+    predicted: Observation,
+    predicted_digest: str,
+    duplicate: bool,
+    enqueued: bool,
+    found: bool,
+) -> dict[str, Any]:
+    return {
+        "node_index": node_index,
+        "depth": depth,
+        "action": action.action,
+        "data": {k: int(v) for k, v in action.data.items()},
+        "parent_digest": parent_digest[:TRACE_DIGEST_PREFIX],
+        "predicted_digest": predicted_digest[:TRACE_DIGEST_PREFIX],
+        "levels_completed": predicted.levels_completed,
+        "state": predicted.state,
+        "frame_unchanged": predicted_digest == parent_digest,
+        "duplicate": duplicate,
+        "enqueued": enqueued,
+        "found": found,
+    }
 
 
 def candidate_actions(
@@ -195,6 +270,7 @@ def plan_to_next_level(
     budget: SimulationBudget,
     limits: PlannerLimits,
     deadline: Deadline | None = None,
+    trace: list[dict[str, Any]] | None = None,
 ) -> Plan:
     """Breadth-first search in ``model`` from ``history`` for the shortest action sequence
     after which ``levels_completed`` exceeds its current value.
@@ -203,6 +279,10 @@ def plan_to_next_level(
     budget cannot pay, the search stops with ``simulation_budget_exhausted`` and the plan
     carries no actions. Predicted observations are de-duplicated on
     ``(digest, levels_completed, state)`` so a no-op action never re-expands a state.
+
+    ``trace``, when given, receives one record per prediction (node index, depth, action,
+    parent and predicted digest prefixes, predicted ``levels_completed`` and ``state``, and
+    the duplicate / enqueued / found flags) in search order.
     """
     if certification_history_length > len(history):
         raise PlannerError(
@@ -218,14 +298,22 @@ def plan_to_next_level(
     outcome = PLAN_NOT_FOUND
     reason: str | None = None
     found: tuple[ActionRecord, ...] = ()
+    duplicates = 0
+    dropped_at_depth_cap = 0
+    max_depth_reached = 0
+    levels_max: int | None = None
+    state_counts: dict[str, int] = {}
+    frame_unchanged = 0
 
     while queue and outcome == PLAN_NOT_FOUND:
         if nodes_expanded >= limits.max_nodes:
             outcome, reason = PLAN_NODE_LIMIT, f"max_nodes {limits.max_nodes} reached"
             break
         node, path = queue.popleft()
+        node_index = nodes_expanded
         nodes_expanded += 1
         last = node.last_observation()
+        parent_digest = observation_digest(last)
         for action in candidate_actions(last.available_actions, limits.click_points):
             if deadline is not None and deadline.expired():
                 outcome, reason = PLAN_DEADLINE, "planner deadline expired"
@@ -244,15 +332,61 @@ def plan_to_next_level(
                 outcome, reason = PLAN_MODEL_ERROR, f"{type(exc).__name__}: {exc}"
                 break
             next_path = path + (action,)
-            if predicted.levels_completed >= target:
+            depth = len(next_path)
+            max_depth_reached = max(max_depth_reached, depth)
+            levels_max = (
+                predicted.levels_completed
+                if levels_max is None
+                else max(levels_max, predicted.levels_completed)
+            )
+            state_counts[predicted.state] = state_counts.get(predicted.state, 0) + 1
+            key = _state_key(predicted)
+            predicted_digest = key[0]
+            if predicted_digest == parent_digest:
+                frame_unchanged += 1
+            is_goal = predicted.levels_completed >= target
+            duplicate = not is_goal and key in seen
+            enqueued = not is_goal and not duplicate and depth < limits.max_depth
+            if trace is not None:
+                trace.append(
+                    _trace_record(
+                        node_index=node_index,
+                        depth=depth,
+                        action=action,
+                        parent_digest=parent_digest,
+                        predicted=predicted,
+                        predicted_digest=predicted_digest,
+                        duplicate=duplicate,
+                        enqueued=enqueued,
+                        found=is_goal,
+                    )
+                )
+            if is_goal:
                 outcome, found = PLAN_FOUND, next_path
                 break
-            key = _state_key(predicted)
-            if key in seen:
+            if duplicate:
+                duplicates += 1
                 continue
             seen.add(key)
-            if len(next_path) < limits.max_depth:
+            if enqueued:
                 queue.append((node.extend(action, predicted), next_path))
+            else:
+                dropped_at_depth_cap += 1
+
+    queue_exhausted = outcome == PLAN_NOT_FOUND and not queue
+    if outcome == PLAN_FOUND:
+        stop_detail = f"found at depth {len(found)} after {nodes_expanded} nodes"
+    elif queue_exhausted:
+        stop_detail = (
+            f"queue exhausted after {nodes_expanded} nodes and {steps} predictions: "
+            f"{len(seen)} distinct states, {duplicates} duplicates, "
+            f"{dropped_at_depth_cap} new states dropped at depth cap {limits.max_depth}, "
+            f"max depth reached {max_depth_reached}, predicted levels max {levels_max} "
+            f"(target {target}), states {dict(sorted(state_counts.items()))}, "
+            f"{frame_unchanged} frame-unchanged predictions"
+        )
+    else:
+        stop_detail = f"{outcome}: {reason}"
 
     return Plan(
         actions=found,
@@ -264,6 +398,15 @@ def plan_to_next_level(
         steps_simulated=steps,
         outcome=outcome,
         reason=reason,
+        queue_exhausted=queue_exhausted,
+        distinct_states=len(seen),
+        duplicate_predictions=duplicates,
+        successors_dropped_at_depth_cap=dropped_at_depth_cap,
+        max_depth_reached=max_depth_reached,
+        predicted_levels_completed_max=levels_max,
+        predicted_state_counts=state_counts,
+        frame_unchanged_predictions=frame_unchanged,
+        stop_detail=stop_detail,
     )
 
 
@@ -335,6 +478,7 @@ __all__ = [
     "PLAN_OUTCOMES",
     "PLAN_SIMULATION_BUDGET_EXHAUSTED",
     "RESET_ACTION_ID",
+    "TRACE_DIGEST_PREFIX",
     "ExplorationError",
     "ExplorationPolicy",
     "Plan",
