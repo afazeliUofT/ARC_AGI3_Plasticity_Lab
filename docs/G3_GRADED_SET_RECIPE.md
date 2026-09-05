@@ -74,6 +74,28 @@ A turn never runs a game inside itself. The turn that queues a job writes the gi
 The ledger `attempt` entry for a queue records: job id, game, config digest, the limit, the
 UTC time read from `date -u`, and the cumulative accounting state at that moment.
 
+### The mechanised queue step (G3.6b step 18)
+
+`scripts/g3_next_job.py` performs this section by script. It reads the games list, the
+experiment id, the graded config digest, the two wall-clock limits and their margin, the
+rerun allowance and the earliest local start from the G3b pre-registration through
+`load_preregistration`, chooses the first game in order without a completed run under
+`artifacts/E304_ref/` (attempt number 1 + earlier runs for that game, capped by
+`failed_reruns_per_game_max`), and refuses with exit 2 and a printed reason when the local
+time is before `earliest_start_local` (both times printed), the config digest differs, the
+runner limit plus margin exceeds the job limit, a request is already pending, a job is in
+flight, or the job id already has a directory under `state/jobs/`. Otherwise it writes the
+request above.
+
+```bash
+uv run python scripts/g3_next_job.py --dry-run   # print the request, write nothing
+uv run python scripts/g3_next_job.py             # write state/job_request.json
+```
+
+The ledger `attempt` entry still has to be written by the turn that queues; the script's
+printed lines (pre-registration digest, config digest, local time, runs seen) are what it
+cites.
+
 ## After every run: record, then account
 
 1. Read `state/jobs/<id>/result.json` (rc, timed_out, wallclock_s, model_seconds_charged,
