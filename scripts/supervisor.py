@@ -105,6 +105,43 @@ JOB_GAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,16}$")
 JOB_MAX_WALLCLOCK = 3 * 3600
 # Charged when a run reports no model figure: the per-run cap agreed at 21:47Z.
 JOB_DEFAULT_MODEL_SECONDS = 1200
+
+
+def find_model_seconds(obj: Any) -> float | None:
+    """Find a model wall-clock total anywhere in a results document.
+
+    The runs nest their payload under `results` and `extra`, so a top-level
+    lookup found nothing and every job fell back to the default. This walks the
+    whole document and takes the largest matching figure.
+    """
+    # A loose "model...seconds" match picks up max_model_wallclock_seconds from
+    # extra.spend_control - the CAP, not the usage - and charges it. So the exact
+    # key wins outright, and the loose pass excludes limit-shaped names.
+    EXCLUDE = ("max", "limit", "cap", "budget", "quota", "allow", "remaining",
+               "threshold", "ceiling", "per_call", "timeout")
+    exact, loose, stack = None, None, [obj]
+    while stack:
+        cur = stack.pop()
+        if isinstance(cur, dict):
+            items = cur.items()
+        elif isinstance(cur, list):
+            stack.extend(x for x in cur if isinstance(x, (dict, list)))
+            continue
+        else:
+            continue
+        for k, v in items:
+            kl = str(k).lower()
+            if isinstance(v, (dict, list)):
+                stack.append(v)
+                continue
+            if not isinstance(v, (int, float)) or isinstance(v, bool):
+                continue
+            if kl == "model_wallclock_seconds_total":
+                exact = float(v) if exact is None else max(exact, float(v))
+            elif ("model" in kl and "second" in kl
+                    and not any(w in kl for w in EXCLUDE)):
+                loose = float(v) if loose is None else max(loose, float(v))
+    return exact if exact is not None else loose
 # After hitting the ceiling, drain to this fraction of it before resuming.
 # Resuming at just-under-the-ceiling produced the 2026-09-05 livelock: every
 # second freed by age-out was refilled by the next deferral turn.
@@ -524,18 +561,24 @@ class Supervisor:
         try:
             newest, newest_mtime = None, started - 5
             for rp in (ROOT / "artifacts").rglob("results.json"):
-                m = rp.stat().st_mtime
-                if m >= newest_mtime:
-                    newest, newest_mtime = rp, m
+                mt = rp.stat().st_mtime
+                if mt >= newest_mtime:
+                    newest, newest_mtime = rp, mt
             if newest is not None:
-                data = read_json(newest, None)
-                if isinstance(data, dict) and data.get("model_wallclock_seconds_total") is not None:
-                    model_s = int(float(data["model_wallclock_seconds_total"]))
+                found = find_model_seconds(read_json(newest, None))
+                if found is not None:
+                    model_s = int(found)
                     source = str(newest.relative_to(ROOT))
         except Exception:
             model_s = None
+        # A run cannot contain more model time than it took. s5i5 was charged
+        # 1200 s for a 441 s run before this clamp existed.
         if model_s is None:
-            model_s, source = JOB_DEFAULT_MODEL_SECONDS, "default (run reported no figure)"
+            model_s = min(JOB_DEFAULT_MODEL_SECONDS, max(1, wall))
+            source = f"default {JOB_DEFAULT_MODEL_SECONDS}s clamped to wall-clock {wall}s"
+        elif model_s > wall:
+            source = f"{source} (reported {model_s}s, clamped to wall-clock {wall}s)"
+            model_s = wall
 
         write_json(d / "result.json", {
             "id": jid, "accepted": True, "returncode": rc, "timed_out": timed_out,
