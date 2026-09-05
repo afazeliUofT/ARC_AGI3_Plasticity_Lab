@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_utc": "2026-09-05T01:31:20Z",
+  "updated_utc": "2026-09-05T01:32:04Z",
   "current_gate": "G3",
   "gate_status": "in_progress",
   "gate_entered_utc": "2026-09-04T16:50:07Z",
@@ -14,7 +14,7 @@
     "started_utc": "2026-09-04T21:56:00Z",
     "g3_5_closed_utc": "2026-09-04T21:56:00Z",
     "g3_6_attempt_1": "cd82 run 20260904T215745Z_seed12345_32580a64 killed at the end of the launching turn (21:58:34Z); preserved under artifacts/E300_ref_incomplete/; see ledger failure process_killed_at_turn_end at 2026-09-04T22:02:37Z",
-    "g3_6_attempt_2_deferrals": "turn at 2026-09-04T22:05:24Z: meter 4714/5000 s, deferred (ledger decision 2026-09-04T22:05:24Z); launch window expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-04T22:06:17Z: meter 4869/5000 s, deferred (ledger decision 2026-09-04T22:06:17Z); turn at 2026-09-04T22:07:33Z: meter 4913/5000 s, deferred (ledger decision 2026-09-04T22:07:33Z); turn at 2026-09-04T22:08:26Z: meter 4994/5000 s, deferred (ledger decision 2026-09-04T22:08:26Z); meter at the ceiling, supervisor sleep expected before the next turn; turn at 2026-09-05T01:29:21Z: meter 4759/5000 s, deferred (ledger decision 2026-09-05T01:29:21Z); supervisor woke after the 01:19:35Z age-out step; launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:30:18Z: meter 4177/5000 s, deferred (ledger decision 2026-09-05T01:30:18Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:31:20Z: meter 4230/5000 s, deferred (ledger decision 2026-09-05T01:31:20Z); launch still expected 02:02Z-02:35Z 2026-09-05"
+    "g3_6_attempt_2_deferrals": "turn at 2026-09-04T22:05:24Z: meter 4714/5000 s, deferred (ledger decision 2026-09-04T22:05:24Z); launch window expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-04T22:06:17Z: meter 4869/5000 s, deferred (ledger decision 2026-09-04T22:06:17Z); turn at 2026-09-04T22:07:33Z: meter 4913/5000 s, deferred (ledger decision 2026-09-04T22:07:33Z); turn at 2026-09-04T22:08:26Z: meter 4994/5000 s, deferred (ledger decision 2026-09-04T22:08:26Z); meter at the ceiling, supervisor sleep expected before the next turn; turn at 2026-09-05T01:29:21Z: meter 4759/5000 s, deferred (ledger decision 2026-09-05T01:29:21Z); supervisor woke after the 01:19:35Z age-out step; launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:30:18Z: meter 4177/5000 s, deferred (ledger decision 2026-09-05T01:30:18Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:31:20Z: meter 4230/5000 s, deferred (ledger decision 2026-09-05T01:31:20Z); launch still expected 02:02Z-02:35Z 2026-09-05; turn at 2026-09-05T01:32:04Z: meter 4279/5000 s, deferred (ledger decision 2026-09-05T01:32:04Z); launch still expected 02:02Z-02:35Z 2026-09-05"
   },
   "blocked_on": null,
   "remote_push": {
