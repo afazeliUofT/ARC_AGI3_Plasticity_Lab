@@ -1,0 +1,572 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 1; actions remaining on this level: 268
+
+## Rejected programs (most recent last)
+
+### h002
+
+```python
+import copy
+
+H = W = 64
+TR0, TC0, TN = 34, 27, 10          # target block (rows 34-43, cols 27-36)
+CR0, CC0, CW, CH = 24, 25, 14, 9   # upright container (rows 24-32, cols 25-38)
+MAX_DEPTH = 7
+
+# Tilted container as drawn in the recording.
+TILTED_RUNS = {
+    21: "5*39 2*1 5*24",
+    22: "5*38 2*3 5*23",
+    23: "5*37 2*2 15*1 2*2 5*22",
+    24: "5*36 2*2 15*3 2*2 5*21",
+    25: "5*35 2*2 15*5 2*2 5*20",
+    26: "5*34 2*2 15*7 2*2 5*19",
+    27: "5*33 2*2 15*9 2*2 5*18",
+    28: "5*35 15*10 2*2 5*17",
+    29: "5*36 15*10 2*2 5*16",
+    30: "5*37 15*10 2*2 5*15",
+    31: "5*38 15*10 2*2 5*14",
+    32: "5*39 15*8 2*2 5*15",
+    33: "5*40 15*6 2*2 5*16",
+    34: "5*27 0*10 5*4 15*4 2*2 5*17",
+    35: "5*27 0*10 5*5 15*2 2*2 5*18",
+    36: "5*27 0*10 5*6 2*2 5*19",
+    37: "5*27 0*10 5*6 2*1 5*20",
+}
+
+
+def _expand(runs):
+    out = []
+    for tok in runs.split():
+        v, n = tok.split("*")
+        out.extend([int(v)] * int(n))
+    return out
+
+
+def _base_frame(last, target, counter):
+    g = [row[:] for row in last]
+    for y in range(18, 63):
+        g[y] = [5] * W
+    for dy in range(TN):
+        for dx in range(TN):
+            g[TR0 + dy][TC0 + dx] = target[dy][dx]
+    g[63] = [4] * (W - counter) + [5] * counter
+    return g
+
+
+def _draw_upright(g, d):
+    y = CR0 + d
+    for x in range(CC0, CC0 + CW):
+        g[y][x] = 2
+    for yy in range(y + 1, y + CH - 1):
+        g[yy][CC0] = 2
+        g[yy][CC0 + CW - 1] = 2
+        for x in range(CC0 + 1, CC0 + CW - 1):
+            g[yy][x] = 15
+    yb = y + CH - 1
+    g[yb][CC0] = 2
+    g[yb][CC0 + CW - 1] = 2
+
+
+def _draw_tilted(g):
+    for y, runs in TILTED_RUNS.items():
+        row = _expand(runs)
+        for x, v in enumerate(row):
+            if v in (2, 15):
+                g[y][x] = v
+
+
+def predict(history, action):
+    prev = history[-1]
+    last = prev["frame"][-1]
+    a = action.get("action")
+    data = action.get("data") or {}
+
+    target = [[last[TR0 + dy][TC0 + dx] for dx in range(TN)] for dy in range(TN)]
+    counter = sum(1 for v in last[63] if v == 5)
+    tilted = last[21][39] == 2
+
+    frames = []
+
+    if a == 4:
+        counter = min(counter + 1, W)
+        g = _base_frame(last, target, counter)
+        _draw_tilted(g)
+        frames = [g]
+    elif a == 3:
+        g = _base_frame(last, target, counter)
+        _draw_upright(g, 0)
+        frames = [g]
+    elif a == 5:
+        counter = min(counter + 1, W)
+        if tilted:
+            g = _base_frame(last, target, counter)
+            _draw_tilted(g)
+            frames = [g]
+        else:
+            offsets = list(range(0, MAX_DEPTH + 1)) + list(range(MAX_DEPTH - 1, -1, -1))
+            for d in offsets:
+                if d == MAX_DEPTH:
+                    lo = CR0 + 1 + MAX_DEPTH
+                    hi = CR0 + CH - 2 + MAX_DEPTH
+                    for y in range(max(lo, TR0), min(hi, TR0 + TN - 1) + 1):
+                        for dx in range(TN):
+                            target[y - TR0][dx] = 15
+                g = _base_frame(last, target, counter)
+                _draw_upright(g, d)
+                frames.append(g)
+    elif a == 6:
+        # A click only "counts" when it lands in the right half of the board.
+        x = data.get("x", 0)
+        if x >= 32:
+            counter = min(counter + 1, W)
+        g = _base_frame(last, target, counter)
+        if tilted:
+            _draw_tilted(g)
+        else:
+            _draw_upright(g, 0)
+        frames = [g]
+    else:
+        g = _base_frame(last, target, counter)
+        if tilted:
+            _draw_tilted(g)
+        else:
+            _draw_upright(g, 0)
+        frames = [g]
+
+    return {
+        "frame": frames,
+        "state": "NOT_FINISHED",
+        "levels_completed": prev.get("levels_completed", 0),
+        "available_actions": [1, 2, 3, 4, 5, 6],
+    }
+```
+
+## Counterexamples
+
+{"action":6,"data":{"x":29,"y":18},"hypothesis_id":"h001","kind":"prediction_mismatch","observation_sha256":"b3ab5fd63ec7d9b5e27be3cee134e0544261d1965e4724675509bd3153b26805","plan_index":null,"predicted_observation_sha256":"cbf4fec9a32d7b2a677bf328fb4da2165e5bbbcdfdf6d3624a8e8f1e9612c9e4","step_index":5}
+{"action":3,"data":{},"hypothesis_id":"h002","kind":"prediction_mismatch","observation_sha256":"a70a00d4609f41f16dcd0f880305ee74591cca72e214a77bb6e8a49cb3027cdf","plan_index":null,"predicted_observation_sha256":"cbf4fec9a32d7b2a677bf328fb4da2165e5bbbcdfdf6d3624a8e8f1e9612c9e4","step_index":7}
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: full, 1 grid(s)
+g0 r0-r1: 5*16 4*2 3*46
+g0 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g0 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g0 r8: 5*3 15*10 5*3 4*2 3*46
+g0 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g0 r13-r15: 5*16 4*2 5*46
+g0 r16-r17: 4*18 5*46
+g0 r18-r23: 5*64
+g0 r24: 5*25 2*14 5*25
+g0 r25-r31: 5*25 2*1 15*12 2*1 5*25
+g0 r32: 5*25 2*1 5*12 2*1 5*25
+g0 r33: 5*64
+g0 r34-r43: 5*27 0*10 5*27
+g0 r44-r62: 5*64
+g0 r63: 4*64
+record 1: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: full, 1 grid(s)
+g0 r0-r1: 5*16 4*2 3*46
+g0 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g0 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g0 r8: 5*3 15*10 5*3 4*2 3*46
+g0 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g0 r13-r15: 5*16 4*2 5*46
+g0 r16-r17: 4*18 5*46
+g0 r18-r20: 5*64
+g0 r21: 5*39 2*1 5*24
+g0 r22: 5*38 2*3 5*23
+g0 r23: 5*37 2*2 15*1 2*2 5*22
+g0 r24: 5*36 2*2 15*3 2*2 5*21
+g0 r25: 5*35 2*2 15*5 2*2 5*20
+g0 r26: 5*34 2*2 15*7 2*2 5*19
+g0 r27: 5*33 2*2 15*9 2*2 5*18
+g0 r28: 5*35 15*10 2*2 5*17
+g0 r29: 5*36 15*10 2*2 5*16
+g0 r30: 5*37 15*10 2*2 5*15
+g0 r31: 5*38 15*10 2*2 5*14
+g0 r32: 5*39 15*8 2*2 5*15
+g0 r33: 5*40 15*6 2*2 5*16
+g0 r34: 5*27 0*10 5*4 15*4 2*2 5*17
+g0 r35: 5*27 0*10 5*5 15*2 2*2 5*18
+g0 r36: 5*27 0*10 5*6 2*2 5*19
+g0 r37: 5*27 0*10 5*6 2*1 5*20
+g0 r38-r43: 5*27 0*10 5*27
+g0 r44-r62: 5*64
+g0 r63: 4*63 5*1
+record 2: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: full, 1 grid(s)
+g0 r0-r1: 5*16 4*2 3*46
+g0 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g0 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g0 r8: 5*3 15*10 5*3 4*2 3*46
+g0 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g0 r13-r15: 5*16 4*2 5*46
+g0 r16-r17: 4*18 5*46
+g0 r18-r23: 5*64
+g0 r24: 5*25 2*14 5*25
+g0 r25-r31: 5*25 2*1 15*12 2*1 5*25
+g0 r32: 5*25 2*1 5*12 2*1 5*25
+g0 r33: 5*64
+g0 r34-r43: 5*27 0*10 5*27
+g0 r44-r62: 5*64
+g0 r63: 4*63 5*1
+record 3: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: full, 15 grid(s)
+g0 r0-r1: 5*16 4*2 3*46
+g0 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g0 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g0 r8: 5*3 15*10 5*3 4*2 3*46
+g0 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g0 r13-r15: 5*16 4*2 5*46
+g0 r16-r17: 4*18 5*46
+g0 r18-r23: 5*64
+g0 r24: 5*25 2*14 5*25
+g0 r25-r31: 5*25 2*1 15*12 2*1 5*25
+g0 r32: 5*25 2*1 5*12 2*1 5*25
+g0 r33: 5*64
+g0 r34-r43: 5*27 0*10 5*27
+g0 r44-r62: 5*64
+g0 r63: 4*62 5*2
+g1 r0-r1: 5*16 4*2 3*46
+g1 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g1 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g1 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g1 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g1 r8: 5*3 15*10 5*3 4*2 3*46
+g1 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g1 r13-r15: 5*16 4*2 5*46
+g1 r16-r17: 4*18 5*46
+g1 r18-r24: 5*64
+g1 r25: 5*25 2*14 5*25
+g1 r26-r32: 5*25 2*1 15*12 2*1 5*25
+g1 r33: 5*25 2*1 5*12 2*1 5*25
+g1 r34-r43: 5*27 0*10 5*27
+g1 r44-r62: 5*64
+g1 r63: 4*62 5*2
+g2 r0-r1: 5*16 4*2 3*46
+g2 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g2 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g2 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g2 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g2 r8: 5*3 15*10 5*3 4*2 3*46
+g2 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g2 r13-r15: 5*16 4*2 5*46
+g2 r16-r17: 4*18 5*46
+g2 r18-r25: 5*64
+g2 r26: 5*25 2*14 5*25
+g2 r27-r33: 5*25 2*1 15*12 2*1 5*25
+g2 r34: 5*25 2*1 5*1 0*10 5*1 2*1 5*25
+g2 r35-r43: 5*27 0*10 5*27
+g2 r44-r62: 5*64
+g2 r63: 4*62 5*2
+g3 r0-r1: 5*16 4*2 3*46
+g3 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g3 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g3 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g3 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g3 r8: 5*3 15*10 5*3 4*2 3*46
+g3 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g3 r13-r15: 5*16 4*2 5*46
+g3 r16-r17: 4*18 5*46
+g3 r18-r26: 5*64
+g3 r27: 5*25 2*14 5*25
+g3 r28-r34: 5*25 2*1 15*12 2*1 5*25
+g3 r35: 5*25 2*1 5*1 0*10 5*1 2*1 5*25
+g3 r36-r43: 5*27 0*10 5*27
+g3 r44-r62: 5*64
+g3 r63: 4*62 5*2
+g4 r0-r1: 5*16 4*2 3*46
+g4 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g4 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g4 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g4 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g4 r8: 5*3 15*10 5*3 4*2 3*46
+g4 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g4 r13-r15: 5*16 4*2 5*46
+g4 r16-r17: 4*18 5*46
+g4 r18-r27: 5*64
+g4 r28: 5*25 2*14 5*25
+g4 r29-r35: 5*25 2*1 15*12 2*1 5*25
+g4 r36: 5*25 2*1 5*1 0*10 5*1 2*1 5*25
+g4 r37-r43: 5*27 0*10 5*27
+g4 r44-r62: 5*64
+g4 r63: 4*62 5*2
+g5 r0-r1: 5*16 4*2 3*46
+g5 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g5 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g5 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g5 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g5 r8: 5*3 15*10 5*3 4*2 3*46
+g5 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g5 r13-r15: 5*16 4*2 5*46
+g5 r16-r17: 4*18 5*46
+g5 r18-r28: 5*64
+g5 r29: 5*25 2*14 5*25
+g5 r30-r36: 5*25 2*1 15*12 2*1 5*25
+g5 r37: 5*25 2*1 5*1 0*10 5*1 2*1 5*25
+g5 r38-r43: 5*27 0*10 5*27
+g5 r44-r62: 5*64
+g5 r63: 4*62 5*2
+g6 r0-r1: 5*16 4*2 3*46
+g6 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g6 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g6 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g6 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g6 r8: 5*3 15*10 5*3 4*2 3*46
+g6 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g6 r13-r15: 5*16 4*2 5*46
+g6 r16-r17: 4*18 5*46
+g6 r18-r29: 5*64
+g6 r30: 5*25 2*14 5*25
+g6 r31-r37: 5*25 2*1 15*12 2*1 5*25
+g6 r38: 5*25 2*1 5*1 0*10 5*1 2*1 5*25
+g6 r39-r43: 5*27 0*10 5*27
+g6 r44-r62: 5*64
+g6 r63: 4*62 5*2
+g7 r0-r1: 5*16 4*2 3*46
+g7 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g7 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g7 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g7 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g7 r8: 5*3 15*10 5*3 4*2 3*46
+g7 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g7 r13-r15: 5*16 4*2 5*46
+g7 r16-r17: 4*18 5*46
+g7 r18-r30: 5*64
+g7 r31: 5*25 2*14 5*25
+g7 r32-r38: 5*25 2*1 15*12 2*1 5*25
+g7 r39: 5*25 2*1 5*1 0*10 5*1 2*1 5*25
+g7 r40-r43: 5*27 0*10 5*27
+g7 r44-r62: 5*64
+g7 r63: 4*62 5*2
+g8 r0-r1: 5*16 4*2 3*46
+g8 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g8 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g8 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g8 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g8 r8: 5*3 15*10 5*3 4*2 3*46
+g8 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g8 r13-r15: 5*16 4*2 5*46
+g8 r16-r17: 4*18 5*46
+g8 r18-r29: 5*64
+g8 r30: 5*25 2*14 5*25
+g8 r31-r37: 5*25 2*1 15*12 2*1 5*25
+g8 r38: 5*25 2*1 5*1 15*10 5*1 2*1 5*25
+g8 r39-r43: 5*27 0*10 5*27
+g8 r44-r62: 5*64
+g8 r63: 4*62 5*2
+g9 r0-r1: 5*16 4*2 3*46
+g9 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g9 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g9 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g9 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g9 r8: 5*3 15*10 5*3 4*2 3*46
+g9 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g9 r13-r15: 5*16 4*2 5*46
+g9 r16-r17: 4*18 5*46
+g9 r18-r28: 5*64
+g9 r29: 5*25 2*14 5*25
+g9 r30-r36: 5*25 2*1 15*12 2*1 5*25
+g9 r37: 5*25 2*1 5*1 15*10 5*1 2*1 5*25
+g9 r38: 5*27 15*10 5*27
+g9 r39-r43: 5*27 0*10 5*27
+g9 r44-r62: 5*64
+g9 r63: 4*62 5*2
+g10 r0-r1: 5*16 4*2 3*46
+g10 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g10 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g10 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g10 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g10 r8: 5*3 15*10 5*3 4*2 3*46
+g10 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g10 r13-r15: 5*16 4*2 5*46
+g10 r16-r17: 4*18 5*46
+g10 r18-r27: 5*64
+g10 r28: 5*25 2*14 5*25
+g10 r29-r35: 5*25 2*1 15*12 2*1 5*25
+g10 r36: 5*25 2*1 5*1 15*10 5*1 2*1 5*25
+g10 r37-r38: 5*27 15*10 5*27
+g10 r39-r43: 5*27 0*10 5*27
+g10 r44-r62: 5*64
+g10 r63: 4*62 5*2
+g11 r0-r1: 5*16 4*2 3*46
+g11 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g11 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g11 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g11 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g11 r8: 5*3 15*10 5*3 4*2 3*46
+g11 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g11 r13-r15: 5*16 4*2 5*46
+g11 r16-r17: 4*18 5*46
+g11 r18-r26: 5*64
+g11 r27: 5*25 2*14 5*25
+g11 r28-r34: 5*25 2*1 15*12 2*1 5*25
+g11 r35: 5*25 2*1 5*1 15*10 5*1 2*1 5*25
+g11 r36-r38: 5*27 15*10 5*27
+g11 r39-r43: 5*27 0*10 5*27
+g11 r44-r62: 5*64
+g11 r63: 4*62 5*2
+g12 r0-r1: 5*16 4*2 3*46
+g12 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g12 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g12 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g12 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g12 r8: 5*3 15*10 5*3 4*2 3*46
+g12 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g12 r13-r15: 5*16 4*2 5*46
+g12 r16-r17: 4*18 5*46
+g12 r18-r25: 5*64
+g12 r26: 5*25 2*14 5*25
+g12 r27-r33: 5*25 2*1 15*12 2*1 5*25
+g12 r34: 5*25 2*1 5*1 15*10 5*1 2*1 5*25
+g12 r35-r38: 5*27 15*10 5*27
+g12 r39-r43: 5*27 0*10 5*27
+g12 r44-r62: 5*64
+g12 r63: 4*62 5*2
+g13 r0-r1: 5*16 4*2 3*46
+g13 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g13 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g13 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g13 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g13 r8: 5*3 15*10 5*3 4*2 3*46
+g13 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g13 r13-r15: 5*16 4*2 5*46
+g13 r16-r17: 4*18 5*46
+g13 r18-r24: 5*64
+g13 r25: 5*25 2*14 5*25
+g13 r26-r32: 5*25 2*1 15*12 2*1 5*25
+g13 r33: 5*25 2*1 5*12 2*1 5*25
+g13 r34-r38: 5*27 15*10 5*27
+g13 r39-r43: 5*27 0*10 5*27
+g13 r44-r62: 5*64
+g13 r63: 4*62 5*2
+g14 r0-r1: 5*16 4*2 3*46
+g14 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g14 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g14 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g14 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g14 r8: 5*3 15*10 5*3 4*2 3*46
+g14 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g14 r13-r15: 5*16 4*2 5*46
+g14 r16-r17: 4*18 5*46
+g14 r18-r23: 5*64
+g14 r24: 5*25 2*14 5*25
+g14 r25-r31: 5*25 2*1 15*12 2*1 5*25
+g14 r32: 5*25 2*1 5*12 2*1 5*25
+g14 r33: 5*64
+g14 r34-r38: 5*27 15*10 5*27
+g14 r39-r43: 5*27 0*10 5*27
+g14 r44-r62: 5*64
+g14 r63: 4*62 5*2
+record 4: action=6 data={"x":49,"y":20}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: full, 1 grid(s)
+g0 r0-r1: 5*16 4*2 3*46
+g0 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g0 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g0 r8: 5*3 15*10 5*3 4*2 3*46
+g0 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g0 r13-r15: 5*16 4*2 5*46
+g0 r16-r17: 4*18 5*46
+g0 r18-r23: 5*64
+g0 r24: 5*25 2*14 5*25
+g0 r25-r31: 5*25 2*1 15*12 2*1 5*25
+g0 r32: 5*25 2*1 5*12 2*1 5*25
+g0 r33: 5*64
+g0 r34-r38: 5*27 15*10 5*27
+g0 r39-r43: 5*27 0*10 5*27
+g0 r44-r62: 5*64
+g0 r63: 4*61 5*3
+record 5: action=6 data={"x":29,"y":18}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: unchanged from record 4
+record 6: action=6 data={"x":61,"y":15}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: delta from record 5, 1 cell(s)
+g0 (63,60)=5
+record 7: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5,6]
+frame: full, 1 grid(s)
+g0 r0-r1: 5*16 4*2 3*46
+g0 r2: 5*16 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r3-r5: 5*3 0*10 5*3 4*2 3*17 4*1 0*3 4*1 3*1 4*1 15*3 4*1 3*18
+g0 r6: 5*3 0*10 5*3 4*2 3*17 4*5 3*1 4*5 3*18
+g0 r7: 5*3 0*10 5*3 4*2 3*23 0*5 3*18
+g0 r8: 5*3 15*10 5*3 4*2 3*46
+g0 r9-r12: 5*3 15*10 5*3 4*2 5*46
+g0 r13-r15: 5*16 4*2 5*46
+g0 r16-r17: 4*18 5*46
+g0 r18-r20: 5*64
+g0 r21: 5*24 2*1 5*39
+g0 r22: 5*23 2*3 5*38
+g0 r23: 5*22 2*2 15*1 2*2 5*37
+g0 r24: 5*21 2*2 15*3 2*2 5*36
+g0 r25: 5*20 2*2 15*5 2*2 5*35
+g0 r26: 5*19 2*2 15*7 2*2 5*34
+g0 r27: 5*18 2*2 15*9 2*2 5*33
+g0 r28: 5*17 2*2 15*10 5*35
+g0 r29: 5*16 2*2 15*10 5*36
+g0 r30: 5*15 2*2 15*10 5*37
+g0 r31: 5*14 2*2 15*10 5*38
+g0 r32: 5*15 2*2 15*8 5*39
+g0 r33: 5*16 2*2 15*6 5*40
+g0 r34: 5*17 2*2 15*4 5*4 15*10 5*27
+g0 r35: 5*18 2*2 15*2 5*5 15*10 5*27
+g0 r36: 5*19 2*2 5*6 15*10 5*27
+g0 r37: 5*20 2*1 5*6 15*10 5*27
+g0 r38: 5*27 15*10 5*27
+g0 r39-r43: 5*27 0*10 5*27
+g0 r44-r62: 5*64
+g0 r63: 4*60 5*4
+```
+
+Reply with one Python program in a ```python fenced block.

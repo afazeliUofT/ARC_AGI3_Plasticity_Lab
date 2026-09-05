@@ -1,0 +1,109 @@
+run_id=20260905T025114Z_seed12345_8fd63a5a experiment=E300_ref runner=ref_world_model seed=12345 config_hash=c216e50e3f5104d93ebbc2882aa8f6cb1635231cc3b3d0772ebcc34c1926e3a0 git=ba4d14db9fcce0c7136b0a3390483f794c81cfa9 dirty=True wallclock_limit=7200s network_allowed=0
+ref_world_model game=cd82-fb555c5d game_index=2 seed=12345 multiplier=5 baselines=[55, 8, 41, 21, 23, 23] model_calls_max=60 tokens_max=4000000 client=headless_cli operation_mode=OFFLINE interface_sha256=97624aa135788f61 backtest_sha256=7e09fefd8b61e31c model_client_sha256=e78bf5fa4b41c90e
+cd82-fb555c5d reset: state=NOT_FINISHED win_levels=6 available=[1, 2, 3, 4, 5, 6] frame_sha256=fe1eaf17e4c079361607c5b62b90a4511d019ba6ab7b590d1a2b4d9e5d744d17 action_budget_total=855
+call 1 (induce) -> h001 sha256=741963c6efe308e5 certified=True checked=4/4 mismatches=0 failure_kind=None
+plan 0 from h001: not_found actions=0 nodes=22 steps=462 budget_used=462
+call 2 (revise) -> h002 sha256=c9d69d2772da2d4e certified=True checked=5/5 mismatches=0 failure_kind=None
+plan 1 from h002: not_found actions=0 nodes=22 steps=462 budget_used=925
+plan 2 from h002: not_found actions=0 nodes=22 steps=462 budget_used=1388
+call 3 (revise) -> h003 sha256=c9beacf5ad4fe16d certified=False checked=7/7 mismatches=1 failure_kind=None
+call 4 (revise) -> h004 sha256=98a636429bee60bc certified=True checked=7/7 mismatches=0 failure_kind=None
+plan 3 from h004: not_found actions=0 nodes=7 steps=147 budget_used=1536
+plan 4 from h004: not_found actions=0 nodes=5 steps=105 budget_used=1642
+plan 5 from h004: not_found actions=0 nodes=10 steps=210 budget_used=1853
+call 5 (revise) -> h005 sha256=ba4d51f7d49ea5a4 certified=True checked=10/10 mismatches=0 failure_kind=None
+plan 6 from h005: not_found actions=0 nodes=166 steps=3486 budget_used=5340
+plan 7 from h005: not_found actions=0 nodes=174 steps=3654 budget_used=8995
+call 6 (revise) -> h006 sha256=fb9ebbe05bc44fb2 certified=True checked=12/12 mismatches=0 failure_kind=None
+plan 8 from h006: not_found actions=0 nodes=168 steps=3528 budget_used=12524
+plan 9 from h006: not_found actions=0 nodes=171 steps=3591 budget_used=16116
+plan 10 from h006: not_found actions=0 nodes=147 steps=3087 budget_used=19204
+plan 11 from h006: not_found actions=0 nodes=186 steps=3906 budget_used=23111
+plan 12 from h006: not_found actions=0 nodes=208 steps=4368 budget_used=27480
+plan 13 from h006: not_found actions=0 nodes=178 steps=3738 budget_used=31219
+plan 14 from h006: not_found actions=0 nodes=185 steps=3885 budget_used=35105
+plan 15 from h006: not_found actions=0 nodes=209 steps=4389 budget_used=39495
+plan 16 from h006: not_found actions=0 nodes=83 steps=1743 budget_used=41239
+plan 17 from h006: not_found actions=0 nodes=85 steps=1785 budget_used=43025
+plan 18 from h006: not_found actions=0 nodes=77 steps=1617 budget_used=44643
+plan 19 from h006: not_found actions=0 nodes=82 steps=1722 budget_used=46366
+plan 20 from h006: not_found actions=0 nodes=85 steps=1785 budget_used=48152
+plan 21 from h006: not_found actions=0 nodes=66 steps=1386 budget_used=49539
+plan 22 from h006: not_found actions=0 nodes=83 steps=1743 budget_used=51283
+plan 23 from h006: not_found actions=0 nodes=96 steps=2016 budget_used=53300
+plan 24 from h006: not_found actions=0 nodes=79 steps=1659 budget_used=54960
+plan 25 from h006: not_found actions=0 nodes=77 steps=1617 budget_used=56578
+plan 26 from h006: not_found actions=0 nodes=77 steps=1617 budget_used=58196
+plan 27 from h006: not_found actions=0 nodes=74 steps=1554 budget_used=59751
+plan 28 from h006: not_found actions=0 nodes=78 steps=1638 budget_used=61390
+plan 29 from h006: not_found actions=0 nodes=77 steps=1617 budget_used=63008
+plan 30 from h006: not_found actions=0 nodes=82 steps=1722 budget_used=64731
+plan 31 from h006: not_found actions=0 nodes=85 steps=1785 budget_used=66517
+plan 32 from h006: not_found actions=0 nodes=94 steps=1974 budget_used=68492
+plan 33 from h006: not_found actions=0 nodes=89 steps=1869 budget_used=70362
+plan 34 from h006: not_found actions=0 nodes=85 steps=1785 budget_used=72148
+plan 35 from h006: not_found actions=0 nodes=66 steps=1386 budget_used=73535
+plan 36 from h006: not_found actions=0 nodes=83 steps=1743 budget_used=75279
+plan 37 from h006: not_found actions=0 nodes=96 steps=2016 budget_used=77296
+plan 38 from h006: not_found actions=0 nodes=86 steps=1806 budget_used=79103
+plan 39 from h006: not_found actions=0 nodes=84 steps=1764 budget_used=80868
+plan 40 from h006: not_found actions=0 nodes=77 steps=1617 budget_used=82486
+plan 41 from h006: not_found actions=0 nodes=89 steps=1869 budget_used=84356
+plan 42 from h006: not_found actions=0 nodes=87 steps=1827 budget_used=86184
+plan 43 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=87193
+plan 44 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=88244
+plan 45 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=89253
+plan 46 from h006: not_found actions=0 nodes=44 steps=924 budget_used=90178
+plan 47 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=91229
+plan 48 from h006: not_found actions=0 nodes=60 steps=1260 budget_used=92490
+plan 49 from h006: not_found actions=0 nodes=52 steps=1092 budget_used=93583
+plan 50 from h006: not_found actions=0 nodes=47 steps=987 budget_used=94571
+plan 51 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=95580
+plan 52 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=96631
+plan 53 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=97640
+plan 54 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=98649
+plan 55 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=99700
+plan 56 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=100709
+plan 57 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=101718
+plan 58 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=102769
+plan 59 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=103778
+plan 60 from h006: not_found actions=0 nodes=44 steps=924 budget_used=104703
+plan 61 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=105754
+plan 62 from h006: not_found actions=0 nodes=60 steps=1260 budget_used=107015
+plan 63 from h006: not_found actions=0 nodes=52 steps=1092 budget_used=108108
+plan 64 from h006: not_found actions=0 nodes=47 steps=987 budget_used=109096
+plan 65 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=110105
+plan 66 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=111156
+plan 67 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=112165
+plan 68 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=113174
+plan 69 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=114225
+plan 70 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=115234
+plan 71 from h006: not_found actions=0 nodes=44 steps=924 budget_used=116159
+plan 72 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=117210
+plan 73 from h006: not_found actions=0 nodes=60 steps=1260 budget_used=118471
+plan 74 from h006: not_found actions=0 nodes=52 steps=1092 budget_used=119564
+plan 75 from h006: not_found actions=0 nodes=47 steps=987 budget_used=120552
+plan 76 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=121561
+plan 77 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=122612
+plan 78 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=123621
+plan 79 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=124630
+plan 80 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=125681
+plan 81 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=126690
+plan 82 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=127699
+plan 83 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=128750
+plan 84 from h006: not_found actions=0 nodes=48 steps=1008 budget_used=129759
+plan 85 from h006: not_found actions=0 nodes=44 steps=924 budget_used=130684
+plan 86 from h006: not_found actions=0 nodes=50 steps=1050 budget_used=131735
+plan 87 from h006: not_found actions=0 nodes=60 steps=1260 budget_used=132996
+plan 88 from h006: not_found actions=0 nodes=52 steps=1092 budget_used=134089
+plan 89 from h006: not_found actions=0 nodes=47 steps=987 budget_used=135077
+plan 90 from h006: not_found actions=0 nodes=44 steps=924 budget_used=136002
+plan 91 from h006: not_found actions=0 nodes=42 steps=882 budget_used=136885
+plan 92 from h006: not_found actions=0 nodes=33 steps=693 budget_used=137579
+plan 93 from h006: not_found actions=0 nodes=25 steps=525 budget_used=138105
+plan 94 from h006: not_found actions=0 nodes=20 steps=420 budget_used=138526
+plan 95 from h006: not_found actions=0 nodes=17 steps=357 budget_used=138884
+model call 7 returned no program (exit_code=-1, is_error=True); 1 in a row
+stop: model budget consumed (binding=spend_control.model_wallclock_per_run_seconds, calls=7, tokens=211392, model_wallclock=1200.1s, unavailable=None) and no certified program
+finished stop_reason=model_budget_exhausted levels=0/6 actions=100 rhae=0.0000 model_calls=7 proposed=6 certified=5 plans_executed=0 mismatches=5 exploration=100
+completion_status=completed wallclock_seconds=1567.068

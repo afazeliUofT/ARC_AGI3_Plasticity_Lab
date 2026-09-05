@@ -1,0 +1,85 @@
+{
+  "action_budget_multiplier": 5,
+  "action_budget_total": 855,
+  "actions_total": 100,
+  "completion_action_indices": [],
+  "game_id": "cd82-fb555c5d",
+  "level_accounting_rule": "initial reset not an action; every later action counted, RESET included; level l completed at the first action index c_l with levels_completed >= l; actions attributed to level l are c_l - c_(l-1), c_0 = 0; later full reset and re-completion ignored; a level never reached has no completion and the first uncompleted level takes the remaining actions",
+  "levels": [
+    {
+      "actions_attributed": 100,
+      "budget": 275,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 1,
+      "official_baseline_actions": 55
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 40,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 2,
+      "official_baseline_actions": 8
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 205,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 3,
+      "official_baseline_actions": 41
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 105,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 4,
+      "official_baseline_actions": 21
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 115,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 5,
+      "official_baseline_actions": 23
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 115,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 6,
+      "official_baseline_actions": 23
+    }
+  ],
+  "levels_completed": 0,
+  "official_baseline_actions": [
+    55,
+    8,
+    41,
+    21,
+    23,
+    23
+  ],
+  "over_budget_levels": [],
+  "resets_issued": 0,
+  "rhae_environment_score": 0.0,
+  "rhae_level_scores": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "states_seen": {
+    "GAME_OVER": 1,
+    "NOT_FINISHED": 99
+  },
+  "stem": "cd82",
+  "stop_reason": "model_budget_exhausted",
+  "win_levels": 6
+}
