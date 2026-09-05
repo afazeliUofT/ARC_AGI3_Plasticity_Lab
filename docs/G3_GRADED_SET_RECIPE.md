@@ -104,6 +104,34 @@ cites.
    directory, `results.json` `config_file_sha256` equals the graded config digest, the
    manifest's `prompt_hash` equals `thresholds.prompt_hash`, `stderr.log` empty or explained,
    `completion_status` completed.
+   ### The mechanised record step (G3.6b step 19)
+
+   `scripts/g3_record_run.py` performs items 1 and 2 by script. Given a job id (default:
+   the newest `state/jobs/<id>/` with a `result.json`), it reads the job result, locates the
+   run directory from `model_seconds_source` (or `stdout_tail`), and checks, with every
+   threshold read from the G3b pre-registration through `load_preregistration`: return code
+   0 and no time-out, the job's `wallclock_s` within `job_wallclock_limit_seconds`, the
+   request naming the graded config, every `SHA256SUMS` entry recomputed with hashlib,
+   `config_file_sha256` equal to `graded_config_sha256`, `experiment_id`, `prompt_hash` in
+   both manifest and results, the manifest's `wallclock_limit_seconds` equal to
+   `wallclock_per_invocation_seconds`, `completion_status` completed, `stderr.log` empty
+   (else its first lines are printed), `model_wallclock_seconds_total` at most
+   `model_wallclock_per_run_seconds` plus the config's `model_client.call_wallclock_seconds`,
+   `model_calls` at most `calls_per_run_max`, `resumptions` at most `resumptions_used_max`,
+   the pre-registered seed and the game in `graded_set.games`. It prints one line per check,
+   the run summary (run id, game, stop reason, levels, RHAE, calls, model seconds) and the
+   `results.json` and `SHA256SUMS` digests, and exits 0 when every check passes, 2 when any
+   fails (the run is then labelled `failed` in the ledger and `g3_next_job.py` offers
+   attempt 2), 1 on a usage error such as a job without a result.
+
+   ```bash
+   uv run python scripts/g3_record_run.py --job-id g37-ar25-1 --json /tmp/g3_record_run.json
+   ```
+
+   Validated on the E303 wa30 job before any E304 run existed: it failed exactly the five
+   checks that distinguish an E303 run from an E304 one (job overrun, config path, config
+   digest, experiment id, runner limit) and passed the other fourteen.
+
 3. Run the accounting script. It reads every deciding parameter from the G3b pre-registration
    through `load_preregistration`, reuses the E303 per-run reader, and rewrites the
    `g3_graded_set` key of `state/BUDGET.json` while keeping every other key:
