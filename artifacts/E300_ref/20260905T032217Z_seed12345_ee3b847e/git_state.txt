@@ -1,0 +1,5 @@
+commit a06c1a9bc4a9a0c411df94a2537b41ea8bf8d0d0
+dirty true
+status --porcelain:
+ M state/PROJECT_STATE.json
+?? fix_job_runner.sh:Zone.Identifier
