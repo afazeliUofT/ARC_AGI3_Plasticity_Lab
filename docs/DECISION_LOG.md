@@ -186,3 +186,38 @@ programs exceed their input's level on the *real* action history, whose clicks n
 reached the targets). Fix candidate: a follow-up housekeeping step, not this turn.
 
 ---
+
+## 2026-09-05T22:37:14Z — G3.6b step 12: E303_ref three-run finding written; default configuration for the graded set
+
+**Decided by:** the agent, under the human budget directive of 2026-09-05T19:19:50Z (ledger
+`decision`, item 2). Ledger `decision` entry kind `e303_three_run_summary` at this timestamp.
+
+**Finding recorded:** `docs/FINDINGS_E303.md`, every number derived by
+`scripts/g36b_e303_summary.py` (sha256 a17a3b957f5042f090235d49957fa6eb88253ca470dbd01fc72d7b09903e68cc)
+from the ten E300/E301/E302/E303 run directories and written with their digests to
+`docs/FINDINGS_E303_summary.json` (sha256 a98339d533a0fa6399c51940a77bc693b670aaf03257e3bbc5c494e73efab9be).
+In one paragraph: before E303, 1322 of 1322 plan searches over seven runs found nothing and
+0 of 54 levels completed while the certified programs mismatched only 40 of 1329 predictions;
+under E303 (F1 goal conjecture + F2 click pitch 6 + F3 depth 16) 11 of 498 searches found a
+plan on 3 of 3 games, 41 planned actions were executed, 2 levels completed (s5i5 at action 33,
+RHAE level 36.73; cd82 at action 27, RHAE level 115.0 cap, environment 4.76), at 22 mismatches
+in 90 predictions. The three games bind on three different limits: s5i5 the 5M simulation
+budget (model idle afterwards), cd82 the 2400 s per-run model cap (game abandoned while
+completing levels; the binding constraint on the science), wa30 the 10500 s runner wall-clock
+through 27 node-capped searches (F2 inert, no ACTION6). The wa30 job overran its 10800 s job
+limit by 147 s without a kill. The directive's "2 mismatches in 96" is the s5i5 E302 run, not
+cd82 (cd82 earlier: 5/96 and 6/271); the qualitative claim stands.
+
+**Default for the graded set (stated, not yet pre-registered):** the graded configuration is
+`configs/experiments/E303_ref.yaml` (7d1506ce) or a successor whose only changes are named in
+`preregistration/G3b.yaml` and drawn from the list in `docs/FINDINGS_E303.md` section 6
+(per-run model cap and the stop-reason semantics of `model_budget_exhausted`, per-game
+simulation budget and a per-search cap, node cap, runner wall-clock and job margin). No
+prompt change, no source change, no ladder rung climbed. The graded set starts after the
+weekly reset on Friday 2026-09-11 17:00 local, per the directive; no game-run job is queued
+before then.
+
+**Not decided here:** the values of those caps and the stop-reason semantics; both belong to
+G3b.yaml (write-once, next step) and to the referee's reading of it, not to this log.
+
+---
