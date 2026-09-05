@@ -221,3 +221,26 @@ before then.
 G3b.yaml (write-once, next step) and to the referee's reading of it, not to this log.
 
 ---
+
+## 2026-09-05T22:57:31Z — G3.6b step 14: ruff scope excludes sealed artifact programs (verifier-tooling note, no threshold change)
+
+**Decided by:** the agent, as housekeeping under the human budget directive of 2026-09-05T19:19:50Z.
+Ledger `decision` entry kind `verifier_tooling_scope` at this timestamp.
+
+**What changed:** `pyproject.toml` `[tool.ruff] extend-exclude` now lists `artifacts/**` beside
+the frozen supervisor script (sha256 c603e3f96d9109812b8211d6fdeae0164d3d8944406d6330e327bc4cb6ba3d46). The 62 findings it removes were all in
+`artifacts/E30*/*/world_models/*.py`: world models written by the model during a run, sealed
+in that run's `SHA256SUMS`, raw evidence that is never edited. The remaining 5 findings, in
+`scripts/g36_meter_sim.py`, were fixed by hand (sha256 4aa56d49f9ec68b4dc4fba0a937f5bbde9845adfc44e95ac5463591d194601e1); no `--fix` was run.
+
+**What did not change:** the G3 threshold `ruff_exit_code` (0) and the verifier's command
+`uv run ruff check .` (`scripts/verify_run.py` line 711). This is a scope statement about what
+the linter looks at, not a move of any goalpost. Precedent: the supervisor exclusion of
+2026-09-04T06:44:21Z.
+
+**For the referee:** `uv run ruff check .` 67 -> 0 findings, exit 0; `uv run ruff format --check .`
+70 drifted files (69 artifact programs) -> 0; `uv run mypy` clean; the E100 throughput test that
+failed at 483 fps at step 13 passed on an unchanged re-run (6 passed, 21.2 s), so it is treated as
+machine-state variance and left untouched.
+
+---

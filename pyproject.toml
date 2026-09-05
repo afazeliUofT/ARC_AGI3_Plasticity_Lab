@@ -27,7 +27,12 @@ src = ["src", "tests", "scripts"]
 # not edit it. Its 11 remaining findings are style only (re.I aliases, datetime.UTC,
 # subprocess check=, one blind except) and are the human's to fix. Lift this exclusion once
 # they are. See LEDGER decision 2026-09-04T06:44:21Z.
-extend-exclude = ["scripts/supervisor.py"]
+# artifacts/**/world_models/*.py are model-written world models: raw evidence sealed in each
+# run's SHA256SUMS, never linted and never edited (AGENT_CONSTITUTION.md section 4, preserve
+# raw evidence). Linting them is meaningless and fixing them would invalidate the run. Scope
+# change only; the gate threshold ruff_exit_code is unchanged. See LEDGER decision
+# 2026-09-05 (G3.6b step 14) and docs/DECISION_LOG.md, same timestamp.
+extend-exclude = ["scripts/supervisor.py", "artifacts/**"]
 
 [tool.mypy]
 python_version = "3.12"
