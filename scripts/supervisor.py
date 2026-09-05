@@ -1009,6 +1009,13 @@ class Supervisor:
             write_json(PROJECT_STATE, st)
             write_json(COUNTERS, ctr)
 
+            # Best effort: mirror each committed turn to the private remote so the
+            # run can be followed from a browser. A failure here is never fatal.
+            if committed:
+                _rc, _out = git("push", "origin", "HEAD")
+                if _rc != 0:
+                    self.log("push_failed", detail=(_out or "")[-300:])
+
             npt = st["consecutive_no_progress_turns"]
             self.log("turn", kind=out.kind, returncode=out.returncode, elapsed_s=elapsed,
                      ledger_grew=grew, committed=committed, no_progress=npt, effort=effort)
