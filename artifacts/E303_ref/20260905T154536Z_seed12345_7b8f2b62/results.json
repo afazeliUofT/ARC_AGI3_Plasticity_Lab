@@ -1,0 +1,193 @@
+{
+  "completion_status": "completed",
+  "config_file_sha256": "7d1506ce076eadfefb2336e967155a30bcd69770cdbdf598d7d918fda82ff9ae",
+  "config_hash": "aecd25d2a139ae06ae082d47ce229b819c20326d6f9ca29349304eeab7fb1fcd",
+  "created_utc": "2026-09-05T15:45:36Z",
+  "experiment_id": "E303_ref",
+  "extra": {},
+  "results": {
+    "action_budget_multiplier": 5,
+    "action_budget_total": 3190,
+    "actions_total": 478,
+    "backtest_module_sha256": "7e09fefd8b61e31c5a18eaf0035d5b7ca8309b58f59ef22908a21158b71e5784",
+    "calls_without_program": 0,
+    "calls_without_program_max_consecutive": 3,
+    "environment_generator_version": "arc-agi-offline-cache-1.0.0",
+    "exploration": {
+      "actions_chosen": 460,
+      "game_index": 14,
+      "grid_size": 64,
+      "pairs_tested": 459,
+      "seed": 12345,
+      "untested_choices": 459
+    },
+    "exploration_actions": 460,
+    "final_frame_sha256": "c7b65179cbf8c5481f53d47aaa0bed0be321389c132f02fd75fefa90a2ee0f3c",
+    "final_state": "NOT_FINISHED",
+    "game_id": "s5i5-18d95033",
+    "game_index": 14,
+    "history_encoding": {
+      "module_sha256": "cb9a80fa3807585af61f8a55af4f235590763a96e1a2b25f4097103404541aba",
+      "name": "rle_rows_delta_v1"
+    },
+    "hypotheses_certified": 9,
+    "hypotheses_proposed": 10,
+    "induction_min_history": 4,
+    "interface_module_sha256": "97624aa135788f61d25a9ac2bb8442ccfbe317c7152abaea58de48af6b252164",
+    "level_accounting_rule": "initial reset not an action; every later action counted, RESET included; level l completed at the first action index c_l with levels_completed >= l; actions attributed to level l are c_l - c_(l-1), c_0 = 0; later full reset and re-completion ignored; a level never reached has no completion and the first uncompleted level takes the remaining actions",
+    "levels": [
+      {
+        "actions_attributed": 33,
+        "budget": 100,
+        "completed": true,
+        "completion_action_index": 33,
+        "level": 1,
+        "official_baseline_actions": 20
+      },
+      {
+        "actions_attributed": 445,
+        "budget": 445,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 2,
+        "official_baseline_actions": 89
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 530,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 3,
+        "official_baseline_actions": 106
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 270,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 4,
+        "official_baseline_actions": 54
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 810,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 5,
+        "official_baseline_actions": 162
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 190,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 6,
+        "official_baseline_actions": 38
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 430,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 7,
+        "official_baseline_actions": 86
+      },
+      {
+        "actions_attributed": 0,
+        "budget": 415,
+        "completed": false,
+        "completion_action_index": null,
+        "level": 8,
+        "official_baseline_actions": 83
+      }
+    ],
+    "levels_completed": 1,
+    "model_budget_binding": null,
+    "model_budget_consumed": false,
+    "model_calls": 10,
+    "model_calls_per_game_max": 60,
+    "model_client_kind": "headless_cli",
+    "model_client_sha256": "e78bf5fa4b41c90e3e61500c88136ff6cfc02a6d1b20807c84fbb78edd71c717",
+    "model_effort": "high",
+    "model_identifier": "claude-fable-5-1",
+    "model_unavailable_reason": null,
+    "model_wallclock_seconds_total": 1417.4914083059994,
+    "network_guard": "NetworkGuard",
+    "official_baseline_actions": [
+      20,
+      89,
+      106,
+      54,
+      162,
+      38,
+      86,
+      83
+    ],
+    "operation_mode": "OFFLINE",
+    "over_budget_levels": [],
+    "plan_actions": 16,
+    "plan_trace_sampling": {
+      "every_nth_plan": 50,
+      "first_plans": 3,
+      "plans_traced": 12,
+      "trace_records": 62284
+    },
+    "planner": {
+      "click_grid_step": 6,
+      "click_points": 121,
+      "max_depth": 16,
+      "max_nodes": 20000
+    },
+    "plans_executed": 3,
+    "plans_searched": 459,
+    "prediction_mismatches": 8,
+    "predictions_compared": 35,
+    "predictions_matched": 27,
+    "prompt_hash": "ddeb01c5ef38a128e4da5200e25a24e11f8ecd02a3122139d38b327ce205223d",
+    "reset_actions": 2,
+    "resets_issued": 2,
+    "resumptions": 0,
+    "rhae_environment_score": 1.020304050607081,
+    "rhae_level_scores": [
+      36.73094582185492,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sandbox_limits": {
+      "address_space_bytes_max": 2147483648,
+      "backtest_seconds_max": 120.0,
+      "predict_seconds_max": 5.0
+    },
+    "seed": 12345,
+    "simulation_budget": {
+      "max_steps": 5000000,
+      "used": 5000000
+    },
+    "simulation_steps_per_game_max": 5000000,
+    "spend_control": {
+      "calls_per_run_max": 40,
+      "concurrency": 1,
+      "model_wallclock_per_run_seconds": 2400.0
+    },
+    "stem": "s5i5",
+    "step_failed_at": null,
+    "stop_reason": "level_budget_exhausted",
+    "tokens_by_kind": {
+      "cache_creation": 128944,
+      "cache_read": 0,
+      "input": 20,
+      "output": 123220
+    },
+    "tokens_per_game_max": 4000000,
+    "tokens_total": 252184,
+    "win_levels": 8
+  },
+  "run_id": "20260905T154536Z_seed12345_7b8f2b62",
+  "seed": 12345,
+  "wallclock_seconds": 6646.625268822012
+}

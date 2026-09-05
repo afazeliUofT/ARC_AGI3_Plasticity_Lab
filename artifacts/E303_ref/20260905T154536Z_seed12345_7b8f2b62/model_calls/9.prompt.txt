@@ -1,0 +1,574 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+Level-completion conjecture (required). In the recorded history levels_completed has
+never changed, so the data cannot show what completes a level. What completes the
+current level is therefore a hypothesis that your program must state and implement;
+a planner will search your model for the shortest action sequence that raises
+levels_completed, execute that sequence on the real game, and reject your program
+with a counterexample if the game disagrees. Begin your program with one comment line
+starting with "# GOAL:" that states, in one sentence, the concrete condition under
+which you conjecture the current level is completed (for example a movable object
+reaching a marked target cell, two regions matching in colour, a counter of cells
+reaching a value). Implement exactly that condition in predict(): when the frame the
+action produces satisfies it, return levels_completed increased by one and the state
+string "WIN" if you believe that level was the last one, otherwise "NOT_FINISHED";
+when it does not, return levels_completed unchanged. The condition must hold on NO
+recorded transition, or the replay check will reject the program. A program whose
+levels_completed can never increase does not answer this task. Choose the simplest
+conjecture consistent with the observed dynamics; when a counterexample below refutes
+an earlier conjecture, state a different one rather than a variant that cannot fire.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 2; actions remaining on this level: 443
+
+## Rejected programs (most recent last)
+
+### h008
+
+```python
+# GOAL: the level is completed when the 13-coloured head mark at the tip of the four-segment arm (segments coloured 12 right, 10 up, 11 right, 14 down; each segment is extended/retracted by 3 cells via the right/left half of the button box of its colour, a click being ignored if the arm would overlap a 15-coloured wall or leave the grid) lands on the hollow diamond centre at row 31, column 52.
+import copy
+
+STEP = 3
+MIN_LEN = 2
+BUDGET_L1 = 50
+BUDGET_L2 = 445
+H = 64
+W = 64
+
+
+def _click(act):
+    if act is None or act.get("action") != 6:
+        return None
+    d = act.get("data") or {}
+    if "x" not in d or "y" not in d:
+        return None
+    return d["x"], d["y"]
+
+
+def _counter(grid, n, budget):
+    filled = int(W * n / budget + 0.5)
+    filled = max(0, min(W, filled))
+    for x in range(W):
+        grid[H - 1][x] = 4 if x >= W - filled else 3
+
+
+# ---------------------------------------------------------------- level 1
+L1_HBOX = (18, 24, 36, 48, 42)   # y0, y1, x0, x1, split column
+L1_VBOX = (35, 47, 21, 27, 41)   # y0, y1, x0, x1, split row
+L1_HDIAMOND = ((9, 52), (11, 52), (10, 51), (10, 53))
+L1_VDIAMOND = ((51, 10), (53, 10), (52, 9), (52, 11))
+
+
+def _l1_button(act):
+    c = _click(act)
+    if c is None:
+        return None
+    x, y = c
+    y0, y1, x0, x1, split = L1_HBOX
+    if y0 <= y <= y1 and x0 <= x <= x1:
+        if x < split:
+            return "left"
+        if x > split:
+            return "right"
+        return None
+    y0, y1, x0, x1, split = L1_VBOX
+    if y0 <= y <= y1 and x0 <= x <= x1:
+        if y < split:
+            return "up"
+        if y > split:
+            return "down"
+        return None
+    return None
+
+
+def _l1_lengths(actions):
+    la, lb = 5, 8
+    for act in actions:
+        b = _l1_button(act)
+        if b == "left":
+            la = max(MIN_LEN, la - STEP)
+        elif b == "right":
+            la = min(36, la + STEP)
+        elif b == "up":
+            lb = max(MIN_LEN, lb - STEP)
+        elif b == "down":
+            lb = min(35, lb + STEP)
+    return la, lb
+
+
+def _l1_render(base, la, lb, n):
+    grid = copy.deepcopy(base)
+    for y in (9, 10, 11):
+        for x in range(28, W):
+            grid[y][x] = 5
+        for x in range(28, 28 + la):
+            grid[y][x] = 14
+    grid[10][28 + la - 2] = 13
+    for (y, x) in L1_HDIAMOND:
+        grid[y][x] = 13
+    for x in (9, 10, 11):
+        for y in range(28, H - 1):
+            grid[y][x] = 5
+        for y in range(28, 28 + lb):
+            grid[y][x] = 11
+    grid[28 + lb - 2][10] = 13
+    for (y, x) in L1_VDIAMOND:
+        grid[y][x] = 13
+    _counter(grid, n, BUDGET_L1)
+    return grid
+
+
+# ---------------------------------------------------------------- level 2
+L2_BOXES = [(3, 12), (18, 10), (33, 11), (48, 14)]   # x0, colour; rows 54..60, width 13
+L2_BOX_Y0, L2_BOX_Y1 = 54, 60
+L2_DIAMOND = ((30, 52), (32, 52), (31, 51), (31, 53))
+L2_TARGET = (31, 52)
+
+
+def _l2_walls():
+    walls = set()
+    for y in (9, 10, 11):
+        for x in range(33, 57):
+            walls.add((y, x))
+    for y in range(12, 27):
+        for x in (33, 34, 35):
+            walls.add((y, x))
+    for y in range(15, 45):
+        for x in (42, 43, 44):
+            walls.add((y, x))
+    return walls
+
+
+L2_WALLS = _l2_walls()
+
+
+def _l2_button(act):
+    c = _click(act)
+    if c is None:
+        return None
+    x, y = c
+    if not (L2_BOX_Y0 <= y <= L2_BOX_Y1):
+        return None
+    for i, (x0, _col) in enumerate(L2_BOXES):
+        if x0 <= x <= x0 + 12:
+            split = x0 + 6
+            if x < split:
+                return (i, -1)
+            if x > split:
+                return (i, +1)
+            return None
+    return None
+
+
+def _arm(L):
+    r0, c0 = 40, 10
+    e0 = c0 + L[0] - 1
+    seg0 = {(y, x) for y in (r0 - 1, r0, r0 + 1) for x in range(c0, e0 + 1)}
+    base0 = {(y, c0 - 1) for y in (r0 - 1, r0, r0 + 1)}
+    c1 = e0 + 2
+    e1 = r0 - L[1] + 1
+    seg1 = {(y, x) for x in (c1 - 1, c1, c1 + 1) for y in range(e1, r0 + 1)}
+    base1 = {(r0 + 1, x) for x in (c1 - 1, c1, c1 + 1)}
+    r2 = e1 - 2
+    e2 = c1 + L[2] - 1
+    seg2 = {(y, x) for y in (r2 - 1, r2, r2 + 1) for x in range(c1, e2 + 1)}
+    base2 = {(y, c1 - 1) for y in (r2 - 1, r2, r2 + 1)}
+    c3 = e2 + 2
+    e3 = r2 + L[3] - 1
+    seg3 = {(y, x) for x in (c3 - 1, c3, c3 + 1) for y in range(r2, e3 + 1)}
+    base3 = {(r2 - 1, x) for x in (c3 - 1, c3, c3 + 1)}
+    head = (e3 - 1, c3)
+    return {
+        "segs": [(12, seg0), (10, seg1), (11, seg2), (14, seg3)],
+        "bases": [base0, base1, base2, base3],
+        "head": head,
+    }
+
+
+def _l2_valid(L):
+    if any(l < MIN_LEN for l in L):
+        return False
+    arm = _arm(L)
+    for _col, cells in arm["segs"]:
+        for (y, x) in cells:
+            if y < 0 or y > H - 2 or x < 0 or x > W - 1:
+                return False
+            if (y, x) in L2_WALLS:
+                return False
+    return True
+
+
+def _l2_lengths(actions):
+    L = [2, 2, 2, 2]
+    for act in actions:
+        b = _l2_button(act)
+        if b is None:
+            continue
+        i, s = b
+        nl = list(L)
+        nl[i] = nl[i] + s * STEP
+        if _l2_valid(nl):
+            L = nl
+    return L
+
+
+def _l2_render(L, n):
+    grid = [[5] * W for _ in range(H)]
+    for (y, x) in L2_WALLS:
+        grid[y][x] = 15
+    arm = _arm(L)
+    for base in arm["bases"]:
+        for (y, x) in base:
+            grid[y][x] = 3
+    for col, cells in arm["segs"]:
+        for (y, x) in cells:
+            grid[y][x] = col
+    hy, hx = arm["head"]
+    grid[hy][hx] = 13
+    for (y, x) in L2_DIAMOND:
+        grid[y][x] = 13
+    for (x0, c) in L2_BOXES:
+        rows = [
+            [2] * 13,
+            [2] + [4] * 5 + [3] + [4] * 5 + [2],
+            [2, 4, c, c, c, 4, 3, 4, c, c, c, 4, 2],
+            [2, 4, c, 4, 4, 4, 3, 4, 4, 4, c, 4, 2],
+            [2, 4, c, c, c, 4, 3, 4, c, c, c, 4, 2],
+            [2] + [4] * 5 + [3] + [4] * 5 + [2],
+            [2] * 13,
+        ]
+        for dy, row in enumerate(rows):
+            for dx, v in enumerate(row):
+                grid[L2_BOX_Y0 + dy][x0 + dx] = v
+    _counter(grid, n, BUDGET_L2)
+    return grid
+
+
+# ---------------------------------------------------------------- predict
+def predict(history, action):
+    last = history[-1]
+    lc = last["levels_completed"]
+
+    if lc == 0:
+        actions = [h["action"] for h in history[1:]] + [action]
+        la, lb = _l1_lengths(actions)
+        grid = _l1_render(history[0]["frame"][0], la, lb, len(actions))
+        if 28 + la - 2 == 52 and 28 + lb - 2 == 52:
+            return {
+                "frame": [grid, _l2_render([2, 2, 2, 2], 0)],
+                "state": "NOT_FINISHED",
+                "levels_completed": 1,
+                "available_actions": [6],
+            }
+        return {
+            "frame": [grid],
+            "state": "NOT_FINISHED",
+            "levels_completed": 0,
+            "available_actions": [6],
+        }
+
+    if lc == 1:
+        k = 0
+        for i, h in enumerate(history):
+            if h["levels_completed"] >= 1:
+                k = i
+                break
+        actions = [h["action"] for h in history[k + 1:]] + [action]
+        L = _l2_lengths(actions)
+        grid = _l2_render(L, len(actions))
+        head = _arm(L)["head"]
+        levels = 1
+        state = "NOT_FINISHED"
+        if head == L2_TARGET:
+            levels = 2
+            state = "NOT_FINISHED"
+        return {
+            "frame": [grid],
+            "state": state,
+            "levels_completed": levels,
+            "available_actions": [6],
+        }
+
+    return {
+        "frame": copy.deepcopy(last["frame"]),
+        "state": last["state"],
+        "levels_completed": lc,
+        "available_actions": [6],
+    }
+```
+
+## Counterexamples
+
+{"action":6,"data":{"x":51,"y":9},"hypothesis_id":"h001","kind":"prediction_mismatch","observation_sha256":"173099b958bf7f2c9dc88b9c26bee56ec1dcc897c89903bfbe0b40d7ebb65c10","plan_index":0,"predicted_observation_sha256":"ed831990cbe5a2d209ebadfac657476c8630d648431ab827ce12023a99762977","step_index":5}
+{"failure_kind":null,"first_mismatch_index":0,"history_length":5,"history_length_checked":5,"hypothesis_id":"h002","kind":"backtest","mismatches":5,"reason":null}
+{"action":6,"data":{"x":38,"y":19},"hypothesis_id":"h003","kind":"prediction_mismatch","observation_sha256":"b09b00ef8b5037087a9a6074a7b8d080de4c5f536066a00ec8cbf9bab251199c","plan_index":null,"predicted_observation_sha256":"e0f6f559b01987b4017b1253aa3d52aa63cfaaab59fcb3e3c6728f683c3151f3","step_index":11}
+{"action":6,"data":{"x":25,"y":35},"hypothesis_id":"h004","kind":"prediction_mismatch","observation_sha256":"dd6f7878f10651c14b9f7ac19445689d6a87356ae9265e839b9be70fb176d1b5","plan_index":null,"predicted_observation_sha256":"cd358cc998dd4010104ed8dee9b035ca20af732306ab2f64533197a824f8816b","step_index":18}
+{"action":6,"data":{"x":45,"y":21},"hypothesis_id":"h005","kind":"prediction_mismatch","observation_sha256":"4a32e163794f752c19c19ffec480a918bff3b91603c445dc1381bca27cf4cd85","plan_index":14,"predicted_observation_sha256":"3be7a1b173ec6a2a250bcc251a2c35a809d0c5ea1e855605b9e85f2798b48b65","step_index":26}
+{"action":6,"data":{"x":21,"y":45},"hypothesis_id":"h006","kind":"prediction_mismatch","observation_sha256":"41017dfec22031425650361c6e6b1b32532b55419c3c7de31ba4b66b74c7ba78","plan_index":15,"predicted_observation_sha256":"8d868fa0d7ddacfe178dbc7fbe2561b00b62772f5586ae25dce5bf7b9f178330","step_index":33}
+{"action":6,"data":{"x":15,"y":51},"hypothesis_id":"h007","kind":"prediction_mismatch","observation_sha256":"25edb78d7ee635659f0a4b5c03ca64b98923c8ed10435c63194ef4330c3f71b6","plan_index":null,"predicted_observation_sha256":"2f88098d1aa5613c71db21c4a8642c0f3d31e531b81f238c4daa3c9cd5684f61","step_index":34}
+{"action":6,"data":{"x":12,"y":40},"hypothesis_id":"h008","kind":"prediction_mismatch","observation_sha256":"2f88098d1aa5613c71db21c4a8642c0f3d31e531b81f238c4daa3c9cd5684f61","plan_index":null,"predicted_observation_sha256":"25edb78d7ee635659f0a4b5c03ca64b98923c8ed10435c63194ef4330c3f71b6","step_index":35}
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: full, 1 grid(s)
+g0 r0-r8: 5*64
+g0 r9: 5*27 3*1 14*5 5*19 13*1 5*11
+g0 r10: 5*27 3*1 14*3 13*1 14*1 5*18 13*1 5*1 13*1 5*10
+g0 r11: 5*27 3*1 14*5 5*19 13*1 5*11
+g0 r12-r17: 5*64
+g0 r18: 5*36 2*13 5*15
+g0 r19: 5*36 2*1 4*5 3*1 4*5 2*1 5*15
+g0 r20: 5*36 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*15
+g0 r21: 5*36 2*1 4*1 14*1 4*3 3*1 4*3 14*1 4*1 2*1 5*15
+g0 r22: 5*36 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*15
+g0 r23: 5*36 2*1 4*5 3*1 4*5 2*1 5*15
+g0 r24: 5*36 2*13 5*15
+g0 r25-r26: 5*64
+g0 r27: 5*9 3*3 5*52
+g0 r28-r33: 5*9 11*3 5*52
+g0 r34: 5*9 11*1 13*1 11*1 5*52
+g0 r35: 5*9 11*3 5*9 2*7 5*36
+g0 r36: 5*21 2*1 4*5 2*1 5*36
+g0 r37: 5*21 2*1 4*1 11*3 4*1 2*1 5*36
+g0 r38-r39: 5*21 2*1 4*1 11*1 4*1 11*1 4*1 2*1 5*36
+g0 r40: 5*21 2*1 4*5 2*1 5*36
+g0 r41: 5*21 2*1 3*5 2*1 5*36
+g0 r42: 5*21 2*1 4*5 2*1 5*36
+g0 r43-r44: 5*21 2*1 4*1 11*1 4*1 11*1 4*1 2*1 5*36
+g0 r45: 5*21 2*1 4*1 11*3 4*1 2*1 5*36
+g0 r46: 5*21 2*1 4*5 2*1 5*36
+g0 r47: 5*21 2*7 5*36
+g0 r48-r50: 5*64
+g0 r51: 5*10 13*1 5*53
+g0 r52: 5*9 13*1 5*1 13*1 5*52
+g0 r53: 5*10 13*1 5*53
+g0 r54-r62: 5*64
+g0 r63: 3*64
+record 1: action=6 data={"x":47,"y":60}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 0, 1 cell(s)
+g0 (63,63)=4
+record 2: action=6 data={"x":20,"y":13}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 1, 2 cell(s)
+g0 (63,61)=4 (63,62)=4
+record 3: action=6 data={"x":57,"y":50}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 2, 1 cell(s)
+g0 (63,60)=4
+record 4: action=6 data={"x":17,"y":46}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 3, 1 cell(s)
+g0 (63,59)=4
+record 5: action=6 data={"x":51,"y":9}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 4, 1 cell(s)
+g0 (63,58)=4
+record 6: action=6 data={"x":10,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 5, 2 cell(s)
+g0 (63,56)=4 (63,57)=4
+record 7: action=6 data={"x":34,"y":32}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 6, 1 cell(s)
+g0 (63,55)=4
+record 8: action=6 data={"x":59,"y":49}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 7, 1 cell(s)
+g0 (63,54)=4
+record 9: action=6 data={"x":14,"y":48}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 8, 2 cell(s)
+g0 (63,52)=4 (63,53)=4
+record 10: action=6 data={"x":7,"y":54}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 9, 1 cell(s)
+g0 (63,51)=4
+record 11: action=6 data={"x":38,"y":19}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 10, 11 cell(s)
+g0 (9,30)=5 (9,31)=5 (9,32)=5 (10,28)=13 (10,30)=5 (10,31)=5 (10,32)=5 (11,30)=5 (11,31)=5 (11,32)=5 (63,50)=4
+record 12: action=6 data={"x":63,"y":50}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 11, 1 cell(s)
+g0 (63,49)=4
+record 13: action=6 data={"x":55,"y":58}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 12, 2 cell(s)
+g0 (63,47)=4 (63,48)=4
+record 14: action=6 data={"x":52,"y":41}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 13, 1 cell(s)
+g0 (63,46)=4
+record 15: action=6 data={"x":10,"y":60}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 14, 1 cell(s)
+g0 (63,45)=4
+record 16: action=6 data={"x":1,"y":61}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 15, 1 cell(s)
+g0 (63,44)=4
+record 17: action=6 data={"x":0,"y":16}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 16, 2 cell(s)
+g0 (63,42)=4 (63,43)=4
+record 18: action=6 data={"x":25,"y":35}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 17, 11 cell(s)
+g0 (31,10)=13 (33,9)=5 (33,10)=5 (33,11)=5 (34,9)=5 (34,10)=5 (34,11)=5 (35,9)=5 (35,10)=5 (35,11)=5 (63,41)=4
+record 19: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 18, 11 cell(s)
+g0 (9,30)=14 (9,31)=14 (9,32)=14 (10,28)=14 (10,30)=14 (10,31)=13 (10,32)=14 (11,30)=14 (11,31)=14 (11,32)=14 (63,40)=4
+record 20: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 19, 12 cell(s)
+g0 (9,33)=14 (9,34)=14 (9,35)=14 (10,31)=14 (10,33)=14 (10,34)=13 (10,35)=14 (11,33)=14 (11,34)=14 (11,35)=14 (63,38)=4 (63,39)=4
+record 21: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 20, 11 cell(s)
+g0 (9,36)=14 (9,37)=14 (9,38)=14 (10,34)=14 (10,36)=14 (10,37)=13 (10,38)=14 (11,36)=14 (11,37)=14 (11,38)=14 (63,37)=4
+record 22: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 21, 11 cell(s)
+g0 (9,39)=14 (9,40)=14 (9,41)=14 (10,37)=14 (10,39)=14 (10,40)=13 (10,41)=14 (11,39)=14 (11,40)=14 (11,41)=14 (63,36)=4
+record 23: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 22, 11 cell(s)
+g0 (9,42)=14 (9,43)=14 (9,44)=14 (10,40)=14 (10,42)=14 (10,43)=13 (10,44)=14 (11,42)=14 (11,43)=14 (11,44)=14 (63,35)=4
+record 24: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 23, 12 cell(s)
+g0 (9,45)=14 (9,46)=14 (9,47)=14 (10,43)=14 (10,45)=14 (10,46)=13 (10,47)=14 (11,45)=14 (11,46)=14 (11,47)=14 (63,33)=4 (63,34)=4
+record 25: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 24, 11 cell(s)
+g0 (9,48)=14 (9,49)=14 (9,50)=14 (10,46)=14 (10,48)=14 (10,49)=13 (10,50)=14 (11,48)=14 (11,49)=14 (11,50)=14 (63,32)=4
+record 26: action=6 data={"x":45,"y":21}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 25, 7 cell(s)
+g0 (9,51)=14 (9,53)=14 (10,49)=14 (10,52)=13 (11,51)=14 (11,53)=14 (63,31)=4
+record 27: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 26, 12 cell(s)
+g0 (31,10)=11 (33,9)=11 (33,10)=11 (33,11)=11 (34,9)=11 (34,10)=13 (34,11)=11 (35,9)=11 (35,10)=11 (35,11)=11 (63,29)=4 (63,30)=4
+record 28: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 27, 11 cell(s)
+g0 (34,10)=11 (36,9)=11 (36,10)=11 (36,11)=11 (37,9)=11 (37,10)=13 (37,11)=11 (38,9)=11 (38,10)=11 (38,11)=11 (63,28)=4
+record 29: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 28, 11 cell(s)
+g0 (37,10)=11 (39,9)=11 (39,10)=11 (39,11)=11 (40,9)=11 (40,10)=13 (40,11)=11 (41,9)=11 (41,10)=11 (41,11)=11 (63,27)=4
+record 30: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 29, 11 cell(s)
+g0 (40,10)=11 (42,9)=11 (42,10)=11 (42,11)=11 (43,9)=11 (43,10)=13 (43,11)=11 (44,9)=11 (44,10)=11 (44,11)=11 (63,26)=4
+record 31: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 30, 12 cell(s)
+g0 (43,10)=11 (45,9)=11 (45,10)=11 (45,11)=11 (46,9)=11 (46,10)=13 (46,11)=11 (47,9)=11 (47,10)=11 (47,11)=11 (63,24)=4 (63,25)=4
+record 32: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 31, 11 cell(s)
+g0 (46,10)=11 (48,9)=11 (48,10)=11 (48,11)=11 (49,9)=11 (49,10)=13 (49,11)=11 (50,9)=11 (50,10)=11 (50,11)=11 (63,23)=4
+record 33: action=6 data={"x":21,"y":45}; state="NOT_FINISHED"; levels_completed=1; available_actions=[6]
+frame: full, 2 grid(s)
+g0 r0-r8: 5*64
+g0 r9: 5*27 3*1 14*24 13*1 14*1 5*10
+g0 r10: 5*27 3*1 14*23 13*3 5*10
+g0 r11: 5*27 3*1 14*24 13*1 14*1 5*10
+g0 r12-r17: 5*64
+g0 r18: 5*36 2*13 5*15
+g0 r19: 5*36 2*1 4*5 3*1 4*5 2*1 5*15
+g0 r20: 5*36 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*15
+g0 r21: 5*36 2*1 4*1 14*1 4*3 3*1 4*3 14*1 4*1 2*1 5*15
+g0 r22: 5*36 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*15
+g0 r23: 5*36 2*1 4*5 3*1 4*5 2*1 5*15
+g0 r24: 5*36 2*13 5*15
+g0 r25-r26: 5*64
+g0 r27: 5*9 3*3 5*52
+g0 r28-r34: 5*9 11*3 5*52
+g0 r35: 5*9 11*3 5*9 2*7 5*36
+g0 r36: 5*9 11*3 5*9 2*1 4*5 2*1 5*36
+g0 r37: 5*9 11*3 5*9 2*1 4*1 11*3 4*1 2*1 5*36
+g0 r38-r39: 5*9 11*3 5*9 2*1 4*1 11*1 4*1 11*1 4*1 2*1 5*36
+g0 r40: 5*9 11*3 5*9 2*1 4*5 2*1 5*36
+g0 r41: 5*9 11*3 5*9 2*1 3*5 2*1 5*36
+g0 r42: 5*9 11*3 5*9 2*1 4*5 2*1 5*36
+g0 r43-r44: 5*9 11*3 5*9 2*1 4*1 11*1 4*1 11*1 4*1 2*1 5*36
+g0 r45: 5*9 11*3 5*9 2*1 4*1 11*3 4*1 2*1 5*36
+g0 r46: 5*9 11*3 5*9 2*1 4*5 2*1 5*36
+g0 r47: 5*9 11*3 5*9 2*7 5*36
+g0 r48-r50: 5*9 11*3 5*52
+g0 r51: 5*9 11*1 13*1 11*1 5*52
+g0 r52: 5*9 13*3 5*52
+g0 r53: 5*9 11*1 13*1 11*1 5*52
+g0 r54-r62: 5*64
+g0 r63: 3*22 4*42
+g1 r0-r8: 5*64
+g1 r9-r11: 5*33 15*24 5*7
+g1 r12-r14: 5*33 15*3 5*28
+g1 r15-r26: 5*33 15*3 5*6 15*3 5*19
+g1 r27-r29: 5*42 15*3 5*19
+g1 r30: 5*42 15*3 5*7 13*1 5*11
+g1 r31: 5*42 15*3 5*6 13*1 5*1 13*1 5*10
+g1 r32: 5*42 15*3 5*7 13*1 5*11
+g1 r33-r35: 5*42 15*3 5*19
+g1 r36: 5*12 3*1 11*2 3*3 5*24 15*3 5*19
+g1 r37: 5*12 3*1 11*2 14*1 13*1 14*1 5*24 15*3 5*19
+g1 r38: 5*12 3*1 11*2 14*3 5*24 15*3 5*19
+g1 r39-r40: 5*9 3*1 12*2 10*3 5*27 15*3 5*19
+g1 r41: 5*9 3*1 12*2 3*3 5*27 15*3 5*19
+g1 r42-r44: 5*42 15*3 5*19
+g1 r45-r53: 5*64
+g1 r54: 5*3 2*13 5*2 2*13 5*2 2*13 5*2 2*13 5*3
+g1 r55: 5*3 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*3
+g1 r56: 5*3 2*1 4*1 12*3 4*1 3*1 4*1 12*3 4*1 2*1 5*2 2*1 4*1 10*3 4*1 3*1 4*1 10*3 4*1 2*1 5*2 2*1 4*1 11*3 4*1 3*1 4*1 11*3 4*1 2*1 5*2 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*3
+g1 r57: 5*3 2*1 4*1 12*1 4*3 3*1 4*3 12*1 4*1 2*1 5*2 2*1 4*1 10*1 4*3 3*1 4*3 10*1 4*1 2*1 5*2 2*1 4*1 11*1 4*3 3*1 4*3 11*1 4*1 2*1 5*2 2*1 4*1 14*1 4*3 3*1 4*3 14*1 4*1 2*1 5*3
+g1 r58: 5*3 2*1 4*1 12*3 4*1 3*1 4*1 12*3 4*1 2*1 5*2 2*1 4*1 10*3 4*1 3*1 4*1 10*3 4*1 2*1 5*2 2*1 4*1 11*3 4*1 3*1 4*1 11*3 4*1 2*1 5*2 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*3
+g1 r59: 5*3 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*3
+g1 r60: 5*3 2*13 5*2 2*13 5*2 2*13 5*2 2*13 5*3
+g1 r61-r62: 5*64
+g1 r63: 3*64
+record 34: action=6 data={"x":15,"y":51}; state="NOT_FINISHED"; levels_completed=1; available_actions=[6]
+frame: full, 1 grid(s)
+g0 r0-r8: 5*64
+g0 r9-r11: 5*33 15*24 5*7
+g0 r12-r14: 5*33 15*3 5*28
+g0 r15-r26: 5*33 15*3 5*6 15*3 5*19
+g0 r27-r29: 5*42 15*3 5*19
+g0 r30: 5*42 15*3 5*7 13*1 5*11
+g0 r31: 5*42 15*3 5*6 13*1 5*1 13*1 5*10
+g0 r32: 5*42 15*3 5*7 13*1 5*11
+g0 r33-r35: 5*42 15*3 5*19
+g0 r36: 5*12 3*1 11*2 3*3 5*24 15*3 5*19
+g0 r37: 5*12 3*1 11*2 14*1 13*1 14*1 5*24 15*3 5*19
+g0 r38: 5*12 3*1 11*2 14*3 5*24 15*3 5*19
+g0 r39-r40: 5*9 3*1 12*2 10*3 5*27 15*3 5*19
+g0 r41: 5*9 3*1 12*2 3*3 5*27 15*3 5*19
+g0 r42-r44: 5*42 15*3 5*19
+g0 r45-r53: 5*64
+g0 r54: 5*3 2*13 5*2 2*13 5*2 2*13 5*2 2*13 5*3
+g0 r55: 5*3 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*3
+g0 r56: 5*3 2*1 4*1 12*3 4*1 3*1 4*1 12*3 4*1 2*1 5*2 2*1 4*1 10*3 4*1 3*1 4*1 10*3 4*1 2*1 5*2 2*1 4*1 11*3 4*1 3*1 4*1 11*3 4*1 2*1 5*2 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*3
+g0 r57: 5*3 2*1 4*1 12*1 4*3 3*1 4*3 12*1 4*1 2*1 5*2 2*1 4*1 10*1 4*3 3*1 4*3 10*1 4*1 2*1 5*2 2*1 4*1 11*1 4*3 3*1 4*3 11*1 4*1 2*1 5*2 2*1 4*1 14*1 4*3 3*1 4*3 14*1 4*1 2*1 5*3
+g0 r58: 5*3 2*1 4*1 12*3 4*1 3*1 4*1 12*3 4*1 2*1 5*2 2*1 4*1 10*3 4*1 3*1 4*1 10*3 4*1 2*1 5*2 2*1 4*1 11*3 4*1 3*1 4*1 11*3 4*1 2*1 5*2 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*3
+g0 r59: 5*3 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*2 2*1 4*5 3*1 4*5 2*1 5*3
+g0 r60: 5*3 2*13 5*2 2*13 5*2 2*13 5*2 2*13 5*3
+g0 r61-r62: 5*64
+g0 r63: 3*64
+record 35: action=6 data={"x":12,"y":40}; state="NOT_FINISHED"; levels_completed=1; available_actions=[6]
+frame: delta from record 34, 1 cell(s)
+g0 (63,63)=4
+```
+
+Reply with one Python program in a ```python fenced block.

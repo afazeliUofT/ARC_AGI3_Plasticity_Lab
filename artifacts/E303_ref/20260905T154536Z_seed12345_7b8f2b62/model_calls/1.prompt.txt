@@ -1,0 +1,113 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+Level-completion conjecture (required). In the recorded history levels_completed has
+never changed, so the data cannot show what completes a level. What completes the
+current level is therefore a hypothesis that your program must state and implement;
+a planner will search your model for the shortest action sequence that raises
+levels_completed, execute that sequence on the real game, and reject your program
+with a counterexample if the game disagrees. Begin your program with one comment line
+starting with "# GOAL:" that states, in one sentence, the concrete condition under
+which you conjecture the current level is completed (for example a movable object
+reaching a marked target cell, two regions matching in colour, a counter of cells
+reaching a value). Implement exactly that condition in predict(): when the frame the
+action produces satisfies it, return levels_completed increased by one and the state
+string "WIN" if you believe that level was the last one, otherwise "NOT_FINISHED";
+when it does not, return levels_completed unchanged. The condition must hold on NO
+recorded transition, or the replay check will reject the program. A program whose
+levels_completed can never increase does not answer this task. Choose the simplest
+conjecture consistent with the observed dynamics; when a counterexample below refutes
+an earlier conjecture, state a different one rather than a variant that cannot fire.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 1; actions remaining on this level: 96
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: full, 1 grid(s)
+g0 r0-r8: 5*64
+g0 r9: 5*27 3*1 14*5 5*19 13*1 5*11
+g0 r10: 5*27 3*1 14*3 13*1 14*1 5*18 13*1 5*1 13*1 5*10
+g0 r11: 5*27 3*1 14*5 5*19 13*1 5*11
+g0 r12-r17: 5*64
+g0 r18: 5*36 2*13 5*15
+g0 r19: 5*36 2*1 4*5 3*1 4*5 2*1 5*15
+g0 r20: 5*36 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*15
+g0 r21: 5*36 2*1 4*1 14*1 4*3 3*1 4*3 14*1 4*1 2*1 5*15
+g0 r22: 5*36 2*1 4*1 14*3 4*1 3*1 4*1 14*3 4*1 2*1 5*15
+g0 r23: 5*36 2*1 4*5 3*1 4*5 2*1 5*15
+g0 r24: 5*36 2*13 5*15
+g0 r25-r26: 5*64
+g0 r27: 5*9 3*3 5*52
+g0 r28-r33: 5*9 11*3 5*52
+g0 r34: 5*9 11*1 13*1 11*1 5*52
+g0 r35: 5*9 11*3 5*9 2*7 5*36
+g0 r36: 5*21 2*1 4*5 2*1 5*36
+g0 r37: 5*21 2*1 4*1 11*3 4*1 2*1 5*36
+g0 r38-r39: 5*21 2*1 4*1 11*1 4*1 11*1 4*1 2*1 5*36
+g0 r40: 5*21 2*1 4*5 2*1 5*36
+g0 r41: 5*21 2*1 3*5 2*1 5*36
+g0 r42: 5*21 2*1 4*5 2*1 5*36
+g0 r43-r44: 5*21 2*1 4*1 11*1 4*1 11*1 4*1 2*1 5*36
+g0 r45: 5*21 2*1 4*1 11*3 4*1 2*1 5*36
+g0 r46: 5*21 2*1 4*5 2*1 5*36
+g0 r47: 5*21 2*7 5*36
+g0 r48-r50: 5*64
+g0 r51: 5*10 13*1 5*53
+g0 r52: 5*9 13*1 5*1 13*1 5*52
+g0 r53: 5*10 13*1 5*53
+g0 r54-r62: 5*64
+g0 r63: 3*64
+record 1: action=6 data={"x":47,"y":60}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 0, 1 cell(s)
+g0 (63,63)=4
+record 2: action=6 data={"x":20,"y":13}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 1, 2 cell(s)
+g0 (63,61)=4 (63,62)=4
+record 3: action=6 data={"x":57,"y":50}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 2, 1 cell(s)
+g0 (63,60)=4
+record 4: action=6 data={"x":17,"y":46}; state="NOT_FINISHED"; levels_completed=0; available_actions=[6]
+frame: delta from record 3, 1 cell(s)
+g0 (63,59)=4
+```
+
+Reply with one Python program in a ```python fenced block.
