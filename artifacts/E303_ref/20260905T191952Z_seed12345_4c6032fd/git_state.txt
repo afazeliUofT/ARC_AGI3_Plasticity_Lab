@@ -1,0 +1,6 @@
+commit cdd89762991ae138dfff73a97433e5a3527c5cd0
+dirty true
+status --porcelain:
+ M state/LEDGER.jsonl
+ M state/PROJECT_STATE.json
+?? fix_job_runner.sh:Zone.Identifier

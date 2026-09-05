@@ -1,0 +1,42 @@
+run_id=20260905T191952Z_seed12345_4c6032fd experiment=E303_ref runner=ref_world_model seed=12345 config_hash=642b73b44afa0b1332156368db7f14f3abaf0d944b2573f4c3a7f25c6913095e git=cdd89762991ae138dfff73a97433e5a3527c5cd0 dirty=True wallclock_limit=10500s network_allowed=0
+ref_world_model game=wa30-ee6fef47 game_index=24 seed=12345 multiplier=5 baselines=[71, 119, 183, 98, 368, 68, 79, 442, 415] model_calls_max=60 tokens_max=4000000 client=headless_cli operation_mode=OFFLINE interface_sha256=97624aa135788f61 backtest_sha256=7e09fefd8b61e31c model_client_sha256=e78bf5fa4b41c90e
+wa30-ee6fef47 reset: state=NOT_FINISHED win_levels=9 available=[1, 2, 3, 4, 5] frame_sha256=7f1b683174d29f50e92f2b2f2a6c5cb42dd91c8b0b07a67e2db650ae52045540 action_budget_total=9215
+call 1 (induce) -> h001 sha256=b67a03cfb2ef947e certified=True checked=4/4 mismatches=0 failure_kind=None
+plan 0 from h001: found actions=5 nodes=53 steps=261 budget_used=261 traced=True; found at depth 5 after 53 nodes
+call 2 (revise) -> h002 sha256=a095c26e4ce3529f certified=False checked=9/9 mismatches=1 failure_kind=None
+call 3 (revise) -> h003 sha256=0bea5a2e3d534082 certified=True checked=9/9 mismatches=0 failure_kind=None
+plan 1 from h003: node_limit actions=0 nodes=20000 steps=100000 budget_used=100266 traced=True; node_limit: max_nodes 20000 reached
+plan 2 from h003: node_limit actions=0 nodes=20000 steps=100000 budget_used=200267 traced=True; node_limit: max_nodes 20000 reached
+call 4 (revise) -> h004 sha256=b7e85d514e7755af certified=True checked=11/11 mismatches=0 failure_kind=None
+plan 3 from h004: node_limit actions=0 nodes=20000 steps=100000 budget_used=300268 traced=False; node_limit: max_nodes 20000 reached
+plan 4 from h004: node_limit actions=0 nodes=20000 steps=100000 budget_used=400269 traced=False; node_limit: max_nodes 20000 reached
+plan 5 from h004: node_limit actions=0 nodes=20000 steps=100000 budget_used=500270 traced=False; node_limit: max_nodes 20000 reached
+call 5 (revise) -> h005 sha256=56c62ec200ec39ce certified=True checked=14/14 mismatches=0 failure_kind=None
+plan 6 from h005: node_limit actions=0 nodes=20000 steps=100000 budget_used=600271 traced=False; node_limit: max_nodes 20000 reached
+plan 7 from h005: node_limit actions=0 nodes=20000 steps=100000 budget_used=700272 traced=False; node_limit: max_nodes 20000 reached
+plan 8 from h005: node_limit actions=0 nodes=20000 steps=100000 budget_used=800273 traced=False; node_limit: max_nodes 20000 reached
+plan 9 from h005: node_limit actions=0 nodes=20000 steps=100000 budget_used=900274 traced=False; node_limit: max_nodes 20000 reached
+call 6 (revise) -> h006 sha256=d75303ac98c09748 certified=True checked=18/18 mismatches=0 failure_kind=None
+plan 10 from h006: node_limit actions=0 nodes=20000 steps=100000 budget_used=1000275 traced=False; node_limit: max_nodes 20000 reached
+call 7 (revise) -> h007 sha256=9289b10c48100f7d certified=True checked=19/19 mismatches=0 failure_kind=None
+plan 11 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1100276 traced=False; node_limit: max_nodes 20000 reached
+plan 12 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1200277 traced=False; node_limit: max_nodes 20000 reached
+plan 13 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1300278 traced=False; node_limit: max_nodes 20000 reached
+plan 14 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1400279 traced=False; node_limit: max_nodes 20000 reached
+plan 15 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1500280 traced=False; node_limit: max_nodes 20000 reached
+plan 16 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1600281 traced=False; node_limit: max_nodes 20000 reached
+plan 17 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1700282 traced=False; node_limit: max_nodes 20000 reached
+plan 18 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1800283 traced=False; node_limit: max_nodes 20000 reached
+plan 19 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=1900284 traced=False; node_limit: max_nodes 20000 reached
+plan 20 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2000285 traced=False; node_limit: max_nodes 20000 reached
+plan 21 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2100286 traced=False; node_limit: max_nodes 20000 reached
+plan 22 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2200287 traced=False; node_limit: max_nodes 20000 reached
+plan 23 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2300288 traced=False; node_limit: max_nodes 20000 reached
+plan 24 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2400289 traced=False; node_limit: max_nodes 20000 reached
+plan 25 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2500290 traced=False; node_limit: max_nodes 20000 reached
+plan 26 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2600291 traced=False; node_limit: max_nodes 20000 reached
+plan 27 from h007: node_limit actions=0 nodes=20000 steps=100000 budget_used=2700292 traced=False; node_limit: max_nodes 20000 reached
+plan 28 from h007: model_error actions=0 nodes=14461 steps=72302 budget_used=2772595 traced=False; model_error: WallclockExceededError: hard wall-clock limit of 10500s reached
+stop: wall-clock reserve reached
+finished stop_reason=wallclock levels=0/9 actions=37 rhae=0.0000 model_calls=7 proposed=7 certified=6 plans_executed=1 mismatches=5 exploration=32
+completion_status=completed wallclock_seconds=10501.530

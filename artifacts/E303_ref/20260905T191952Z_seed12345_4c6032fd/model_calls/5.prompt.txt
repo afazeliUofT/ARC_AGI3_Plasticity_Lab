@@ -1,0 +1,340 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+Level-completion conjecture (required). In the recorded history levels_completed has
+never changed, so the data cannot show what completes a level. What completes the
+current level is therefore a hypothesis that your program must state and implement;
+a planner will search your model for the shortest action sequence that raises
+levels_completed, execute that sequence on the real game, and reject your program
+with a counterexample if the game disagrees. Begin your program with one comment line
+starting with "# GOAL:" that states, in one sentence, the concrete condition under
+which you conjecture the current level is completed (for example a movable object
+reaching a marked target cell, two regions matching in colour, a counter of cells
+reaching a value). Implement exactly that condition in predict(): when the frame the
+action produces satisfies it, return levels_completed increased by one and the state
+string "WIN" if you believe that level was the last one, otherwise "NOT_FINISHED";
+when it does not, return levels_completed unchanged. The condition must hold on NO
+recorded transition, or the replay check will reject the program. A program whose
+levels_completed can never increase does not answer this task. Choose the simplest
+conjecture consistent with the observed dynamics; when a counterexample below refutes
+an earlier conjecture, state a different one rather than a variant that cannot fire.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 1; actions remaining on this level: 341
+
+## Rejected programs (most recent last)
+
+### h004
+
+```python
+# GOAL: the player pushes all three 4x4 crates (border 4/3, centre 9) so every crate lies fully inside the 12x4 bar region (9 border, 2 interior) at rows 28-31, cols 28-39, which completes the level.
+DIRS = {1: (-4, 0), 2: (4, 0), 3: (0, -4), 4: (0, 4)}
+
+
+def _overlap(r1, c1, h1, w1, r2, c2, h2, w2):
+    return r1 < r2 + h2 and r2 < r1 + h1 and c1 < c2 + w2 and c2 < c1 + w1
+
+
+def _parse(frame):
+    g = frame[0]
+    H, W = len(g), len(g[0])
+    cells = [(y, x) for y in range(H - 1) for x in range(W) if g[y][x] in (0, 14)]
+    pr = min(y for y, x in cells)
+    pc = min(x for y, x in cells)
+    if g[pr][pc] == 0 and g[pr][pc + 3] == 0:
+        facing = 1
+    elif g[pr + 3][pc] == 0 and g[pr + 3][pc + 3] == 0:
+        facing = 2
+    elif g[pr][pc] == 0:
+        facing = 3
+    else:
+        facing = 4
+    twos = [(y, x) for y in range(H - 1) for x in range(W) if g[y][x] == 2]
+    br = min(y for y, x in twos) - 1
+    bc = min(x for y, x in twos) - 1
+    crates = []
+    for y in range(H - 4):
+        for x in range(W - 3):
+            if (g[y][x] in (3, 4) and g[y][x + 1] in (3, 4)
+                    and g[y + 1][x] in (3, 4) and g[y + 1][x + 1] == 9):
+                crates.append((y, x))
+    return {"H": H, "W": W, "pr": pr, "pc": pc, "facing": facing,
+            "br": br, "bc": bc, "crates": crates, "moves": 0}
+
+
+def _in_bounds(s, r, c):
+    return 0 <= r and r + 4 <= s["H"] - 1 and 0 <= c and c + 4 <= s["W"]
+
+
+def _step(s, a):
+    if a not in DIRS:
+        return False
+    s["moves"] += 1
+    dr, dc = DIRS[a]
+    s["facing"] = a
+    nr, nc = s["pr"] + dr, s["pc"] + dc
+    if not _in_bounds(s, nr, nc):
+        return False
+    hit = None
+    for i, (cr, cc) in enumerate(s["crates"]):
+        if _overlap(nr, nc, 4, 4, cr, cc, 4, 4):
+            hit = i
+            break
+    if hit is not None:
+        cr, cc = s["crates"][hit]
+        tr, tc = cr + dr, cc + dc
+        if not _in_bounds(s, tr, tc):
+            return False
+        for j, (or_, oc) in enumerate(s["crates"]):
+            if j != hit and _overlap(tr, tc, 4, 4, or_, oc, 4, 4):
+                return False
+        s["crates"][hit] = (tr, tc)
+    s["pr"], s["pc"] = nr, nc
+    br, bc = s["br"], s["bc"]
+    for (cr, cc) in s["crates"]:
+        if not (cr == br and bc <= cc and cc + 4 <= bc + 12):
+            return False
+    return True
+
+
+def _render(s):
+    H, W = s["H"], s["W"]
+    g = [[1] * W for _ in range(H)]
+    g[H - 1] = [7] * W
+    ticks = (s["moves"] + 2) // 3
+    for k in range(min(ticks, W)):
+        g[H - 1][W - 1 - k] = 4
+    br, bc = s["br"], s["bc"]
+    for y in range(br, br + 4):
+        for x in range(bc, bc + 12):
+            if 0 <= x < W:
+                g[y][x] = 9
+    for y in range(br + 1, br + 3):
+        for x in range(bc + 1, bc + 11):
+            if 0 <= x < W:
+                g[y][x] = 2
+    pr, pc, f = s["pr"], s["pc"], s["facing"]
+    fdr, fdc = DIRS[f]
+    faced = (pr + fdr, pc + fdc)
+    for (cr, cc) in s["crates"]:
+        border = 3 if (cr, cc) == faced else 4
+        for y in range(cr, cr + 4):
+            for x in range(cc, cc + 4):
+                g[y][x] = border
+        for y in range(cr + 1, cr + 3):
+            for x in range(cc + 1, cc + 3):
+                g[y][x] = 9
+    for y in range(pr, pr + 4):
+        for x in range(pc, pc + 4):
+            g[y][x] = 14
+    if f == 1:
+        for x in range(pc, pc + 4):
+            g[pr][x] = 0
+    elif f == 2:
+        for x in range(pc, pc + 4):
+            g[pr + 3][x] = 0
+    elif f == 3:
+        for y in range(pr, pr + 4):
+            g[y][pc] = 0
+    else:
+        for y in range(pr, pr + 4):
+            g[y][pc + 3] = 0
+    return [g]
+
+
+def predict(history, action):
+    s = _parse(history[0]["frame"])
+    for h in history[1:]:
+        if h.get("action"):
+            _step(s, h["action"]["action"])
+    win = _step(s, action["action"])
+    last = history[-1]
+    lc = last["levels_completed"] + (1 if win else 0)
+    return {"frame": _render(s),
+            "state": "NOT_FINISHED",
+            "levels_completed": lc,
+            "available_actions": last["available_actions"]}
+```
+
+## Counterexamples
+
+{"action":1,"data":{},"hypothesis_id":"h001","kind":"prediction_mismatch","observation_sha256":"b4690d2898eaf06181b62d27b313992b716d59831cc3424741e6b5dac75b41f0","plan_index":0,"predicted_observation_sha256":"25520d48f6d624fb84fc776c71d5e56cd4087a2048bc4a7a89653b04245bf511","step_index":9}
+{"failure_kind":null,"first_mismatch_index":8,"history_length":9,"history_length_checked":9,"hypothesis_id":"h002","kind":"backtest","mismatches":1,"reason":null}
+{"action":2,"data":{},"hypothesis_id":"h003","kind":"prediction_mismatch","observation_sha256":"08b587bd59544d636095a6820ffd36c685f5a91e2848a5d0a1af06cfa1caa191","plan_index":null,"predicted_observation_sha256":"24b81c5c20ff7a48ed6ab24d320453b7075f44d7299968024a6251bb8a11c19a","step_index":11}
+{"action":2,"data":{},"hypothesis_id":"h004","kind":"prediction_mismatch","observation_sha256":"7721daecbc8cf238de5e086ebc99a4b904aea7add3e0734ad86abd1e9e5f35bf","plan_index":null,"predicted_observation_sha256":"68b3854c1e377218d985c5517d133883e8a51ad9990c78b54d55cba703984bd5","step_index":14}
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r47: 1*64
+g0 r48: 1*32 0*4 1*28
+g0 r49-r51: 1*32 14*4 1*28
+g0 r52-r62: 1*64
+g0 r63: 7*64
+record 1: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 0
+record 2: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 1, 33 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1 (63,63)=4
+record 3: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 2, 32 cell(s)
+g0 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (48,32)=14 (48,33)=14 (48,34)=14 (48,35)=0 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=0 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=0 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=0
+record 4: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 3, 32 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1
+record 5: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 4, 33 cell(s)
+g0 (44,28)=0 (44,29)=0 (44,30)=0 (44,31)=0 (45,28)=14 (45,29)=14 (45,30)=14 (45,31)=14 (46,28)=14 (46,29)=14 (46,30)=14 (46,31)=14 (47,28)=14 (47,29)=14 (47,30)=14 (47,31)=14 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (63,62)=4
+record 6: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 5, 32 cell(s)
+g0 (40,28)=0 (40,29)=0 (40,30)=0 (40,31)=0 (41,28)=14 (41,29)=14 (41,30)=14 (41,31)=14 (42,28)=14 (42,29)=14 (42,30)=14 (42,31)=14 (43,28)=14 (43,29)=14 (43,30)=14 (43,31)=14 (44,28)=1 (44,29)=1 (44,30)=1 (44,31)=1 (45,28)=1 (45,29)=1 (45,30)=1 (45,31)=1 (46,28)=1 (46,29)=1 (46,30)=1 (46,31)=1 (47,28)=1 (47,29)=1 (47,30)=1 (47,31)=1
+record 7: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*28 0*4 4*4 1*28
+g0 r37-r38: 1*28 14*4 4*1 9*2 4*1 1*28
+g0 r39: 1*28 14*4 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*62 4*2
+record 8: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32: 1*28 0*4 1*32
+g0 r33-r35: 1*28 14*4 1*32
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*61 4*3
+record 9: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 0*4 9*8 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 14*4 2*7 9*1 1*24
+g0 r31: 1*16 4*4 1*8 14*4 9*8 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*61 4*3
+record 10: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 9, 32 cell(s)
+g0 (28,28)=9 (28,29)=9 (28,30)=9 (28,31)=9 (28,32)=14 (28,33)=14 (28,34)=14 (28,35)=0 (29,28)=9 (29,29)=2 (29,30)=2 (29,31)=2 (29,32)=14 (29,33)=14 (29,34)=14 (29,35)=0 (30,28)=9 (30,29)=2 (30,30)=2 (30,31)=2 (30,32)=14 (30,33)=14 (30,34)=14 (30,35)=0 (31,28)=9 (31,29)=9 (31,30)=9 (31,31)=9 (31,32)=14 (31,33)=14 (31,34)=14 (31,35)=0
+record 11: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r34: 1*32 14*4 1*28
+g0 r35: 1*32 0*4 1*28
+g0 r36: 1*32 3*4 1*28
+g0 r37-r38: 1*32 3*1 9*2 3*1 1*28
+g0 r39: 1*32 3*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*60 4*4
+record 12: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*28 0*1 14*3 1*32
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*60 4*4
+record 13: action=1 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 0*4 9*8 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 14*4 2*7 9*1 1*24
+g0 r31: 1*16 4*4 1*8 14*4 9*8 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r62: 1*64
+g0 r63: 7*60 4*4
+record 14: action=2 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 13, 32 cell(s)
+g0 (28,28)=9 (28,29)=9 (28,30)=9 (28,31)=9 (29,28)=9 (29,29)=2 (29,30)=2 (29,31)=2 (30,28)=9 (30,29)=2 (30,30)=2 (30,31)=2 (31,28)=9 (31,29)=9 (31,30)=9 (31,31)=9 (32,28)=14 (32,29)=14 (32,30)=14 (32,31)=14 (33,28)=14 (33,29)=14 (33,30)=14 (33,31)=14 (34,28)=14 (34,29)=14 (34,30)=14 (34,31)=14 (35,28)=0 (35,29)=0 (35,30)=0 (35,31)=0
+```
+
+Reply with one Python program in a ```python fenced block.

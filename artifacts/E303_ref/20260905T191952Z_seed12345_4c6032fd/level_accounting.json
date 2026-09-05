@@ -1,0 +1,114 @@
+{
+  "action_budget_multiplier": 5,
+  "action_budget_total": 9215,
+  "actions_total": 37,
+  "completion_action_indices": [],
+  "game_id": "wa30-ee6fef47",
+  "level_accounting_rule": "initial reset not an action; every later action counted, RESET included; level l completed at the first action index c_l with levels_completed >= l; actions attributed to level l are c_l - c_(l-1), c_0 = 0; later full reset and re-completion ignored; a level never reached has no completion and the first uncompleted level takes the remaining actions",
+  "levels": [
+    {
+      "actions_attributed": 37,
+      "budget": 355,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 1,
+      "official_baseline_actions": 71
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 595,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 2,
+      "official_baseline_actions": 119
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 915,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 3,
+      "official_baseline_actions": 183
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 490,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 4,
+      "official_baseline_actions": 98
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 1840,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 5,
+      "official_baseline_actions": 368
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 340,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 6,
+      "official_baseline_actions": 68
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 395,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 7,
+      "official_baseline_actions": 79
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 2210,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 8,
+      "official_baseline_actions": 442
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 2075,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 9,
+      "official_baseline_actions": 415
+    }
+  ],
+  "levels_completed": 0,
+  "official_baseline_actions": [
+    71,
+    119,
+    183,
+    98,
+    368,
+    68,
+    79,
+    442,
+    415
+  ],
+  "over_budget_levels": [],
+  "resets_issued": 0,
+  "rhae_environment_score": 0.0,
+  "rhae_level_scores": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "states_seen": {
+    "NOT_FINISHED": 37
+  },
+  "stem": "wa30",
+  "stop_reason": "wallclock",
+  "win_levels": 9
+}

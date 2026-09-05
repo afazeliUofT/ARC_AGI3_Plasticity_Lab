@@ -1,0 +1,95 @@
+You are writing an executable world model of an unknown grid game from a recorded
+history of actions and the observations that followed them. The history is complete
+and exact; your program must reproduce EVERY recorded transition exactly (every grid
+cell, the state string and levels_completed) when replayed from the start, or it will
+be rejected with a counterexample. Prefer the simplest rule that explains all of the
+data. Return a single Python program implementing the contract below, in one fenced
+```python block, with no other code blocks.
+
+Level-completion conjecture (required). In the recorded history levels_completed has
+never changed, so the data cannot show what completes a level. What completes the
+current level is therefore a hypothesis that your program must state and implement;
+a planner will search your model for the shortest action sequence that raises
+levels_completed, execute that sequence on the real game, and reject your program
+with a counterexample if the game disagrees. Begin your program with one comment line
+starting with "# GOAL:" that states, in one sentence, the concrete condition under
+which you conjecture the current level is completed (for example a movable object
+reaching a marked target cell, two regions matching in colour, a counter of cells
+reaching a value). Implement exactly that condition in predict(): when the frame the
+action produces satisfies it, return levels_completed increased by one and the state
+string "WIN" if you believe that level was the last one, otherwise "NOT_FINISHED";
+when it does not, return levels_completed unchanged. The condition must hold on NO
+recorded transition, or the replay check will reject the program. A program whose
+levels_completed can never increase does not answer this task. Choose the simplest
+conjecture consistent with the observed dynamics; when a counterexample below refutes
+an earlier conjecture, state a different one rather than a variant that cannot fire.
+
+## Program contract
+
+A candidate program is a Python source file defining, at module level:
+
+    def predict(history: list[dict], action: dict) -> dict
+
+history[0] is the reset observation and history[i] (i >= 1) the observation after the i-th
+recorded action. Every record is {"action": {"action": int, "data": {..}} | None,
+"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}; history[0]["action"] is None. ``action`` is
+{"action": int, "data": {"x": int, "y": int} or {}}. The return value is
+{"frame": list[list[list[int]]], "state": str, "levels_completed": int,
+"available_actions": list[int]}: the observation the program expects after ``action``.
+The program must be a pure function of its arguments; it runs in a sandbox with no network,
+no repository writes and the limits given in preregistration/G3.yaml thresholds.
+
+## Budget
+
+current level: 1; actions remaining on this level: 351
+
+## Recorded history (rle_rows_delta_v1; record 0 is the reset observation)
+
+The recorded history below is a lossless compact rendering of exactly the JSON records your
+program will receive (record 0 is the reset observation, record i the observation after the
+i-th action). Read it as follows. Each record starts with a line
+`record <i>: reset|action=<int> data=<json>; state=<json string>; levels_completed=<int>;
+available_actions=<json list>`. Its frame follows in one of three forms.
+`frame: full, <g> grid(s)` is followed by row lines `g<k> r<a>: v*n v*n ...` meaning row a of
+grid k is value v repeated n times, then the next run, left to right; `g<k> r<a>-r<b>: ...`
+means rows a to b inclusive are all identical to the runs given. Rows and columns are 0-based;
+grid k row y column x is history[i]["frame"][k][y][x]. `frame: delta from record <i-1>,
+<c> cell(s)` is followed by lines `g<k> (y,x)=v ...` listing every cell whose value differs
+from record i-1; all other cells are unchanged. `frame: unchanged from record <i-1>` means
+the whole frame equals the previous record's. Your program never sees this rendering: it
+receives the decoded JSON records described in the program contract.
+
+```
+record 0: reset; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: full, 1 grid(s)
+g0 r0-r23: 1*64
+g0 r24: 1*44 4*4 1*16
+g0 r25-r26: 1*44 4*1 9*2 4*1 1*16
+g0 r27: 1*44 4*4 1*16
+g0 r28: 1*16 4*4 1*8 9*12 1*24
+g0 r29-r30: 1*16 4*1 9*2 4*1 1*8 9*1 2*10 9*1 1*24
+g0 r31: 1*16 4*4 1*8 9*12 1*24
+g0 r32-r35: 1*64
+g0 r36: 1*32 4*4 1*28
+g0 r37-r38: 1*32 4*1 9*2 4*1 1*28
+g0 r39: 1*32 4*4 1*28
+g0 r40-r47: 1*64
+g0 r48: 1*32 0*4 1*28
+g0 r49-r51: 1*32 14*4 1*28
+g0 r52-r62: 1*64
+g0 r63: 7*64
+record 1: action=5 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: unchanged from record 0
+record 2: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 1, 33 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1 (63,63)=4
+record 3: action=4 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 2, 32 cell(s)
+g0 (48,28)=1 (48,29)=1 (48,30)=1 (48,31)=1 (48,32)=14 (48,33)=14 (48,34)=14 (48,35)=0 (49,28)=1 (49,29)=1 (49,30)=1 (49,31)=1 (49,32)=14 (49,33)=14 (49,34)=14 (49,35)=0 (50,28)=1 (50,29)=1 (50,30)=1 (50,31)=1 (50,32)=14 (50,33)=14 (50,34)=14 (50,35)=0 (51,28)=1 (51,29)=1 (51,30)=1 (51,31)=1 (51,32)=14 (51,33)=14 (51,34)=14 (51,35)=0
+record 4: action=3 data={}; state="NOT_FINISHED"; levels_completed=0; available_actions=[1,2,3,4,5]
+frame: delta from record 3, 32 cell(s)
+g0 (48,28)=0 (48,29)=14 (48,30)=14 (48,31)=14 (48,32)=1 (48,33)=1 (48,34)=1 (48,35)=1 (49,28)=0 (49,29)=14 (49,30)=14 (49,31)=14 (49,32)=1 (49,33)=1 (49,34)=1 (49,35)=1 (50,28)=0 (50,29)=14 (50,30)=14 (50,31)=14 (50,32)=1 (50,33)=1 (50,34)=1 (50,35)=1 (51,28)=0 (51,29)=14 (51,30)=14 (51,31)=14 (51,32)=1 (51,33)=1 (51,34)=1 (51,35)=1
+```
+
+Reply with one Python program in a ```python fenced block.
