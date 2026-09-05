@@ -58,3 +58,63 @@ against `max_nodes` 20000. Candidate (a) is therefore refuted for the node budge
 diagnostic runs; the depth cap of 8 cannot be separated from a closed reachable set (b or d)
 because the planner does not record how many successors it dropped at the depth cap versus
 de-duplicated. That is the instrumentation the diagnostic adds.
+
+## 2026-09-05T13:07:39Z — G3.6b: diagnosis answered; F1 fix to be validated before any graded set
+
+**Decided by:** the agent, applying the human's decision rule of 2026-09-05T08:20:01Z above.
+Ledger `decision` entry (kind `plan_diagnosis`) at 2026-09-05T13:07:39Z; script
+`scripts/g36b_plan_diagnosis.py` (sha256 `46218c01929e9412`), report
+`/tmp/g36b_plan_diagnosis.json` (sha256 `2a3f98be359cb0b2`, every number below cites its source
+file digest there).
+
+**The question:** why did the plan searches return `not_found` while hypotheses were certified?
+
+**The answer, over all six REF runs (three E300_ref pre-flight, three E301_ref diagnostic):**
+
+| evidence | value |
+|---|---|
+| plan searches / `not_found` | 1227 / 1227 |
+| instrumented searches with predicted `levels_completed` max 0 | 714 / 714 (plus 37909 trace records, all 0) |
+| nodes expanded, max, against `max_nodes` 20000 | 583 |
+| real transitions with `levels_completed` 0 | 1257 / 1257 (no level change ever observed) |
+| proposed programs / certified | 46 / 43 |
+| programs whose `predict` copies `levels_completed` from an input record | 45 (2 through a local name) |
+| programs returning the literal 0 | 1 (s5i5 pre-flight h006, not certified) |
+| programs computing a level change, or mentioning `WIN` | 0 |
+| sandbox probe: predictions / programs ever exceeding their input's level | 1210 / 0 |
+| deeper offline search, s5i5 h005, depth 24, 200000 nodes | 141 states, still 0 |
+
+- **(a) node or depth budget:** refuted as the cause. The depth cap truncates the cd82 and wa30
+  frontiers, but no depth reaches a goal region that is empty.
+- **(b) goal unreachable under the certified model:** true, but derivative of (c) and (d).
+- **(c) goal mis-specified:** yes, at the pipeline level. The planner's goal is stated on
+  `levels_completed`; the induction prompt asks only that the history be reproduced, and the
+  backtest can only constrain the field on a history in which it never changed. Nothing in REF
+  asks for, rewards or can certify a hypothesis about what completes a level.
+- **(d) true but useless:** yes. Every certified program is a valid retrodictive model of the
+  frame dynamics with a constant level counter, so `predicted.levels_completed >= start + 1` is
+  unsatisfiable at any depth by induction over the search tree.
+
+**Root cause:** REF can only plan after random exploration has already completed level 1,
+which it never did (0 levels in 1257 actions here; 1 in 75 game-runs in G1). A graded set of
+REF as it stands would measure random exploration, not induction plus planning.
+
+**The fix (F1):** a prompt-wording change, which the G3 pre-registration's
+`reference_architecture.what_is_fixed_here` leaves changeable under the escalation ladder until
+the first graded run of a set starts. Every program must state and implement an explicit
+level-completion conjecture (a `# GOAL:` comment plus code that increments `levels_completed`
+and sets the state when the conjectured condition is met, while still reproducing the history
+exactly). Certification then carries a goal; the planner finds plans toward it;
+predict-before-act refutes false conjectures on the real environment as prediction mismatches.
+Testable prediction: `plans.jsonl` shows `found` with `plan_actions > 0` on the same three
+games (currently 0 of 1227), and either a level completes or the conjectures are refuted with
+counterexamples in `hypotheses.jsonl`.
+
+**Decision rule applied:** prong 1 (a level completed) is not met: 0/6, 0/8, 0/9. Prong 2 (a
+specific, testable defect with the change that fixes it) is met. **Default taken:** the graded
+set is not queued on the unfixed REF, which would reproduce the zeros 25 times. F1 goes into a
+successor `configs/experiments/E302_ref.yaml` (E301_ref stays byte-identical) and is validated
+on the same three games as a second diagnostic set, s5i5 first (about 2 USD equivalent), then
+cd82 and wa30 only if s5i5 shows a found plan. `preregistration/G3b.yaml` follows that
+validation and precedes any graded run. If F1 yields no found plan on any of the three, the
+rule's fall-back applies: `retrospective` (L4) and escalation of its recommendation.
