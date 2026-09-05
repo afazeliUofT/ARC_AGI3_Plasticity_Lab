@@ -1,0 +1,105 @@
+{
+  "action_budget_multiplier": 5,
+  "action_budget_total": 3190,
+  "actions_total": 100,
+  "completion_action_indices": [],
+  "game_id": "s5i5-18d95033",
+  "level_accounting_rule": "initial reset not an action; every later action counted, RESET included; level l completed at the first action index c_l with levels_completed >= l; actions attributed to level l are c_l - c_(l-1), c_0 = 0; later full reset and re-completion ignored; a level never reached has no completion and the first uncompleted level takes the remaining actions",
+  "levels": [
+    {
+      "actions_attributed": 100,
+      "budget": 100,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 1,
+      "official_baseline_actions": 20
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 445,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 2,
+      "official_baseline_actions": 89
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 530,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 3,
+      "official_baseline_actions": 106
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 270,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 4,
+      "official_baseline_actions": 54
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 810,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 5,
+      "official_baseline_actions": 162
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 190,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 6,
+      "official_baseline_actions": 38
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 430,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 7,
+      "official_baseline_actions": 86
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 415,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 8,
+      "official_baseline_actions": 83
+    }
+  ],
+  "levels_completed": 0,
+  "official_baseline_actions": [
+    20,
+    89,
+    106,
+    54,
+    162,
+    38,
+    86,
+    83
+  ],
+  "over_budget_levels": [],
+  "resets_issued": 1,
+  "rhae_environment_score": 0.0,
+  "rhae_level_scores": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "states_seen": {
+    "GAME_OVER": 1,
+    "NOT_FINISHED": 99
+  },
+  "stem": "s5i5",
+  "stop_reason": "level_budget_exhausted",
+  "win_levels": 8
+}

@@ -118,3 +118,71 @@ on the same three games as a second diagnostic set, s5i5 first (about 2 USD equi
 cd82 and wa30 only if s5i5 shows a found plan. `preregistration/G3b.yaml` follows that
 validation and precedes any graded run. If F1 yields no found plan on any of the three, the
 rule's fall-back applies: `retrospective` (L4) and escalation of its recommendation.
+## 2026-09-05T15:38:58Z — G3.6b step 7: F1 complied with, plan still not found; two planner defects (F2, F3) named and tested offline
+
+**Run:** `artifacts/E302_ref/20260905T131531Z_seed12345_d915c5ae` (job g36c-s5i5-1, config `configs/experiments/E302_ref.yaml` da84c695,
+manifest prompt_hash ddeb01c5, git 0ce3e59, `SHA256SUMS` 27/27 OK, stderr empty). Stop
+`level_budget_exhausted` after 100 actions (99 exploration + 1 RESET, 0 plan actions), 3
+calls all returning programs, 214.5 s of model time, 298.5 s wall-clock, 1.31 USD equivalent
+(1.55 USD CLI total_cost_usd), levels 0/8, rhae 0.0.
+
+**F1 (prompt) is complied with.** 3/3 programs begin with a `# GOAL:` line stating a
+concrete condition (both piece heads on their diamond targets at (row 10, col 52) and
+(row 52, col 10)), 3/3 implement it (`levels += 1` when `hx == H_TARGET and vy == V_TARGET`),
+3/3 certified by the full-history backtest (0 mismatches at history 4 / 10 / 51). h001 and
+h002 were decertified by predict-before-act (steps 10 and 51); h003 held for 49 searches.
+
+**The found-plan test failed:** 95/95 searches `not_found`, `predicted_levels_completed_max`
+0 in all, 84/95 reached depth 8 and dropped successors at the cap. Two planner defects
+explain it, both read from the artifacts and both confirmed offline with
+`scripts/g36b_plan_diagnosis.py --deep-search` over h003 from history prefix 51
+(reports in /tmp, digests in the ledger):
+
+| offline search over h003 (prefix 51) | click pitch | depth | outcome |
+|---|---|---|---|
+| planner's own limits | 16 (16 points) | 8 | not_found |
+| deeper only | 16 | 16 | not_found (93 states) |
+| denser only | 6 (121 points) | 8 | not_found, 70 dropped at cap |
+| both | 6 | 16 | **found, 13 actions, predicted level 1**, 691 nodes, 83571 steps, 79 s |
+
+- **F2, click lattice:** `click_points_for_step(16)` yields the 16 points (8+16i, 8+16j).
+  Under all three programs' button geometry those points hit only the L button (40,24) and
+  the U button (24,40), which move the heads toward their anchors and away from the targets;
+  no point falls in the R (x 43-48, y 18-24) or D (x 21-27, y 42-47) regions. Pitch 6 hits all
+  four buttons (pitch 8 misses D and U; pitch 12 misses all four).
+- **F3, depth cap:** under the certified model the goal needs 7 R clicks (31 -> 52 in steps
+  of 3) plus 6 D clicks (34 -> 52): 13 actions against `max_depth` 8. Every earlier run
+  (cd82, wa30) also dropped successors at the cap.
+
+Neither defect is prompt wording, so no E303 prompt revision. Neither is a hypothesis
+failure: the induction side now produces certified, goal-bearing, planner-usable models.
+Both are planner *configuration* values (`planner.click_grid_step`, `planner.max_depth`),
+which the G3 pre-registration's `reference_architecture.what_is_fixed_here` leaves changeable
+under the ladder until the first graded run of a set starts.
+
+**Decision rule applied (docs/DECISION_LOG.md 2026-09-05T08:20:01Z):** prong 1 (a level
+completed) not met: 0/8. Prong 2 (a specific testable defect and its fix) met, twice over,
+with the fix already tested offline. **Default taken (L1, smallest corrective patch, no source
+change):** a successor `configs/experiments/E303_ref.yaml` derived from E302_ref.yaml by
+exactly three changes (experiment_id, `planner.max_depth` 8 -> 16, `planner.click_grid_step`
+16 -> 6), validated on s5i5 first as job g36d-s5i5-1, then cd82 and wa30 only if s5i5 shows a
+found plan. Testable prediction: `plans.jsonl` carries `found` records with `plan_actions > 0`
+in results.json; then either level 1 completes on the real game or h00N is decertified by a
+prediction mismatch on a planned action (a refuted conjecture, which F1 asks the model to
+replace). Cost risk stated: 121 click points and depth 16 multiply the planner's branching
+by 7.6 and its depth by 2; on open-state-space games (cd82, wa30) the node cap (20000), the
+simulation budget (5M steps) or the runner's wall-clock limit (10500 s) will bind and that is
+a measured result, not a defect. The principled alternative if the lattice fails there is
+object-centred click candidates (connected components of the current frame), a planner source
+change recorded here as the next rung, not taken now.
+
+**Diagnosis-script limitation found:** the static classifier in
+`scripts/g36b_plan_diagnosis.py` labels all three E302 programs
+`copied_from_input_record` / `never computing levels` because they read
+`history[-1]["levels_completed"]` into a local and then conditionally increment it; the
+augmented assignment is not followed. The label is wrong for these programs (read directly:
+`levels += 1` at h001.py:95, h002.py:98, h003.py:109). The sandbox probe is right (0
+programs exceed their input's level on the *real* action history, whose clicks never
+reached the targets). Fix candidate: a follow-up housekeeping step, not this turn.
+
+---

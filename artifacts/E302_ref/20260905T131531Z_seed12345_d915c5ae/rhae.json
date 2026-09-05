@@ -1,0 +1,93 @@
+{
+  "canonical_scoring_baseline": "official metadata.json baseline_actions",
+  "game_id": "s5i5-18d95033",
+  "levels": [
+    {
+      "actions_attributed": 100,
+      "budget": 100,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 1,
+      "official_baseline_actions": 20,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 445,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 2,
+      "official_baseline_actions": 89,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 530,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 3,
+      "official_baseline_actions": 106,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 270,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 4,
+      "official_baseline_actions": 54,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 810,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 5,
+      "official_baseline_actions": 162,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 190,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 6,
+      "official_baseline_actions": 38,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 430,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 7,
+      "official_baseline_actions": 86,
+      "rhae_level_score": 0.0
+    },
+    {
+      "actions_attributed": 0,
+      "budget": 415,
+      "completed": false,
+      "completion_action_index": null,
+      "level": 8,
+      "official_baseline_actions": 83,
+      "rhae_level_score": 0.0
+    }
+  ],
+  "levels_completed": 0,
+  "official_baseline_actions": [
+    20,
+    89,
+    106,
+    54,
+    162,
+    38,
+    86,
+    83
+  ],
+  "rhae_environment_score": 0.0,
+  "stem": "s5i5",
+  "stop_reason": "level_budget_exhausted",
+  "win_levels": 8
+}
