@@ -26,3 +26,5 @@ data/human_replays/extras/
 data/**/*.zip
 state/throttle.json
 state/supervisor.py.bak.*
+state/jobs/
+state/job_request.json

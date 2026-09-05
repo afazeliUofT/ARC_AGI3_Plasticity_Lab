@@ -93,6 +93,22 @@ state/ESCALATION.md, set blocked_on, and stop cleanly."""
 # Effort by task class. AGENT_CONSTITUTION.md section 8: mechanical work uses no
 # model at all, so it never reaches this table.
 THROTTLE = STATE / "throttle.json"
+JOB_REQUEST = STATE / "job_request.json"
+JOBS = STATE / "jobs"
+
+# The agent may ask for an EXPERIMENT, never for a command. The supervisor
+# builds the argv itself from a whitelisted runner name and validated fields, so
+# a job request can never become arbitrary execution with the credential set.
+JOB_RUNNERS = {"run_experiment": "scripts/run_experiment.py"}
+JOB_CONFIG_RE = re.compile(r"^configs/experiments/[A-Za-z0-9_.-]{1,64}\.ya?ml$")
+JOB_GAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,16}$")
+JOB_MAX_WALLCLOCK = 3 * 3600
+# Charged when a run reports no model figure: the per-run cap agreed at 21:47Z.
+JOB_DEFAULT_MODEL_SECONDS = 1200
+# After hitting the ceiling, drain to this fraction of it before resuming.
+# Resuming at just-under-the-ceiling produced the 2026-09-05 livelock: every
+# second freed by age-out was refilled by the next deferral turn.
+THROTTLE_RESUME_FRACTION = 0.60
 
 # A turn that returns in a second or two did no work: the CLI refused before the
 # agent ran. Scoring those as no-progress turns walked the run into a HALT on
@@ -163,6 +179,41 @@ USAGE_ANY_PAT = re.compile(
     r"|upgrade to (a )?higher|insufficient (credit|quota))", re.I)
 
 
+def drain_target(seconds_back: int, target_total: int) -> float | None:
+    """When the rolling window will have drained to target_total seconds.
+
+    Ages metered events out one at a time, oldest first, until the remainder is
+    at or below the target, and returns when that event leaves the window.
+    """
+    cutoff = time.time() - seconds_back
+    rows = []
+    if not SUPERVISOR_LOG.exists():
+        return None
+    for line in SUPERVISOR_LOG.read_text(encoding="utf-8", errors="ignore").splitlines():
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if d.get("event") not in ("turn", "job"):
+            continue
+        secs = int(d.get("elapsed_s", 0) or 0)
+        if secs < NOOP_SECONDS:
+            continue
+        try:
+            when = datetime.fromisoformat(str(d.get("ts")).replace("Z", "+00:00")).timestamp()
+        except Exception:
+            continue
+        if when >= cutoff:
+            rows.append((when, secs))
+    rows.sort()
+    total = sum(sc for _w, sc in rows)
+    for when, secs in rows:
+        if total <= target_total:
+            return when + seconds_back + 60
+        total -= secs
+    return None
+
+
 def window_model_seconds(seconds_back: int) -> tuple[int, int, float]:
     """Model seconds, turn count, and oldest turn epoch inside a rolling window.
 
@@ -182,7 +233,7 @@ def window_model_seconds(seconds_back: int) -> tuple[int, int, float]:
             d = json.loads(line)
         except Exception:
             continue
-        if d.get("event") != "turn":
+        if d.get("event") not in ("turn", "job"):
             continue
         secs = int(d.get("elapsed_s", 0) or 0)
         if secs < NOOP_SECONDS:
@@ -406,6 +457,98 @@ class Supervisor:
             pinned["evidence_sizes"] = current
             write_json(PINNED, pinned)
         return True, "evidence append-only ok"
+
+    # -- experiment jobs ----------------------------------------------------
+    def run_job(self) -> bool:
+        """Run one queued experiment outside any turn. True if one was handled."""
+        req = read_json(JOB_REQUEST, None)
+        if not isinstance(req, dict):
+            return False
+
+        jid = re.sub(r"[^A-Za-z0-9_.-]", "_", str(req.get("id") or iso()))[:64] or "job"
+        d = JOBS / jid
+        d.mkdir(parents=True, exist_ok=True)
+        runner = str(req.get("runner") or "")
+        cfg = str(req.get("config") or "")
+        game = str(req.get("game") or "")
+        limit = max(60, min(int(req.get("wallclock_limit_s") or 3600), JOB_MAX_WALLCLOCK))
+
+        problems = []
+        if runner not in JOB_RUNNERS:
+            problems.append(f"runner not allowed: {runner!r}")
+        if not JOB_CONFIG_RE.match(cfg):
+            problems.append(f"config path not allowed: {cfg!r}")
+        elif not (ROOT / cfg).is_file():
+            problems.append(f"config not found: {cfg!r}")
+        if game and not JOB_GAME_RE.match(game):
+            problems.append(f"game id not allowed: {game!r}")
+
+        write_json(d / "request.json", {**req, "received_utc": iso()})
+        JOB_REQUEST.unlink(missing_ok=True)   # consumed either way, never retried blindly
+
+        if problems:
+            write_json(d / "result.json", {"id": jid, "accepted": False,
+                                           "problems": problems, "finished_utc": iso()})
+            self.log("job_refused", job=jid, problems=problems)
+            print(f"[supervisor] job {jid} REFUSED: {'; '.join(problems)}")
+            return True
+
+        py = ROOT / ".venv" / "bin" / "python"
+        argv = [str(py) if py.exists() else sys.executable, JOB_RUNNERS[runner],
+                "--config", cfg]
+        if game:
+            argv += ["--game", game]
+
+        env = dict(os.environ)
+        env.setdefault("CLAUDE_PROJECT_DIR", str(ROOT))
+        _tok = env.get("CLAUDE_CODE_OAUTH_TOKEN")
+        if _tok:
+            env["PLASTICITY_LAB_OAUTH_TOKEN"] = _tok
+
+        print(f"[supervisor] job {jid}: {' '.join(argv[1:])}  (limit {limit}s)")
+        self.log("job_start", job=jid, runner=runner, config=cfg, game=game, limit_s=limit)
+        started = time.time()
+        try:
+            r = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True,
+                               timeout=limit, env=env, start_new_session=True)
+            rc, out, err, timed_out = r.returncode, r.stdout or "", r.stderr or "", False
+        except subprocess.TimeoutExpired as e:
+            rc, timed_out = 124, True
+            out = (e.stdout or b"").decode(errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+            err = (e.stderr or b"").decode(errors="replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
+        wall = int(time.time() - started)
+
+        # Charge the model seconds the run reports, not its wall-clock. Most of a
+        # game-run is engine stepping and backtests, which cost no allowance.
+        model_s, source = None, "none"
+        try:
+            newest, newest_mtime = None, started - 5
+            for rp in (ROOT / "artifacts").rglob("results.json"):
+                m = rp.stat().st_mtime
+                if m >= newest_mtime:
+                    newest, newest_mtime = rp, m
+            if newest is not None:
+                data = read_json(newest, None)
+                if isinstance(data, dict) and data.get("model_wallclock_seconds_total") is not None:
+                    model_s = int(float(data["model_wallclock_seconds_total"]))
+                    source = str(newest.relative_to(ROOT))
+        except Exception:
+            model_s = None
+        if model_s is None:
+            model_s, source = JOB_DEFAULT_MODEL_SECONDS, "default (run reported no figure)"
+
+        write_json(d / "result.json", {
+            "id": jid, "accepted": True, "returncode": rc, "timed_out": timed_out,
+            "wallclock_s": wall, "model_seconds_charged": model_s,
+            "model_seconds_source": source, "finished_utc": iso(),
+            "stdout_tail": out[-8000:], "stderr_tail": err[-8000:]})
+        # Logged as a metered event so the throttle sees it; NOT a turn, so it
+        # never touches the no-progress counter.
+        self.log("job", job=jid, returncode=rc, timed_out=timed_out,
+                 wallclock_s=wall, elapsed_s=model_s, model_seconds_source=source)
+        print(f"[supervisor] job {jid} done rc={rc} wall={wall}s "
+              f"charged={model_s}s ({source})")
+        return True
 
     # -- gating -------------------------------------------------------------
     def blocked_on_human(self, st: dict[str, Any]) -> tuple[bool, str]:
@@ -646,13 +789,23 @@ class Supervisor:
                     (cap7, _u7, _n7, _o7, SEVEN_DAYS, "seven_day")):
                 if cap and used >= cap:
                     target = int(oldest + span + 60) if oldest else None
+                    low = int(cap * THROTTLE_RESUME_FRACTION)
+                    drained = drain_target(span, low)
+                    target = int(drained) if drained else target
                     self.sleep_until(
                         target, wname,
                         f"self-throttle: {used}s of model time in the last "
-                        f"{span // 3600}h over {nturns} turn(s), ceiling {cap}s")
+                        f"{span // 3600}h over {nturns} event(s), ceiling {cap}s, "
+                        f"resuming at {int(cap * THROTTLE_RESUME_FRACTION)}s")
                     throttled = True
                     break
             if throttled:
+                continue
+
+            # A queued experiment runs here, between turns: outside the turn
+            # timeout, outside a model-controlled shell, and charged only for
+            # the model seconds it reports.
+            if self.run_job():
                 continue
 
             effort = self.effort_for(st, bud)
