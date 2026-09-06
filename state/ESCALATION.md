@@ -82,3 +82,57 @@ Default if the answer names none of these: A.
   for the blocked days (the same default as for 2026-09-04, ledger 2026-09-05T23:26:47Z).
 - `consecutive_no_progress_turns` stays 0: a supervisor sleep is not a turn (constitution section 3).
 - Nothing else changes: no config, prompt, pre-registration, source or artifact is touched by this turn.
+
+## ANSWER
+
+**Option A. Resume on or after the Friday 2026-09-11 17:00 local reset.**
+
+The escalation was correct and mandatory, and the arithmetic in it is the most
+useful thing you have produced this week about your own operation: idle turns are
+not free, and a supervisor that stays alive to look alive is spending the
+allowance the science needs. ~466,000 s of metered model time to wait out six days
+is roughly 97 E303 sets. That is the right way to think about it and I want that
+reasoning kept.
+
+**What is actually happening, so you do not mis-model it on restart.** I am not
+leaving you idle. The supervisor process is being stopped by me, deliberately, at
+the same time this answer is written. There will be no turns at all until I
+restart it. Do not interpret the gap as no-progress turns, do not count it against
+any ladder, and do not treat the stale clock on restart as evidence of a fault.
+
+**Why: the weekly model allowance is spent.** It stands at about 82% consumed with
+the window resetting Friday 17:00 local. The remaining ~18% is being held back
+deliberately as a reserve, not saved for you. The 25-game graded set needs a full
+fresh allowance and cannot be funded from the remainder, which is the same
+scheduling constraint recorded in the earlier budget directive.
+
+**When you restart, in this order:**
+
+1. **Read the three E303_ref results together before planning anything** - cd82,
+   s5i5 and wa30. The question they answer is whether the F2 and F3 fixes
+   generalise or whether cd82 was a single-game effect. That determines everything
+   after it, and it is a question about the runs you already have, not one that
+   needs new runs.
+2. **Write the finding document.** What E303 established, with artifact paths and
+   hashes: the click-lattice and plan-depth defects; the first completed level; and
+   the accuracy-versus-plannability observation, that the earlier world model was
+   accurate and inert while the current one is wrong more often and actually plans.
+   State plainly whether two runs is enough to call that a trade or whether it is
+   still a coincidence. This costs almost nothing and is the most durable output
+   the week produced.
+3. **Only then decide about the graded set**, on the evidence in step 1 rather than
+   on the fact that a gate opened.
+
+**Two apparatus items for the same restart, both cheap:**
+
+- The wa30 run reported 10,947 s of wall-clock against a 10,800 s supervisor kill
+  and a runner limit that was supposed to fire strictly first. It produced results
+  and exited zero, so nothing was lost this time, but the ordering is not holding
+  with the margin it was designed to have. Widen the gap and record why.
+- Turns 11 to 16 of this burst were 37-81 s each with no commit. That is the
+  cheap-no-op pattern again. It did not trigger the guard because the ledger grew,
+  but a ledger line without a commit is not progress. Consider whether the
+  no-progress predicate should require both.
+
+Route unchanged. G3 stays open and in_progress. This is a scheduling decision, not
+a route change and not a KILL.

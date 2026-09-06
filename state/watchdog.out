@@ -13,3 +13,9 @@
    E303_ref   s5i5  levels=1 plans=3 rhae=1.020304050607081 stop=level_budget_exhausted
    E303_ref   cd82  levels=1 plans=7 rhae=4.761904761904762 stop=model_budget_exhausted
    E303_ref   wa30  levels=0 plans=1 rhae=0.0 stop=wallclock
+  [ok]  committed
+  [ok]  pushed
+
+  Lab is stopped. Nothing is running and nothing is spending.
+  Restart after the weekly reset (Fri 17:00) with:
+    cd /home/afazeli2006/ARC_AGI3_Plasticity_Lab && nohup setsid python3 -u scripts/supervisor.py > state/supervisor.out 2>&1 &
