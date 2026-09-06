@@ -1,0 +1,15 @@
+  [ok]  supervisor stopped
+  [ok]  throttle ceiling restored to 5000s per 5h
+  [ok]  recorded in the ledger
+
+  runs on disk:
+   E300_ref   cd82  levels=0 plans=0 rhae=0.0 stop=model_budget_exhausted
+   E300_ref   s5i5  levels=0 plans=0 rhae=0.0 stop=level_budget_exhausted
+   E300_ref   wa30  levels=0 plans=0 rhae=0.0 stop=wallclock
+   E301_ref   cd82  levels=0 plans=0 rhae=0.0 stop=level_budget_exhausted
+   E301_ref   s5i5  levels=0 plans=0 rhae=0.0 stop=level_budget_exhausted
+   E301_ref   wa30  levels=0 plans=0 rhae=0.0 stop=level_budget_exhausted
+   E302_ref   s5i5  levels=0 plans=0 rhae=0.0 stop=level_budget_exhausted
+   E303_ref   s5i5  levels=1 plans=3 rhae=1.020304050607081 stop=level_budget_exhausted
+   E303_ref   cd82  levels=1 plans=7 rhae=4.761904761904762 stop=model_budget_exhausted
+   E303_ref   wa30  levels=0 plans=1 rhae=0.0 stop=wallclock
